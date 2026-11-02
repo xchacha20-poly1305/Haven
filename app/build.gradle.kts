@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,12 +7,20 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val releaseKeystore = rootProject.file("release.keystore")
+val signingProperties = providers.fileContents(
+    rootProject.layout.projectDirectory.file("local.properties")
+).asText.orElse("").map { content ->
+    Properties().apply { content.reader().use { load(it) } }
+}
+
 android {
     namespace = "sh.haven.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "sh.haven.app"
+        applicationId = "io.github.xchacha20_poly1305.haven"
+        resValue("string", "application_id", applicationId!!)
         minSdk = 26
         targetSdk = 35
         versionCode = 930
@@ -53,12 +63,15 @@ android {
 
     signingConfigs {
         create("release") {
-            val ksFile = rootProject.file("haven-release.jks")
-            if (ksFile.exists()) {
-                storeFile = ksFile
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-                keyAlias = System.getenv("KEY_ALIAS") ?: ""
-                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            if (releaseKeystore.isFile) {
+                fun signingProperty(name: String): String =
+                    signingProperties.get().getProperty(name)?.takeIf { it.isNotBlank() }
+                        ?: error("Missing signing property '$name' in local.properties")
+
+                storeFile = releaseKeystore
+                storePassword = signingProperty("KEYSTORE_PASS")
+                keyAlias = signingProperty("ALIAS_NAME")
+                keyPassword = signingProperty("ALIAS_PASS")
             }
         }
     }
@@ -82,11 +95,8 @@ android {
             vcsInfo.include = false
         }
         debug {
-            // Sign debug with the release cert when the keystore env is present
-            // (source ~/.haven-release.env), so a debuggable build installs over
-            // a release-signed device build without a data-wiping uninstall.
-            // Falls back to the default debug keystore when the env is absent.
-            if (System.getenv("KEYSTORE_PASSWORD") != null) {
+            // Use the same certificate locally so debug can update release builds.
+            if (releaseKeystore.isFile) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
@@ -101,6 +111,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 
     packaging {

@@ -7,7 +7,7 @@
         android:shortcutShortLabel="@string/shortcut_pull_backup_label">
         <intent
             android:action="sh.haven.app.ACTION_PULL_BACKUP"
-            android:targetPackage="sh.haven.app"
+            android:targetPackage="@string/application_id"
             android:targetClass="sh.haven.app.backup.PullBackupShortcutActivity" />
     </shortcut>
 </shortcuts>
