@@ -5,15 +5,29 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import sh.haven.core.data.preferences.NumericPreferenceKeys.terminalFontSizeKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.terminalHorizontalPaddingKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.mailFontScaleKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.terminalScrollbackRowsKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.prootIdleTimeoutMinutesKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.rdpDesktopWidthKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.rdpDesktopHeightKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.reticulumPortKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.terminalBackgroundOpacityKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.toolbarRowsKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.toolbarMinButtonWidthKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.toolbarKeyScaleKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.appWindowDefaultScaleKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.backupAutoPullIntervalMinutesKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.desktopTouchpadSensitivityKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.updateCheckLastRunKey
+import sh.haven.core.data.preferences.NumericPreferenceKeys.lastMediaServerPortKey
 import sh.haven.core.security.CredentialEncryption
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,16 +38,6 @@ class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
     private val biometricEnabledKey = booleanPreferencesKey("biometric_enabled")
-    private val terminalFontSizeKey = intPreferencesKey("terminal_font_size")
-    // Horizontal margin around the terminal grid in dp (#745). Shrinking the
-    // measured width makes termlib recompute columns and resize the PTY.
-    private val terminalHorizontalPaddingKey = intPreferencesKey("terminal_horizontal_padding")
-    // Mail message-list pinch-zoom factor, multiplied onto the terminal font size.
-    private val mailFontScaleKey = floatPreferencesKey("mail_font_scale")
-    private val terminalScrollbackRowsKey = intPreferencesKey("terminal_scrollback_rows")
-    private val prootIdleTimeoutMinutesKey = intPreferencesKey("proot_idle_timeout_minutes")
-    private val rdpDesktopWidthKey = intPreferencesKey("rdp_desktop_width")
-    private val rdpDesktopHeightKey = intPreferencesKey("rdp_desktop_height")
     private val terminalTapToPositionCursorKey = booleanPreferencesKey("terminal_tap_to_position_cursor")
     // #753: raise a system notification when a terminal rings BEL while Haven
     // is backgrounded. Default on — the request's whole point is being told
@@ -58,24 +62,18 @@ class UserPreferencesRepository @Inject constructor(
     private val sessionManagerKey = stringPreferencesKey("session_manager")
     private val reticulumRpcKeyKey = stringPreferencesKey("reticulum_rpc_key")
     private val reticulumHostKey = stringPreferencesKey("reticulum_host")
-    private val reticulumPortKey = intPreferencesKey("reticulum_port")
     private val terminalColorSchemeKey = stringPreferencesKey("terminal_color_scheme")
     private val terminalAutoSwitchSchemeKey = booleanPreferencesKey("terminal_auto_switch_scheme")
     private val terminalLightColorSchemeKey = stringPreferencesKey("terminal_light_color_scheme")
     private val terminalDarkColorSchemeKey = stringPreferencesKey("terminal_dark_color_scheme")
     private val terminalApplySchemePaletteKey = booleanPreferencesKey("terminal_apply_scheme_palette")
-    private val terminalBackgroundOpacityKey = floatPreferencesKey("terminal_background_opacity")
     private val terminalInlineImagesKey = stringPreferencesKey("terminal_inline_images")
-    private val toolbarRowsKey = intPreferencesKey("toolbar_rows") // legacy
     private val toolbarRow1Key = stringPreferencesKey("toolbar_row1") // legacy
     private val toolbarRow2Key = stringPreferencesKey("toolbar_row2") // legacy
     private val toolbarLayoutKey = stringPreferencesKey("toolbar_layout")
     private val snippetLibraryKey = stringPreferencesKey("snippet_library")
-    private val toolbarMinButtonWidthKey = intPreferencesKey("toolbar_min_button_width")
-    private val toolbarKeyScaleKey = floatPreferencesKey("toolbar_key_scale")
     private val appWindowDefsKey = stringPreferencesKey("app_window_defs")
     private val appWindowDefaultResolutionKey = stringPreferencesKey("app_window_default_resolution")
-    private val appWindowDefaultScaleKey = floatPreferencesKey("app_window_default_scale")
     private val navBlockModeKey = stringPreferencesKey("nav_block_mode")
     private val toolbarUniformGridKey = booleanPreferencesKey("toolbar_uniform_grid")
     private val editModeControlsPlacementKey = stringPreferencesKey("edit_mode_controls_placement")
@@ -97,7 +95,6 @@ class UserPreferencesRepository @Inject constructor(
     private val backupSyncPathKey = stringPreferencesKey("backup_sync_path")
     private val backupAutoSyncEnabledKey = booleanPreferencesKey("backup_auto_sync_enabled")
     private val backupAutoPullEnabledKey = booleanPreferencesKey("backup_auto_pull_enabled")
-    private val backupAutoPullIntervalMinutesKey = intPreferencesKey("backup_auto_pull_interval_minutes")
     // CredentialEncryption-wrapped backup passphrase for background pushes (#359).
     private val backupSyncPassphraseKey = stringPreferencesKey("backup_sync_passphrase")
     // Session command for the Custom (X11) desktop (#361).
@@ -155,8 +152,6 @@ class UserPreferencesRepository @Inject constructor(
     private val showDesktopsCardKey = booleanPreferencesKey("show_desktops_card")
     private val mediaExtensionsKey = stringPreferencesKey("media_extensions")
     private val desktopInputModeKey = stringPreferencesKey("desktop_input_mode")
-    // Trackpad-mode speed multiplier (#696). 1f = the 1:1 finger→cursor ratio.
-    private val desktopTouchpadSensitivityKey = floatPreferencesKey("desktop_touchpad_sensitivity")
 
     // = virgl/virpipe (GL 2.1, present works on every path). On = venus
     // (Vulkan→Mali) + zink (modern GL, ~3.2 core) with the wl_shm CPU-copy WSI
@@ -174,10 +169,8 @@ class UserPreferencesRepository @Inject constructor(
     // ever consulted when the running copy was signed with the GitHub-release
     // key — see UpdateChecker.
     private val updateCheckEnabledKey = booleanPreferencesKey("update_check_enabled")
-    private val updateCheckLastRunKey = longPreferencesKey("update_check_last_run_ms")
     private val updateCheckLastNotifiedKey = stringPreferencesKey("update_check_last_notified_version")
     private val bandwidthAutoSuggestKey = booleanPreferencesKey("bandwidth_auto_suggest")
-    private val lastMediaServerPortKey = intPreferencesKey("last_media_server_port")
 
     // fast with a JSON-RPC error before any consent prompt fires. Default
 
@@ -423,7 +416,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val backupAutoPullIntervalMinutes: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(backupAutoPullIntervalMinutesKey) ?: 1440
+        prefs[backupAutoPullIntervalMinutesKey] ?: 1440
     }
 
     suspend fun setBackupAutoPull(enabled: Boolean, passphrase: String?) {
@@ -698,7 +691,7 @@ class UserPreferencesRepository @Inject constructor(
      * and RDP touchpad paths so both behave the same.
      */
     val desktopTouchpadSensitivity: Flow<Float> = dataStore.data.map { prefs ->
-        prefs.floatSafe(desktopTouchpadSensitivityKey) ?: 1f
+        prefs.floatOrNull(desktopTouchpadSensitivityKey) ?: 1f
     }
 
     suspend fun setDesktopTouchpadSensitivity(value: Float) {
@@ -926,7 +919,7 @@ class UserPreferencesRepository @Inject constructor(
 
     /** Wall-clock ms of the last launch-time check; 0 = never. Throttle input. */
     val updateCheckLastRunMs: Flow<Long> = dataStore.data.map { prefs ->
-        prefs.longSafe(updateCheckLastRunKey) ?: 0L
+        prefs.longOrNull(updateCheckLastRunKey) ?: 0L
     }
 
     suspend fun setUpdateCheckLastRunMs(atMs: Long) {
@@ -1131,7 +1124,7 @@ class UserPreferencesRepository @Inject constructor(
 
     /** Last port used by the media streaming server (for reconnection after restart). */
     val lastMediaServerPort: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(lastMediaServerPortKey) ?: 0
+        prefs[lastMediaServerPortKey] ?: 0
     }
 
     suspend fun setLastMediaServerPort(port: Int) {
@@ -1159,11 +1152,11 @@ class UserPreferencesRepository @Inject constructor(
      */
 
     val terminalFontSize: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(terminalFontSizeKey) ?: DEFAULT_FONT_SIZE
+        prefs[terminalFontSizeKey] ?: DEFAULT_FONT_SIZE
     }
 
     val terminalHorizontalPadding: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(terminalHorizontalPaddingKey) ?: DEFAULT_HORIZONTAL_PADDING_DP
+        prefs[terminalHorizontalPaddingKey] ?: DEFAULT_HORIZONTAL_PADDING_DP
     }
 
     suspend fun setTerminalHorizontalPadding(paddingDp: Int) {
@@ -1205,7 +1198,7 @@ class UserPreferencesRepository @Inject constructor(
      * shared key primitive.
      */
     val toolbarMinButtonWidth: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(toolbarMinButtonWidthKey) ?: DEFAULT_TOOLBAR_MIN_BUTTON_WIDTH
+        prefs[toolbarMinButtonWidthKey] ?: DEFAULT_TOOLBAR_MIN_BUTTON_WIDTH
     }
 
     /**
@@ -1215,7 +1208,7 @@ class UserPreferencesRepository @Inject constructor(
      * with [toolbarMinButtonWidth], which keeps operating in scaled dp.
      */
     val toolbarKeyScale: Flow<Float> = dataStore.data.map { prefs ->
-        prefs.floatSafe(toolbarKeyScaleKey) ?: DEFAULT_TOOLBAR_KEY_SCALE
+        prefs.floatOrNull(toolbarKeyScaleKey) ?: DEFAULT_TOOLBAR_KEY_SCALE
     }
 
     /**
@@ -1226,7 +1219,7 @@ class UserPreferencesRepository @Inject constructor(
      * open tabs.
      */
     val terminalScrollbackRows: Flow<Int> = dataStore.data.map { prefs ->
-        (prefs.intSafe(terminalScrollbackRowsKey) ?: DEFAULT_SCROLLBACK_ROWS)
+        (prefs[terminalScrollbackRowsKey] ?: DEFAULT_SCROLLBACK_ROWS)
             .coerceIn(MIN_SCROLLBACK_ROWS, MAX_SCROLLBACK_ROWS)
     }
 
@@ -1241,12 +1234,12 @@ class UserPreferencesRepository @Inject constructor(
      * follow the server is the better fix and is a separate piece of work.
      */
     val rdpDesktopWidth: Flow<Int> = dataStore.data.map { prefs ->
-        (prefs.intSafe(rdpDesktopWidthKey) ?: DEFAULT_RDP_WIDTH)
+        (prefs[rdpDesktopWidthKey] ?: DEFAULT_RDP_WIDTH)
             .coerceIn(MIN_RDP_DIMENSION, MAX_RDP_DIMENSION)
     }
 
     val rdpDesktopHeight: Flow<Int> = dataStore.data.map { prefs ->
-        (prefs.intSafe(rdpDesktopHeightKey) ?: DEFAULT_RDP_HEIGHT)
+        (prefs[rdpDesktopHeightKey] ?: DEFAULT_RDP_HEIGHT)
             .coerceIn(MIN_RDP_DIMENSION, MAX_RDP_DIMENSION)
     }
 
@@ -1264,7 +1257,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val prootIdleTimeoutMinutes: Flow<Int> = dataStore.data.map { prefs ->
-        (prefs.intSafe(prootIdleTimeoutMinutesKey) ?: 0).coerceAtLeast(0)
+        (prefs[prootIdleTimeoutMinutesKey] ?: 0).coerceAtLeast(0)
     }
 
     suspend fun setProotIdleTimeoutMinutes(minutes: Int) {
@@ -1378,27 +1371,9 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Read a numeric preference defensively (#323, #779). Android's
-     * [org.json.JSONObject] strips `.0` from whole-numbered doubles (`1.0` -> `1`),
-     * so an older backup import stored whole-valued floats (and small longs) as
-     * `Int` in DataStore. Because `Preferences.Key` equality only compares `name`,
-     * `prefs[floatKey]` then threw `ClassCastException: Integer cannot be cast to Float`.
-     * Looking up via [Preferences.asMap] and converting any [Number] heals already-imported
-     * stores on read while preserving the user's numeric value (e.g. `2` -> `2.0f`).
-     */
-    internal fun Preferences.floatSafe(key: Preferences.Key<Float>): Float? =
-        (this.asMap()[key] as? Number)?.toFloat()
-
-    internal fun Preferences.longSafe(key: Preferences.Key<Long>): Long? =
-        (this.asMap()[key] as? Number)?.toLong()
-
-    internal fun Preferences.intSafe(key: Preferences.Key<Int>): Int? =
-        (this.asMap()[key] as? Number)?.toInt()
-
     /** Mail message-list pinch-zoom factor (× the terminal font size). 1.0 = match terminal. */
     val mailFontScale: Flow<Float> = dataStore.data.map { prefs ->
-        (prefs.floatSafe(mailFontScaleKey) ?: DEFAULT_MAIL_FONT_SCALE)
+        (prefs.floatOrNull(mailFontScaleKey) ?: DEFAULT_MAIL_FONT_SCALE)
             .coerceIn(MIN_MAIL_FONT_SCALE, MAX_MAIL_FONT_SCALE)
     }
 
@@ -1437,7 +1412,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val reticulumPort: Flow<Int> = dataStore.data.map { prefs ->
-        prefs.intSafe(reticulumPortKey) ?: DEFAULT_RETICULUM_PORT
+        prefs[reticulumPortKey] ?: DEFAULT_RETICULUM_PORT
     }
 
     val reticulumConfigured: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -1645,7 +1620,7 @@ class UserPreferencesRepository @Inject constructor(
 
     /** Global default cage output scale for app windows that don't set their own. */
     val appWindowDefaultScale: Flow<Float> = dataStore.data.map { prefs ->
-        prefs.floatSafe(appWindowDefaultScaleKey) ?: 1f
+        prefs.floatOrNull(appWindowDefaultScaleKey) ?: 1f
     }
 
     suspend fun setAppWindowDefaultScale(scale: Float) {
@@ -1839,7 +1814,7 @@ class UserPreferencesRepository @Inject constructor(
      * `ConnectionProfile.terminalBackgroundOpacity`).
      */
     val terminalBackgroundOpacity: Flow<Float> = dataStore.data.map { prefs ->
-        (prefs.floatSafe(terminalBackgroundOpacityKey) ?: 1f).coerceIn(0f, 1f)
+        (prefs.floatOrNull(terminalBackgroundOpacityKey) ?: 1f).coerceIn(0f, 1f)
     }
 
     suspend fun setTerminalBackgroundOpacity(opacity: Float) {
@@ -2255,30 +2230,5 @@ class UserPreferencesRepository @Inject constructor(
         const val DEFAULT_TOOLBAR_ROW2 = "arrow_left,arrow_up,arrow_down,arrow_right,sym_pipe,sym_tilde,sym_slash,sym_backslash,sym_backtick" // legacy
         const val DEFAULT_MEDIA_EXTENSIONS = "mp3 flac ogg opus m4a aac wma wav aiff alac ape mka mp4 mkv avi mov wmv flv webm m4v ts mpg mpeg 3gp"
         const val DEFAULT_TERMINAL_LOCALE = "en_US.UTF-8"
-
-        /**
-         * DataStore keys backed by [floatPreferencesKey]. Android's [org.json.JSONObject]
-         * strips `.0` from whole-numbered doubles (`1.0` -> `1`), so JSON import sees an
-         * [Int] for whole-valued floats (#323, #779). [sh.haven.core.data.backup.BackupService]
-         * consults this set to restore them as [Float], and [floatSafe] coerces any [Number]
-         * on read so an already-imported store self-heals without losing the stored value.
-         */
-        val FLOAT_PREF_KEYS: Set<String> = setOf(
-            "mail_font_scale",
-            "terminal_background_opacity",
-            "toolbar_key_scale",
-            "app_window_default_scale",
-            "desktop_touchpad_sensitivity",
-        )
-
-        /**
-         * DataStore keys backed by [longPreferencesKey]. Small values (e.g. `0`) parse back
-         * from JSON as [Int]; [sh.haven.core.data.backup.BackupService] restores them as [Long]
-         * and [longSafe] coerces any [Number] on read.
-         */
-        val LONG_PREF_KEYS: Set<String> = setOf(
-            "update_check_last_run_ms",
-            "last_viewed_agent_audit_timestamp",
-        )
     }
 }

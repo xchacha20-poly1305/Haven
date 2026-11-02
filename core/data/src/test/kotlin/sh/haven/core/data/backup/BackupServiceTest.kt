@@ -6,9 +6,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import sh.haven.core.data.preferences.UserPreferencesRepository
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -111,7 +111,7 @@ class BackupServiceTest {
         coEvery { knownHostDao.getAll() } returns emptyList()
         coEvery { portForwardRuleDao.getAll() } returns emptyList()
 
-        // Fractional and whole-valued floats across all known FLOAT_PREF_KEYS, plus
+        // Fractional and whole-valued floats across all declared float preferences, plus
         // a small-valued Long pref (JSON collapses 1.0 -> 1 and 0L -> 0, so import
         // sees java.lang.Integer).
         val fracKey = floatPreferencesKey("terminal_background_opacity")
@@ -156,7 +156,6 @@ class BackupServiceTest {
             it[intPreferencesKey("app_window_default_scale")] = 2
             it[intPreferencesKey("terminal_background_opacity")] = 1
             it[intPreferencesKey("update_check_last_run_ms")] = 12345
-            it[intPreferencesKey("last_viewed_agent_audit_timestamp")] = 67890
         }
 
         val repo = UserPreferencesRepository(mockk(relaxed = true), dataStore)
@@ -166,7 +165,28 @@ class BackupServiceTest {
         assertEquals(2.0f, repo.appWindowDefaultScale.first())
         assertEquals(1.0f, repo.terminalBackgroundOpacity.first())
         assertEquals(12345L, repo.updateCheckLastRunMs.first())
-        assertEquals(67890L, repo.lastViewedAgentAuditTimestamp.first())
+    }
+
+    @Test
+    fun `legacy integer JSON restores the declared float and long preference types`() = runTest {
+        val json = JSONObject().put("settings", JSONObject().apply {
+            put("desktop_touchpad_sensitivity", 2)
+            put("toolbar_key_scale", 1)
+            put("terminal_background_opacity", 1)
+            put("update_check_last_run_ms", 0)
+            put("terminal_font_size", 18)
+        })
+        val backup = encryptForTest(json.toString().toByteArray(Charsets.UTF_8), "pw")
+
+        val result = service.import(backup, "pw")
+
+        assertTrue(result.errors.isEmpty())
+        val prefs = dataStore.data.first()
+        assertEquals(2f, prefs[floatPreferencesKey("desktop_touchpad_sensitivity")])
+        assertEquals(1f, prefs[floatPreferencesKey("toolbar_key_scale")])
+        assertEquals(1f, prefs[floatPreferencesKey("terminal_background_opacity")])
+        assertEquals(0L, prefs[longPreferencesKey("update_check_last_run_ms")])
+        assertEquals(18, prefs[intPreferencesKey("terminal_font_size")])
     }
 
     @Test(expected = Exception::class)
