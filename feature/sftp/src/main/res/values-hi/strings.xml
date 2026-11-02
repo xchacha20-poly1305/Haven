@@ -103,7 +103,7 @@
     <string name="sftp_mode_sync">मिरर</string>
     <string name="sftp_mode_move">स्थानांतरित करें</string>
     <string name="sftp_mode_copy_desc">नई और अपडेट हुई फ़ाइलें कॉपी करता है। कुछ नहीं हटाता।</string>
-    <string name="sftp_mode_sync_desc">गंतव्य को स्रोत के समान बनाता है। अतिरिक्त हटा देता है।</string>
+
     <string name="sftp_mode_move_desc">फ़ाइलें गंतव्य में ले जाता है। स्रोत से हटा देता है।</string>
     <string name="sftp_advanced_filters">उन्नत फ़िल्टर</string>
     <string name="sftp_include_patterns">समावेशन पैटर्न (हर पंक्ति में एक)</string>
@@ -116,7 +116,7 @@
     <string name="sftp_preview">पूर्वावलोकन</string>
     <string name="sftp_dry_run_results">ड्राई रन परिणाम</string>
     <string name="sftp_start_for_real">वास्तव में शुरू करें</string>
-    <string name="sftp_sync_cancelled">सिंक रद्द किया गया</string>
+
     <!-- Rename dialog -->
     <string name="sftp_rename_title">नाम बदलें</string>
     <string name="sftp_new_name">नया नाम</string>
@@ -131,19 +131,14 @@
     <string name="sftp_calculating_size">गणना हो रही है…</string>
 
     <!-- DLNA -->
-    <string name="sftp_start_dlna">DLNA सर्वर शुरू करें</string>
-    <string name="sftp_stop_dlna">DLNA सर्वर रोकें</string>
+
     <!-- Convert -->
-    <string name="sftp_convert">बदलें</string>
-    <string name="sftp_convert_title">मीडिया बदलें</string>
-    <string name="sftp_convert_format">आउटपुट प्रारूप</string>
-    <string name="sftp_converting">%s बदला जा रहा है</string>
-    <string name="sftp_convert_done">%s में सहेजा गया</string>
+
     <!-- Stream -->
     <string name="sftp_stream">स्ट्रीम</string>
     <string name="sftp_streaming">%s पर स्ट्रीम हो रहा है</string>
     <string name="sftp_stream_stop">रोकें</string>
-    <string name="sftp_downloading_for_convert">बदलने के लिए डाउनलोड हो रहा है…</string>
+
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="sftp_play_in_browser">ब्राउज़र में चलाएँ</string>
     <string name="sftp_stream_to_network">नेटवर्क पर स्ट्रीम करें</string>
@@ -176,44 +171,8 @@
     <string name="sftp_media">मीडिया…</string>
     <string name="sftp_stream_folder">फ़ोल्डर प्लेलिस्ट स्ट्रीम करें</string>
     <string name="sftp_output_filename">आउटपुट फ़ाइल का नाम</string>
-    <string name="sftp_convert_sub">फ़िल्टर के साथ वीडियो या ऑडियो री-एनकोड करें</string>
-    <string name="sftp_media_info">मीडिया जानकारी</string>
-    <string name="sftp_media_info_sub">कोडेक, अवधि, स्ट्रीम</string>
-    <string name="sftp_media_info_probing">जाँच हो रही है…</string>
-    <string name="sftp_media_info_failed">ffprobe विफल: %s</string>
-    <string name="sftp_media_info_container">कंटेनर</string>
-    <string name="sftp_media_info_duration">अवधि</string>
-    <string name="sftp_media_info_bitrate">बिटरेट</string>
-    <string name="sftp_media_info_size">आकार</string>
-    <string name="sftp_media_info_video_streams">वीडियो</string>
-    <string name="sftp_media_info_audio_streams">ऑडियो</string>
-    <string name="sftp_media_info_subtitle_streams">उपशीर्षक</string>
-    <string name="sftp_media_info_video">वीडियो</string>
-    <string name="sftp_media_info_audio">ऑडियो</string>
-    <string name="sftp_media_info_subtitle">उपशीर्षक</string>
-    <string name="sftp_media_info_chapters">अध्याय: %d</string>
-    <string name="sftp_media_info_copy">JSON कॉपी करें</string>
+
     <string name="sftp_trim">ट्रिम (हानिरहित)</string>
-    <string name="sftp_trim_sub">बिना री-एनकोड किए क्लिप काटें</string>
-    <string name="sftp_trim_title">क्लिप ट्रिम करें</string>
-    <string name="sftp_trim_explain">शुरू और अंत H:MM:SS के रूप में। स्ट्रीम-कॉपी, कोई री-एनकोड नहीं।</string>
-    <string name="sftp_trim_start">शुरू</string>
-    <string name="sftp_trim_end">अंत</string>
-    <string name="sftp_trim_action">ट्रिम करें</string>
-    <string name="sftp_extract_audio">ऑडियो निकालें</string>
-    <string name="sftp_extract_audio_sub">साउंडट्रैक को MP3/AAC/Opus/FLAC के रूप में सहेजें</string>
-    <string name="sftp_extract_audio_title">ऑडियो निकालें</string>
-    <string name="sftp_extract_audio_format">प्रारूप</string>
-    <string name="sftp_extract_audio_bitrate">बिटरेट: %d kbps</string>
-    <string name="sftp_extract_audio_action">निकालें</string>
-    <string name="sftp_contact_sheet">कांटैक्ट शीट</string>
-    <string name="sftp_contact_sheet_sub">फ़ाइल भर से लिए गए थंबनेल का ग्रिड</string>
-    <string name="sftp_contact_sheet_title">कांटैक्ट शीट</string>
-    <string name="sftp_contact_sheet_explain">क्लिप भर से बराबर अंतराल पर फ़्रेम लेकर टाइल किए गए PNG में जोड़ता है।</string>
-    <string name="sftp_contact_sheet_cols">स्तंभ</string>
-    <string name="sftp_contact_sheet_rows">पंक्तियाँ</string>
-    <string name="sftp_contact_sheet_tile">टाइल आकार: %1$d × %2$d</string>
-    <string name="sftp_contact_sheet_action">शीट बनाएँ</string>
 
     <!-- #135 third pass -->
     <string name="sftp_attach_use_folder">यह फ़ोल्डर उपयोग करें</string>
@@ -223,10 +182,7 @@
     <string name="sftp_paste_discard_body">लंबित फ़ाइलें कतार से हटा दी जाएँगी। इसे पूर्ववत नहीं किया जा सकता।</string>
     <string name="sftp_paste_keep">रखें</string>
     <string name="sftp_preview_frame_desc">पूर्वावलोकन फ़्रेम — पूर्णस्क्रीन के लिए टैप करें</string>
-        <string name="sftp_convert_container">कंटेनर</string>
-    <string name="sftp_convert_video_encoder">वीडियो एन्कोडर</string>
-    <string name="sftp_convert_audio_encoder">ऑडियो एन्कोडर</string>
-    <string name="sftp_convert_save_to">यहाँ सहेजें</string>
+
     <string name="sftp_preview_stop">रोकें</string>
     <string name="sftp_preview_preparing">तैयार हो रहा है…</string>
     <string name="sftp_preview_play5s">5 सेकंड का पूर्वावलोकन चलाएँ</string>
@@ -245,12 +201,7 @@
 
     <!-- i18n sweep #210 -->
     <string name="sftp_open_with">इससे खोलें…</string>
-    <string name="sftp_saved_sync_label">सहेजा गया configuration</string>
-    <string name="sftp_saved_sync_pick">सहेजा गया configuration चुनें</string>
-    <string name="sftp_saved_sync_save">सहेजें</string>
-    <string name="sftp_saved_sync_save_as">इस रूप में सहेजें…</string>
-    <string name="sftp_saved_sync_save_as_title">Sync configuration सहेजें</string>
-    <string name="sftp_saved_sync_name">नाम</string>
+
     <string name="sftp_attach_choose_folder">%1$s के लिए फ़ोल्डर चुनें</string>
     <string name="sftp_attach_pick_profile">उपयोग के लिए कनेक्टेड profile चुनें</string>
     <string name="sftp_attach_local_no_upload">रिमोट profile चुनें — local uploads नहीं ले सकता</string>
@@ -259,16 +210,9 @@
     <string name="sftp_chat_attach_will_pick_from">इनमें से चुनें: %1$s</string>
     <string name="sftp_attach_sending">%1$s भेजा जा रहा है…</string>
     <string name="sftp_storage_permission_title">Storage access आवश्यक</string>
-    <string name="sftp_storage_permission_body">Local files तक पहुँच देने के लिए टैप करें — media features, browsing, और transfers के लिए यह अनुमति ज़रूरी है।</string>
+
     <string name="sftp_paste_unfinished">अधूरा paste</string>
-    <string name="sftp_agent_chip">Agent</string>
-    <string name="sftp_convert_dest_downloads">Downloads (यह डिवाइस)</string>
-    <string name="sftp_convert_dest_same_folder_local">Source के समान फ़ोल्डर</string>
-    <string name="sftp_convert_dest_same_folder_cloud">Cloud पर वापस (समान फ़ोल्डर)</string>
-    <string name="sftp_convert_dest_same_folder_server">Server पर वापस (समान फ़ोल्डर)</string>
-    <string name="sftp_convert_download_first">पहले download करें</string>
-    <string name="sftp_convert_download_first_on">Transcode से पहले पूरी फ़ाइल download होती है</string>
-    <string name="sftp_convert_download_first_off">Cloud से stream करता है (बड़ी files के लिए तेज़)</string>
+
     <string name="sftp_preview_preparing_long">Preview तैयार हो रहा है…</string>
     <string name="sftp_preview_fetching_cloud">☁ Cloud से fetch हो रहा है…</string>
     <string name="sftp_preview_tap_to_refresh">रिफ़्रेश करने के लिए Preview टैप करें</string>
@@ -279,7 +223,7 @@
     <string name="sftp_downloaded_file">%1$s download हुई</string>
     <string name="sftp_location_downloads">Downloads</string>
     <string name="sftp_file_too_large_for_editor">संपादक में खोलने के लिए फ़ाइल बहुत बड़ी है (%1$s)। सीमा 20 MB है।</string>
-    <string name="sftp_processing_perspective">Perspective लागू हो रहा है…</string>
+
     <string name="sftp_processing_crop">Crop हो रहा है…</string>
     <string name="sftp_processing_rotate">Rotate हो रहा है…</string>
     <string name="sftp_conflict_size_summary">मौजूदा: %1$s  ·  नई: %2$s</string>

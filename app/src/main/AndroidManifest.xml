@@ -15,38 +15,14 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-    <!-- Senses tools (get_location / capture_camera_frame): declared so
-         Shizuku `pm grant` can grant them silently; motion/environment
-         sensors need no runtime permission. -->
-    <!-- GPS broker (SensesToolProvider get_location_precise / start_gps_log /
-         start_ntp_service): fine location is the runtime grant; the
-         location-type foreground service keeps updates flowing with Haven
-         backgrounded. ACCESS_BACKGROUND_LOCATION is deliberately absent —
-         the FGS started while the app is foreground covers continuous
-         logging, and skipping it keeps the consent surface smaller. -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- tools:node="replace": core/bleserial declares FINE capped at
-         maxSdkVersion=30 for its legacy BLE-scan path; the merger applies
-         that cap app-wide, which would strip FINE on modern devices and
-         break the GPS broker entirely. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="replace" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
 
     <!-- Package visibility: needed for detecting installed apps on targetSdk 30+ -->
     <queries>
-        <!-- Android Terminal VM (Linux VM on Pixel 8+) -->
-        <package android:name="com.android.virtualization.terminal" />
         <!-- Shizuku (privileged shell access) -->
         <package android:name="moe.shizuku.privileged.api" />
-        <!-- Launch intent for Terminal VM -->
-        <intent>
-            <action android:name="android.virtualization.VM_TERMINAL" />
-        </intent>
         <!-- #604: Dictate key — resolve a speech recognizer to launch. -->
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
@@ -68,7 +44,6 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale">
@@ -185,28 +160,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Long-lived SSH/Mosh/VNC/RDP/SFTP sessions and the MCP reverse tunnel they carry; user-initiated and kept alive while the connection notification is showing. dataSync was killed by Android 16 within ~10s." />
-        </service>
-
-        <!-- GPS broker foreground service: keeps GNSS updates flowing for
-             start_gps_log / start_ntp_service while Haven is backgrounded.
-             GpsBroker owns all state; this only paints the notification. -->
-        <service
-            android:name="sh.haven.app.agent.GpsLogService"
-            android:exported="false"
-            android:foregroundServiceType="location" />
-
-        <!-- Inbound presence (list_notifications): mirrors the shade into a
-             bounded in-memory ring the MCP agent reads behind per-call
-             consent. BIND_NOTIFICATION_LISTENER_SERVICE is a special grant
-             the user flips in Settings (or the tool enables via Shizuku). -->
-        <service
-            android:name="sh.haven.app.agent.NotificationMirrorService"
-            android:exported="false"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
+                android:value="Long-lived SSH/Mosh/VNC/RDP/SFTP sessions; user-initiated and kept alive while the connection notification is showing. dataSync was killed by Android 16 within ~10s." />
         </service>
 
         <provider
@@ -256,8 +210,5 @@
 
         <!-- Allow/Deny actions on the backgrounded-consent notification.
              Internal only — fired by our own PendingIntents. -->
-        <receiver
-            android:name=".agent.ConsentActionReceiver"
-            android:exported="false" />
     </application>
 </manifest>

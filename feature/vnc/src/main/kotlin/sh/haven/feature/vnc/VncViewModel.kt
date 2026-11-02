@@ -42,7 +42,7 @@ class VncViewModel @Inject constructor(
     private val moshSessionManager: MoshSessionManager,
     private val etSessionManager: EtSessionManager,
     private val portKnocker: PortKnocker,
-    private val tlsCertVerifier: sh.haven.core.data.agent.TlsCertVerifier,
+    private val tlsCertVerifier: sh.haven.core.data.security.TlsCertVerifier,
     private val preferencesRepository: sh.haven.core.data.preferences.UserPreferencesRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -187,16 +187,16 @@ class VncViewModel @Inject constructor(
                         tlsCertVerifier.verify(certHost, certPort, cert.encoded)
                     }
                 ) {
-                    is sh.haven.core.data.agent.TlsCertResult.Trusted -> {
+                    is sh.haven.core.data.security.TlsCertResult.Trusted -> {
                         Log.d(TAG, "VNC TLS cert trusted for $certHost:$certPort")
                     }
-                    is sh.haven.core.data.agent.TlsCertResult.NewCert -> {
+                    is sh.haven.core.data.security.TlsCertResult.NewCert -> {
                         kotlinx.coroutines.runBlocking {
                             tlsCertVerifier.accept(certHost, certPort, r.sha256)
                         }
                         Log.i(TAG, "Pinned VNC TLS cert for $certHost:$certPort: ${r.sha256.take(16)}…")
                     }
-                    is sh.haven.core.data.agent.TlsCertResult.CertChanged -> {
+                    is sh.haven.core.data.security.TlsCertResult.CertChanged -> {
                         throw HandshakingFailedException(
                             "The VNC server's TLS certificate has changed since you last " +
                                 "connected — this can indicate a man-in-the-middle attack, so " +

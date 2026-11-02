@@ -3,7 +3,6 @@ package sh.haven.app.workspace
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -161,7 +160,7 @@ class WorkspaceViewModelTest {
         every { registry.allSessions } returns listOf(
             session("ssh-id", "p-ssh", Transport.SSH, SessionStatus.CONNECTED),
             session("mosh-id", "p-mosh", Transport.MOSH, SessionStatus.CONNECTED),
-            session("local-id", "p-local", Transport.LOCAL, SessionStatus.CONNECTED),
+            session("et-id", "p-et", Transport.ET, SessionStatus.CONNECTED),
             session("smb-id", "p-smb", Transport.SMB, SessionStatus.CONNECTED),
             session("rdp-id", "p-rdp", Transport.RDP, SessionStatus.CONNECTED),
             // Filtered: not connected.
@@ -170,12 +169,12 @@ class WorkspaceViewModelTest {
         )
 
         val drafts = vm.captureFromSingletons("ws-new")
-        // Wayland adds a row only when the JNI lib is loaded, which it
+
         // isn't under unit tests — so we assert exactly the 5 connected
         // session items.
         assertEquals(5, drafts.size)
         assertEquals(
-            listOf("p-ssh", "p-mosh", "p-local", "p-smb", "p-rdp"),
+            listOf("p-ssh", "p-mosh", "p-et", "p-smb", "p-rdp"),
             drafts.map { it.item.connectionProfileId },
         )
         assertEquals(
@@ -214,7 +213,6 @@ class WorkspaceViewModelTest {
     fun captureSkipsEtAndReticulumWhenDisconnected() = runTest(testDispatcher) {
         every { registry.allSessions } returns listOf(
             session("et-id", "p-et", Transport.ET, SessionStatus.ERROR),
-            session("rns-id", "p-rns", Transport.RETICULUM, SessionStatus.RECONNECTING),
             session("ssh-id", "p-ssh", Transport.SSH, SessionStatus.CONNECTED),
         )
 

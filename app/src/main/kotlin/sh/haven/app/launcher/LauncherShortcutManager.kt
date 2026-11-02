@@ -48,29 +48,6 @@ data class WorkspaceShortcut(
     override val shortcutId: String = "workspace-$workspaceId"
 }
 
-/**
- * Reflects saved connections (#699) and workspaces into Android launcher
- * long-press shortcuts. Started from [sh.haven.app.HavenApp.onCreate] —
- * observes both repos and rewrites the dynamic-shortcut set when either
- * changes.
- *
- * One publisher owns the whole dynamic set (replaces the previous
- * workspace-only manager) because the two writers would otherwise race
- * through `setDynamicShortcuts` and clobber each other. Connections come
- * first in the interleaved list, per #699: most-recently-connected (via
- * lastConnected, never-connected profiles after — Room's stable listing
- * order), then workspaces most-recently-updated, alternating so neither
- * category can evict the other from the launcher's ~4–5 visible slots.
- * OpenAI endpoints and EMAIL mailboxes are excluded — a launcher tap
- * dials a terminal/desktop session, and those are neither.
- *
- * Connection taps route through [ACTION_LAUNCH_CONNECTION] and the
- * existing `AgentUiCommand.ConnectProfile` dial (same command an MCP
- * `connect_profile` uses), which connects straight away — unlike the
- * `haven://connect` deep link there is no confirm sheet, matching the
- * workspace shortcut precedent (the intent is app-issued, so a web page
- * cannot fire it by tapping a link).
- */
 @Singleton
 class LauncherShortcutManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -188,7 +165,7 @@ class LauncherShortcutManager @Inject constructor(
         ): List<LauncherShortcut> {
             val limit = maxShortcuts.coerceIn(0, MAX_SHORTCUTS)
             if (limit == 0) return emptyList()
-            val recentConnections = connections.filterNot { it.connectionType == "OPENAI" || it.connectionType == "EMAIL" }
+            val recentConnections = connections.filter { it.isSupported && !it.isOpenai }
                 .sortedByDescending { it.lastConnected ?: 0L }
             val recentWorkspaces = workspaces.sortedByDescending { it.updatedAt }
             val merged = interleave(

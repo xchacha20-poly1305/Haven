@@ -351,7 +351,6 @@
     <string name="connections_section_general">常规</string>
     <string name="connections_section_local_shell">本地 Shell</string>
     <string name="connections_section_guest">Linux 虚拟机</string>
-    <string name="connections_guest_desc">在此设备上引导真实的 Linux 内核，拥有独立的根文件系统和网络。首次使用时解压根文件系统（约 512 MB）。无需主机或登录凭据。</string>
     <string name="connections_section_cloud_storage">云存储</string>
     <string name="connections_section_vnc">VNC 设置</string>
     <string name="connections_section_rdp">RDP 设置</string>
@@ -360,27 +359,21 @@
     <string name="connections_section_terminal">终端</string>
     <string name="connections_section_authentication">身份验证</string>
     <string name="connections_section_embedded_vnc">嵌入式 VNC</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">路由</string>
-    <string name="connections_toggle_mcp_tunnel">公开 Haven 的 MCP 服务器</string>
-    <string name="connections_helper_mcp_tunnel">将 Haven 的 MCP 开放给此连接的每个会话——它们可访问 http://127.0.0.1:8730/mcp，并（通过环回）跳过配对与同意。连接时生效。如需在不打开会话的情况下常驻访问，请在 设置 → 代理端点 中将其设为常驻 MCP 连接。</string>
+
     <string name="connections_section_reconnect">重新连接</string>
-    <string name="connections_local_shell_android_desc">运行原生 Android shell (/system/bin/sh)。可访问 Android 命令、文件系统和 root（如果可用）。</string>
-    <string name="connections_local_shell_proot_desc">通过 PRoot 在本地运行 Alpine Linux shell。首次使用时下载最小 rootfs（约 4MB）。无需 root 或网络连接。</string>
     <string name="connections_dropdown_select_provider">选择提供商…</string>
-    <string name="connections_helper_rclone_signin">首次连接时通过浏览器登录。</string>
-    <string name="connections_helper_rclone_credentials">输入此提供商的账户信息，然后点按配置以保存并验证远程。</string>
-    <string name="connections_rclone_configure">配置并验证</string>
-    <string name="connections_rclone_configured_ok">远程已配置并验证。</string>
+
     <string name="connections_dropdown_select_ssh">选择 SSH 连接</string>
     <string name="connections_helper_add_ssh_first">请先添加一个 SSH 连接</string>
     <string name="connections_ai_route_section">AI 路由载体</string>
     <string name="connections_ai_route_via_ssh">经 SSH</string>
-    <string name="connections_ai_route_via_reticulum">经 Reticulum</string>
+
     <string name="connections_field_ai_route_carrier">载体连接</string>
     <string name="connections_dropdown_select_carrier">选择连接</string>
     <string name="connections_helper_ai_route">通过载体路由端点：SSH 经载体会话打开本地转发，Reticulum 经网格搭建桥梁。Reticulum 路由要求载体已连接。</string>
-    <string name="connections_helper_add_reticulum_first">请先添加一个 Reticulum 连接</string>
+
     <string name="connections_toggle_rdp_nla">网络级身份验证 (NLA)</string>
     <string name="connections_helper_mosh_required">需要远程主机上的 mosh-server</string>
     <string name="connections_helper_et_required">需要远程主机上的 etserver（端口 %1$s）</string>
@@ -434,8 +427,7 @@
     <string name="connections_spa_host_blank">主机为空</string>
     <string name="connections_spa_success">已在 %2$d 毫秒内发送 %1$d 字节 SPA 包</string>
     <string name="connections_spa_failed">%1$d 毫秒后失败：%2$s</string>
-    <string name="connections_agent_active">代理活动中</string>
-    <string name="connections_agent_activity">代理活动</string>
+
     <string name="connections_pf_type_local">本地</string>
     <string name="connections_pf_type_remote">远程</string>
     <string name="connections_pf_type_dynamic">动态（SOCKS5）</string>
@@ -463,7 +455,7 @@
     <string name="connections_pf_dynamic_explanation">设备上的 SOCKS5 客户端可连接 %1$s:%2$s 并请求任意目标。每个请求通过 SSH 服务器开启一个新的 direct-tcpip 通道。</string>
     <string name="connections_pf_dynamic_port_fallback">&lt;port&gt;</string>
     <string name="connections_hosts_discovered">已发现 %1$d 台主机</string>
-    <string name="connections_rclone_provider_cloud">云</string>
+
     <string name="connections_list_via">经由 %1$s</string>
     <string name="connections_auth_methods_title">身份验证方式</string>
     <string name="connections_auth_methods_description">在一次连接中按顺序尝试——用于需要多种方式的服务器（如密钥+密码、PAM/OTP 链）。</string>
@@ -482,35 +474,10 @@
     <string name="connections_auth_confirm_otp_desc">显示生成的验证码供一键确认，而非自动提交。</string>
     <string name="connections_vm_copied_short">已复制</string>
     <string name="connections_vm_terminal_not_found">未找到终端应用</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_local_distro_label">在系统中打开</string>
-    <string name="connections_local_distro_active_default">活动发行版（默认）</string>
 
-    <string name="connections_section_openai">AI 端点</string>
-    <string name="connections_field_openai_host">服务器地址</string>
-    <string name="connections_field_openai_host_hint">IP、主机名或完整的 http:// URL</string>
-    <string name="connections_field_openai_api_key">API 密钥（可选）</string>
-    <string name="connections_field_openai_api_key_hint">以 Bearer 令牌发送。无需密钥的服务器请留空。</string>
-    <string name="connections_field_openai_path_prefix">路径前缀（可选）</string>
-    <string name="connections_field_openai_path_prefix_hint">插入在 /v1 之前 — 例如 /api</string>    <string name="connections_field_openai_protocol">协议</string>
-    <string name="connections_field_openai_protocol_hint">默认兼容 OpenAI；Ollama、Anthropic 和 Gemini 会改变路径与鉴权方式。</string>
-
-    <string name="connections_openai_url_preview">端点 URL：%1$s</string>
     <!-- Email account (embedded mail) -->
     <string name="connections_section_email">电子邮件账户</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">提供商：ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">使用 Proton 的非官方 API。此接口为逆向工程所得，违反 Proton 的服务条款——您的账户可能被限速或锁定。继续即表示您自担风险。</string>
-    <string name="connections_field_email_address">电子邮件地址</string>
-    <string name="connections_field_email_password">密码</string>
-    <string name="connections_field_email_mailbox_password">邮箱密码（仅双密码模式）</string>
-    <string name="connections_email_mailbox_password_hint">除非您的 Proton 账户设有独立的邮箱密码，否则请留空。</string>
-    <string name="connections_email_2fa_hint">如果您的账户启用了双重验证，请在 SSH 密钥 / TOTP 管理器中关联其 TOTP 密钥，系统将自动应用。</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">使用您的密码；如果提供商要求（Fastmail、iCloud、Yahoo、Gmail/双重验证），请使用应用专用密码。</string>
-    <string name="connections_email_preset_label">提供商预设</string>
-    <string name="connections_email_app_password_link">为 %1$s 创建应用专用密码</string>
     <string name="connections_field_imap_server">IMAP 服务器</string>
     <string name="connections_field_smtp_server">SMTP 服务器</string>
     <string name="connections_field_smtp_server_help">留空则使用 IMAP 服务器。</string>
@@ -531,10 +498,6 @@
     <string name="connections_fido_wrong_body">该密钥未持有服务器请求的凭据。请出示所需的密钥并触摸它。</string>
     <string name="connections_auth_key_picker">密钥：%1$s ▾</string>
     <string name="connections_auth_key_only">✓ 仅使用此密钥</string>
-    <string name="connections_mcp_active">代理正在此连接上操作——点击可为其禁用 MCP</string>
-    <string name="connections_mcp_disabled">此连接已禁用 MCP——点击可启用</string>
-    <string name="connections_toggle_mcp_enabled">允许 MCP 代理使用此连接</string>
-    <string name="connections_helper_mcp_enabled">关闭时，针对此连接的 AI 代理（MCP）工具将被拒绝。该连接对您仍可正常使用。</string>
 
     <!-- Backfill 2026-07: strings added since the last i18n pass -->
     <string name="connections_android_shell_label">原生 Android shell</string>
@@ -543,20 +506,9 @@
     <string name="connections_background_opacity_value">不透明度：%1$d%%</string>
     <string name="connections_reveal_password_title">显示已保存的密码</string>
     <string name="connections_reveal_password_subtitle">验证身份后显示已保存的密码</string>
-    <string name="rclone_import_title">导入 rclone 远程</string>
-    <string name="rclone_import_intro">粘贴 Linux 上的 rclone.conf，或选择该文件。远程（包括 OAuth 令牌）将按原样导入，无需重新配置。</string>
-    <string name="rclone_import_pick_file">选择 rclone.conf…</string>
-    <string name="rclone_import_paste_label">rclone.conf 内容</string>
-    <string name="rclone_import_parse">查找远程</string>
-    <string name="rclone_import_encrypted">该文件是使用密码加密的 rclone 配置。请在桌面端运行 “rclone config show”，然后粘贴解密后的输出。</string>
-    <string name="rclone_import_already_added">已添加</string>
-    <string name="rclone_import_no_type">无类型</string>
-    <string name="rclone_import_select_count">导入 %1$d 个远程</string>
-    <string name="rclone_import_done">已导入 %1$d 个，跳过 %2$d 个，失败 %3$d 个。</string>
-    <string name="rclone_import_menu">导入 rclone 配置…</string>
+
     <string name="connections_section_spice">SPICE 设置</string>
-    <string name="connections_section_mcp">AI 代理（MCP）</string>
-    <string name="connections_rclone_configure_first">请先点按“配置并验证”保存此远程，然后才能保存连接。</string>
+
     <string name="connections_helper_spice_auth">SPICE 使用单个可选的票据/密码。服务器未启用票据时请留空。</string>
     <string name="connections_auth_any_hardware_key">任意硬件密钥（FIDO）</string>
     <string name="connections_deeplink_confirm_title">要连接吗？</string>
@@ -620,4 +572,5 @@
     <string name="connections_helper_saved_password">可选。在 Android Keystore 中加密保存，用于 SSH 密码登录以及终端中受生物识别保护的 sudo 自动填充。</string>
     <string name="connections_auth_banner_title">SSH 身份验证</string>
     <string name="connections_auth_banner_open_link">打开链接</string>
+    <string name="connections_removed_route">内置 VPN 已移除，请选择新的连接方式</string>
 </resources>

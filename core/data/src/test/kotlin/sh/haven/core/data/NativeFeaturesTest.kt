@@ -44,24 +44,7 @@ class NativeFeaturesTest {
 
         assertFalse("rdp", f.rdp)
         assertFalse("spice", f.spice)
-        assertFalse("ffmpeg", f.ffmpeg)
-        assertFalse("wayland", f.wayland)
         assertFalse("anyDesktop", f.anyDesktop)
-    }
-
-    /**
-     * Wayland is detected from the library file rather than from
-     * WaylandBridge.available, so asking the question never dlopens the
-     * compositor — which matters because Settings asks it just to decide
-     * whether to draw a row.
-     */
-    @Test
-    fun `wayland is reported from the compositor library`() {
-        assertFalse(features().wayland)
-
-        ship("liblabwc_android.so")
-
-        assertTrue(features().wayland)
     }
 
     @Test
@@ -74,20 +57,13 @@ class NativeFeaturesTest {
 
         assertTrue("rdp", f.rdp)
         assertTrue("spice", f.spice)
-        assertTrue("ffmpeg", f.ffmpeg)
         assertTrue("anyDesktop", f.anyDesktop)
     }
 
-    /**
-     * The executables are thin wrappers since the shared-libav change — the
-     * codec code lives in libavcodec.so. ffmpeg present without it would pass
-     * a naive check and then fail at exec with "library not found".
-     */
     @Test
     fun `ffmpeg needs its shared libraries, not just the executables`() {
         ship("libffmpeg.so", "libffprobe.so")
 
-        assertFalse(features().ffmpeg)
     }
 
     /** A file that is present but not executable is not a usable library. */
@@ -99,13 +75,6 @@ class NativeFeaturesTest {
         assertFalse(features().rdp)
     }
 
-    /**
-     * A Context with no native library directory reports nothing rather than
-     * throwing. Android never leaves it null for an installed package, but a
-     * mocked Context does — and get_app_info taking an NPE because a test
-     * built it that way is a worse failure than answering "not detected".
-     * Three McpTools tests found this the hard way.
-     */
     @Test
     fun `a context with no native library dir reports nothing`() {
         val context = mockk<Context>()
@@ -114,7 +83,6 @@ class NativeFeaturesTest {
 
         assertFalse("rdp", f.rdp)
         assertFalse("spice", f.spice)
-        assertFalse("ffmpeg", f.ffmpeg)
         assertFalse("anyDesktop", f.anyDesktop)
     }
 

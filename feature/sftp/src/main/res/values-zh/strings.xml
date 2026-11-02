@@ -103,7 +103,7 @@
     <string name="sftp_mode_sync">镜像</string>
     <string name="sftp_mode_move">移动</string>
     <string name="sftp_mode_copy_desc">复制新文件和更新过的文件。不删除任何文件。</string>
-    <string name="sftp_mode_sync_desc">使目标与源完全一致。删除多余文件。</string>
+
     <string name="sftp_mode_move_desc">将文件移动到目标。源中的文件将被删除。</string>
     <string name="sftp_advanced_filters">高级过滤器</string>
     <string name="sftp_include_patterns">包含模式（每行一个）</string>
@@ -116,7 +116,7 @@
     <string name="sftp_preview">预览</string>
     <string name="sftp_dry_run_results">试运行结果</string>
     <string name="sftp_start_for_real">正式开始</string>
-    <string name="sftp_sync_cancelled">同步已取消</string>
+
     <!-- Rename dialog -->
     <string name="sftp_rename_title">重命名</string>
     <string name="sftp_new_name">新名称</string>
@@ -131,19 +131,14 @@
     <string name="sftp_calculating_size">计算中…</string>
 
     <!-- DLNA -->
-    <string name="sftp_start_dlna">启动 DLNA 服务器</string>
-    <string name="sftp_stop_dlna">停止 DLNA 服务器</string>
+
     <!-- Convert -->
-    <string name="sftp_convert">转换</string>
-    <string name="sftp_convert_title">转换媒体</string>
-    <string name="sftp_convert_format">输出格式</string>
-    <string name="sftp_converting">正在转换 %s</string>
-    <string name="sftp_convert_done">已保存到 %s</string>
+
     <!-- Stream -->
     <string name="sftp_stream">流式播放</string>
     <string name="sftp_streaming">正在 %s 上流式播放</string>
     <string name="sftp_stream_stop">停止</string>
-    <string name="sftp_downloading_for_convert">正在下载以进行转换…</string>
+
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="sftp_play_in_browser">在浏览器中播放</string>
     <string name="sftp_stream_to_network">流式传输到网络</string>
@@ -176,44 +171,8 @@
     <string name="sftp_media">媒体…</string>
     <string name="sftp_stream_folder">流式播放文件夹列表</string>
     <string name="sftp_output_filename">输出文件名</string>
-    <string name="sftp_convert_sub">使用滤镜重新编码视频或音频</string>
-    <string name="sftp_media_info">媒体信息</string>
-    <string name="sftp_media_info_sub">编解码器、时长、流</string>
-    <string name="sftp_media_info_probing">正在分析…</string>
-    <string name="sftp_media_info_failed">ffprobe 失败：%s</string>
-    <string name="sftp_media_info_container">容器</string>
-    <string name="sftp_media_info_duration">时长</string>
-    <string name="sftp_media_info_bitrate">比特率</string>
-    <string name="sftp_media_info_size">大小</string>
-    <string name="sftp_media_info_video_streams">视频</string>
-    <string name="sftp_media_info_audio_streams">音频</string>
-    <string name="sftp_media_info_subtitle_streams">字幕</string>
-    <string name="sftp_media_info_video">视频</string>
-    <string name="sftp_media_info_audio">音频</string>
-    <string name="sftp_media_info_subtitle">字幕</string>
-    <string name="sftp_media_info_chapters">章节：%d</string>
-    <string name="sftp_media_info_copy">复制 JSON</string>
+
     <string name="sftp_trim">剪辑（无损）</string>
-    <string name="sftp_trim_sub">不重新编码即可剪取片段</string>
-    <string name="sftp_trim_title">剪辑片段</string>
-    <string name="sftp_trim_explain">开始和结束时间格式为 H:MM:SS。流复制，不重新编码。</string>
-    <string name="sftp_trim_start">开始</string>
-    <string name="sftp_trim_end">结束</string>
-    <string name="sftp_trim_action">剪辑</string>
-    <string name="sftp_extract_audio">提取音频</string>
-    <string name="sftp_extract_audio_sub">将音轨保存为 MP3/AAC/Opus/FLAC</string>
-    <string name="sftp_extract_audio_title">提取音频</string>
-    <string name="sftp_extract_audio_format">格式</string>
-    <string name="sftp_extract_audio_bitrate">比特率：%d kbps</string>
-    <string name="sftp_extract_audio_action">提取</string>
-    <string name="sftp_contact_sheet">缩略图拼图</string>
-    <string name="sftp_contact_sheet_sub">在文件中均匀采样的缩略图网格</string>
-    <string name="sftp_contact_sheet_title">缩略图拼图</string>
-    <string name="sftp_contact_sheet_explain">从片段中均匀采样帧并拼合为平铺的 PNG。</string>
-    <string name="sftp_contact_sheet_cols">列数</string>
-    <string name="sftp_contact_sheet_rows">行数</string>
-    <string name="sftp_contact_sheet_tile">瓦片大小：%1$d × %2$d</string>
-    <string name="sftp_contact_sheet_action">生成拼图</string>
 
     <!-- #135 third pass -->
     <string name="sftp_attach_use_folder">使用此文件夹</string>
@@ -223,10 +182,7 @@
     <string name="sftp_paste_discard_body">队列中的待传输文件将被删除，此操作无法撤销。</string>
     <string name="sftp_paste_keep">保留</string>
     <string name="sftp_preview_frame_desc">预览帧 — 点按以全屏</string>
-        <string name="sftp_convert_container">容器</string>
-    <string name="sftp_convert_video_encoder">视频编码器</string>
-    <string name="sftp_convert_audio_encoder">音频编码器</string>
-    <string name="sftp_convert_save_to">保存到</string>
+
     <string name="sftp_preview_stop">停止</string>
     <string name="sftp_preview_preparing">准备中…</string>
     <string name="sftp_preview_play5s">播放 5 秒预览</string>
@@ -245,12 +201,7 @@
 
     <!-- i18n sweep #210 -->
     <string name="sftp_open_with">打开方式…</string>
-    <string name="sftp_saved_sync_label">已保存配置</string>
-    <string name="sftp_saved_sync_pick">选取已保存的配置</string>
-    <string name="sftp_saved_sync_save">保存</string>
-    <string name="sftp_saved_sync_save_as">另存为…</string>
-    <string name="sftp_saved_sync_save_as_title">保存同步配置</string>
-    <string name="sftp_saved_sync_name">名称</string>
+
     <string name="sftp_attach_choose_folder">为 %1$s 选择文件夹</string>
     <string name="sftp_attach_pick_profile">选取要使用的已连接配置文件</string>
     <string name="sftp_attach_local_no_upload">请选取远程配置文件——本地不支持上传</string>
@@ -259,16 +210,9 @@
     <string name="sftp_chat_attach_will_pick_from">选择位置：%1$s</string>
     <string name="sftp_attach_sending">正在发送 %1$s…</string>
     <string name="sftp_storage_permission_title">需要存储访问权限</string>
-    <string name="sftp_storage_permission_body">点击授予本地文件访问权限——媒体功能、浏览和传输均需此权限。</string>
+    <string name="sftp_storage_permission_body">点击授予本地文件访问权限，以浏览和传输文件。</string>
     <string name="sftp_paste_unfinished">未完成的粘贴</string>
-    <string name="sftp_agent_chip">代理</string>
-    <string name="sftp_convert_dest_downloads">下载（本设备）</string>
-    <string name="sftp_convert_dest_same_folder_local">与源相同文件夹</string>
-    <string name="sftp_convert_dest_same_folder_cloud">回传云端（相同文件夹）</string>
-    <string name="sftp_convert_dest_same_folder_server">回传服务器（相同文件夹）</string>
-    <string name="sftp_convert_download_first">先下载</string>
-    <string name="sftp_convert_download_first_on">转码前下载完整文件</string>
-    <string name="sftp_convert_download_first_off">从云端流式传输（大文件更快）</string>
+
     <string name="sftp_preview_preparing_long">正在准备预览…</string>
     <string name="sftp_preview_fetching_cloud">☁ 正在从云端获取…</string>
     <string name="sftp_preview_tap_to_refresh">点击预览以刷新</string>
@@ -279,7 +223,7 @@
     <string name="sftp_downloaded_file">已下载 %1$s</string>
     <string name="sftp_location_downloads">下载</string>
     <string name="sftp_file_too_large_for_editor">文件太大，无法在编辑器中打开 (%1$s)。上限为 20 MB。</string>
-    <string name="sftp_processing_perspective">正在应用透视…</string>
+
     <string name="sftp_processing_crop">正在裁剪…</string>
     <string name="sftp_processing_rotate">正在旋转…</string>
     <string name="sftp_conflict_size_summary">现有：%1$s  ·  新建：%2$s</string>

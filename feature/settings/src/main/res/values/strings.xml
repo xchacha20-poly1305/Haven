@@ -41,7 +41,7 @@
     <string name="settings_remote_clipboard_title">Sync remote clipboard</string>
     <string name="settings_remote_clipboard_subtitle">Let a remote desktop (VNC) copy into the device clipboard. Off by default.</string>
     <string name="settings_sudo_prompt_detection_title">Detect sudo password prompts</string>
-    <string name="settings_sudo_prompt_detection_subtitle">Offer biometric autofill on [sudo] and doas prompts. Passwords stay encrypted in the Android Keystore on this device, require per-use biometric unlock, and are never exposed to AI/MCP tools.</string>
+    <string name="settings_sudo_prompt_detection_subtitle">Offer biometric autofill on [sudo] and doas prompts. Passwords stay encrypted in the Android Keystore on this device, require per-use biometric unlock.</string>
     <string name="settings_show_desktops_title">Show Desktops card</string>
     <string name="settings_show_desktops_subtitle">Show desktop environment manager on the Connections screen</string>
     <string name="settings_show_linux_vm_title">Show Linux VM card</string>
@@ -119,23 +119,13 @@
     <string name="settings_navigation_tabs_subtitle">Reorder tabs and choose which are shown</string>
 
     <!-- Wayland section -->
-    <string name="settings_wayland_shell_title">Wayland desktop shell</string>
-    <string name="settings_proot_idle_title">Auto-stop idle Linux guest</string>
-    <string name="settings_proot_idle_off">Off — the Linux guest keeps running until you stop it</string>
-    <string name="settings_proot_idle_on">Stops the guest %1$d min after you leave Haven (a running guest service keeps it up)</string>
-    <string name="settings_proot_idle_dialog_title">Auto-stop idle Linux guest</string>
-    <string name="settings_proot_idle_dialog_body">After Haven has been in the background this long, stop the Linux guest\'s terminals and desktops to free memory. A running guest service keeps it up. A long job in a backgrounded terminal would be stopped too — leave this off unless you want idle reclamation.</string>
-    <string name="settings_proot_idle_off_label">Off</string>
     <string name="settings_shizuku_title">Shizuku integration</string>
-    <string name="settings_shizuku_enabled">Enabled — auto battery exemption, Wayland socket sharing</string>
+    <string name="settings_shizuku_enabled">Enabled — automatic battery exemption</string>
     <string name="settings_shizuku_available">Shizuku running — tap to grant permission</string>
     <string name="settings_shizuku_not_running">Shizuku installed but not running — tap to open and start via Wireless Debugging</string>
-    <string name="settings_shizuku_not_installed">Install Shizuku for battery exemption and cross-app Wayland access</string>
+    <string name="settings_shizuku_not_installed">Install Shizuku for battery exemption</string>
 
     <!-- Media streaming -->
-    <string name="settings_media_extensions_title">Media file extensions</string>
-    <string name="settings_media_extensions_description">Space-separated file extensions to treat as streamable media in the file browser.</string>
-    <string name="settings_media_extensions_label">Extensions</string>
 
     <!-- Custom shell prompt characters (#280) -->
     <string name="settings_prompt_chars_title">Shell prompt characters</string>
@@ -151,9 +141,9 @@
     <!-- Backup section -->
     <string name="settings_backup_sync_title">Sync to a remote</string>
     <string name="settings_backup_sync_subtitle_set">%1$s : %2$s</string>
-    <string name="settings_backup_sync_subtitle_unset">Push/pull the encrypted backup to an SFTP/SMB/rclone connection</string>
+    <string name="settings_backup_sync_subtitle_unset">Push/pull the encrypted backup to an SFTP/SMB connection</string>
     <string name="settings_backup_sync_description">Push or pull the encrypted backup to a connection you already have. The file is AES-256-GCM encrypted with your passphrase before it leaves the device — the remote never sees your config in the clear.</string>
-    <string name="settings_backup_sync_no_remotes">No SFTP, SMB or rclone connections yet. Add one first, then it can hold your backup.</string>
+    <string name="settings_backup_sync_no_remotes">No SFTP or SMB connections yet. Add one first, then it can hold your backup.</string>
     <string name="settings_backup_sync_choose_remote">Choose a connection…</string>
     <string name="settings_backup_sync_remote_label">Destination connection</string>
     <string name="settings_backup_sync_path_label">File path on the remote</string>
@@ -197,10 +187,6 @@
     <string name="settings_version_unknown">unknown</string>
 
     <!-- Wayland shell dialog -->
-    <string name="settings_wayland_dialog_title">Wayland Desktop Shell</string>
-    <string name="settings_wayland_dialog_description">Shell command to run inside the Wayland desktop foot terminal. Install additional shells with apk (e.g. apk add bash).</string>
-    <string name="settings_wayland_shell_command_label">Shell command</string>
-
     <!-- Lock timeout dialog -->
     <string name="settings_lock_timeout_dialog_title">Lock timeout</string>
 
@@ -229,7 +215,7 @@
     <!-- About dialog -->
     <string name="settings_about_dialog_title">About Haven</string>
     <string name="settings_about_app_name">Haven</string>
-    <string name="settings_about_description">Open source SSH, VNC, RDP &amp; cloud storage client for Android</string>
+    <string name="settings_about_description">Open source remote terminal, desktop and file transfer client for Android</string>
     <string name="settings_about_version">Version %1$s (build %2$d)</string>
     <string name="settings_about_android">Android %1$s (API %2$d)</string>
     <string name="settings_about_libraries_title">Open Source Libraries</string>
@@ -318,7 +304,7 @@
     <string name="settings_section_connections_screen">Connections screen</string>
     <string name="settings_section_diagnostics">Diagnostics</string>
     <string name="settings_section_advanced">Advanced</string>
-    <string name="settings_section_mcp">AI agent (MCP)</string>
+
     <string name="settings_section_backup">Backup</string>
     <string name="settings_section_about">About</string>
     <string name="settings_show_terminal_tab_bar_title">Show terminal tab bar</string>
@@ -416,9 +402,6 @@
     <string name="settings_audio_bridge_subtitle">Play sound from Linux apps through the device speaker via an in-guest PulseAudio bridge. Output only. Streams continuously while on — turn off when not in use.</string>
 
     <!-- PRoot install log -->
-    <string name="settings_proot_install_log_title">View PRoot install log</string>
-    <string name="settings_proot_install_log_subtitle">Per-phase events from Linux distro installs (issue #162)</string>
-
     <!-- Logcat capture -->
     <string name="settings_logcat_capture_title">Logcat Capture</string>
     <string name="settings_logcat_capture_subtitle_on">Recording to /sdcard/Download/haven-logcat.txt</string>
@@ -428,44 +411,13 @@
     <string name="settings_logcat_start_failed_toast">Failed to start capture</string>
 
     <!-- MCP agent endpoint -->
-    <string name="settings_agent_endpoint_title">Agent endpoint (MCP)</string>
-    <string name="settings_agent_endpoint_subtitle_on">Enabled — local MCP server on loopback. Write tools prompt for consent.</string>
-    <string name="settings_agent_endpoint_subtitle_off">Disabled — turn on to let local AI agents read state and (with consent) act on it</string>
-    <string name="settings_agent_file_read_title">Allow agents to read file contents</string>
-    <string name="settings_agent_file_read_subtitle_on">Enabled — `serve_file` returns a single-use download URL after per-call consent</string>
-    <string name="settings_agent_file_read_subtitle_off">Disabled — `serve_file` requests fail immediately, no prompt</string>
-    <string name="settings_agent_terminal_input_title">Allow agents to queue terminal input</string>
-    <string name="settings_agent_terminal_input_subtitle_on">Enabled — `queue_terminal_input` watches the SSH session\'s output and types the queued text on the next prompt (per-call consent)</string>
-    <string name="settings_agent_terminal_input_subtitle_off">Disabled — `queue_terminal_input` requests fail immediately, no prompt</string>
+
     <string name="settings_reverse_tunnel_title">MCP over SSH profile</string>
     <string name="settings_reverse_tunnel_subtitle_set">Rides your connection to \"%1$s\" — open it to reach MCP off-device</string>
     <string name="settings_reverse_tunnel_subtitle_unset">Not set — endpoint reachable on-device only (or over WireGuard)</string>
     <string name="settings_reverse_tunnel_none">None (on-device only)</string>
     <string name="settings_reverse_tunnel_status_active">Near (SSH): riding %1$s — connected</string>
     <string name="settings_reverse_tunnel_status_inactive">Near (SSH): not connected — open %1$s to enable</string>
-    <string name="settings_mcp_wireguard_title">Expose on WireGuard tunnel</string>
-    <string name="settings_mcp_wireguard_subtitle_on">Enabled — also reachable at &lt;wg-ip&gt;:8730 on the active WireGuard tunnel</string>
-    <string name="settings_mcp_wireguard_subtitle_off">Disabled — turn on to reach the endpoint over an active WireGuard tunnel</string>
-    <string name="settings_mcp_wireguard_collision">Another VPN (%1$s) is using %2$s — the same address this endpoint binds, so it\'s shadowed and unreachable from peers. Stop that VPN, or point your MCP client at the loopback (127.0.0.1) endpoint instead.</string>
-    <string name="settings_mcp_lan_title">Expose on Wi-Fi/LAN</string>
-    <string name="settings_mcp_lan_subtitle_on">Enabled — also reachable at &lt;device-lan-ip&gt;:8730 on the local network</string>
-    <string name="settings_mcp_lan_subtitle_off">Disabled — turn on for direct reach from a device on the same Wi-Fi/LAN</string>
-    <string name="settings_mcp_trust_loopback_title">Trust local clients</string>
-    <string name="settings_mcp_trust_loopback_subtitle_on">Enabled — local clients (127.0.0.1) connect without pairing or approval prompts. Wi-Fi/LAN and WireGuard clients still prompt.</string>
-    <string name="settings_mcp_trust_loopback_subtitle_off">Disabled — even local clients must be paired and approve each request</string>
-    <string name="settings_mcp_copy_url_title">Copy agent endpoint URL</string>
-    <string name="settings_mcp_url_copied_toast">Endpoint copied</string>
-    <string name="settings_mcp_copy_config_title">Copy MCP client config</string>
-    <string name="settings_mcp_copy_config_subtitle">Standard JSON snippet to paste into any MCP client</string>
-    <string name="settings_mcp_config_copied_toast">Config copied</string>
-    <string name="settings_mcp_proot_title">Also available in PRoot</string>
-    <string name="settings_agent_activity_title">View agent activity</string>
-    <string name="settings_agent_activity_subtitle">Every MCP call recorded with redacted args</string>
-    <string name="settings_agent_confirm_destructive_title">Confirm destructive agent actions</string>
-    <string name="settings_agent_confirm_destructive_subtitle">Prompt before any agent call that writes, deletes, uploads, or disconnects. Read-only calls never prompt.</string>
-    <string name="settings_agent_forget_allows_title">Forget remembered allows</string>
-    <string name="settings_agent_forget_allows_subtitle">Re-prompt for every tool that previously got a once-per-session approval.</string>
-    <string name="settings_agent_allows_cleared_toast">Remembered allows cleared</string>
 
     <!-- Font-from-URL dialog -->
     <string name="settings_font_from_url_body">Paste a direct link to a TTF or OTF font file. Common Nerd Fonts have raw TTFs on GitHub at github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/&lt;Name&gt;/Regular/&lt;Name&gt;NerdFont-Regular.ttf — copy that URL here.</string>
@@ -507,22 +459,10 @@
     <string name="settings_audit_log_status_sync">Sync</string>
     <string name="settings_audit_log_status_sync_failed">Sync failed</string>
 
-    <string name="settings_agent_activity_screen_title">Agent activity</string>
-    <string name="settings_agent_activity_cd_clear">Clear history</string>
-    <string name="settings_agent_activity_empty">No agent activity yet.\n\nWhen an MCP client calls a tool, the call will appear here with arguments redacted and the result summarised.</string>
-    <string name="settings_agent_activity_clear_dialog_title">Clear agent activity?</string>
-    <string name="settings_agent_activity_clear_dialog_text">All recorded MCP calls will be deleted from this device. This cannot be undone.</string>
-    <string name="settings_agent_activity_unknown_client">unknown client</string>
-    <string name="settings_agent_activity_args_redacted">args (redacted)</string>
     <string name="settings_standing_policies_header">Standing policies — these tools run without asking</string>
     <string name="settings_standing_policy_meta">%1$s · up to %2$d calls/min · expires %3$s</string>
     <string name="settings_standing_policy_revoke">Revoke</string>
 
-    <string name="settings_proot_install_log_screen_title">PRoot install log</string>
-    <string name="settings_proot_install_log_cd_clear">Clear log</string>
-    <string name="settings_proot_install_log_empty">No install events recorded yet. Install a distro via Connections → Desktops to populate this log.</string>
-    <string name="settings_proot_install_log_clear_dialog_title">Clear install log?</string>
-    <string name="settings_proot_install_log_clear_dialog_text">All recorded install events will be removed.</string>
     <string name="settings_ime_flag_no_suggestions_title">Hide suggestion strip</string>
     <string name="settings_ime_flag_no_suggestions_detail">TYPE_TEXT_FLAG_NO_SUGGESTIONS — universally honoured</string>
     <string name="settings_ime_flag_visible_password_title">Suppress autocorrect / autocap / autospace</string>
@@ -537,27 +477,7 @@
     <string name="settings_ime_flag_no_learning_detail">IME_FLAG_NO_PERSONALIZED_LEARNING — privacy: IME\'s word bank ignores typed text. Strong enough on Gboard to also hide the mic.</string>
 
     <!-- Paired MCP clients (#210) -->
-    <string name="settings_mcp_tools_title">MCP tools</string>
-    <string name="settings_mcp_tools_subtitle">Switch individual agent tools off to shrink what they see</string>
-    <string name="settings_mcp_tools_screen_title">MCP tools</string>
-    <string name="settings_mcp_tools_empty">The tool list appears once the agent endpoint has started.</string>
-    <string name="settings_mcp_tools_intro">Off tools leave the agent\'s tool list entirely — small models get less clutter and every call costs fewer tokens. The endpoint switch, pairing and consent prompts still apply.</string>
-    <string name="settings_mcp_tools_consent_every_call">Asks every call</string>
-    <string name="settings_mcp_tools_consent_once">Asks once per session</string>
-    <string name="settings_mcp_tools_consent_never">No per-call prompt</string>
-    <string name="settings_mcp_tools_category_off_count">%1$d off</string>
-    <string name="settings_mcp_tools_cat_terminal">Terminal</string>
-    <string name="settings_mcp_tools_cat_connections">Connections</string>
-    <string name="settings_mcp_tools_cat_files">Files</string>
-    <string name="settings_mcp_tools_cat_desktop">Desktop</string>
-    <string name="settings_mcp_tools_cat_guest">Linux guest</string>
-    <string name="settings_mcp_tools_cat_usb">USB and serial</string>
-    <string name="settings_mcp_tools_cat_keys">Keys and credentials</string>
-    <string name="settings_mcp_tools_cat_mail">Mail</string>
-    <string name="settings_mcp_tools_cat_rclone">Cloud storage</string>
-    <string name="settings_mcp_tools_cat_senses">Sensors and location</string>
-    <string name="settings_mcp_tools_cat_agent">Agent and device control</string>
-    <string name="settings_mcp_tools_cat_other">Other</string>
+
     <string name="settings_paired_clients_title">Paired MCP clients</string>
     <string name="settings_paired_clients_subtitle">Review paired clients, skip prompts per client, or un-pair</string>
     <string name="settings_paired_clients_screen_title">Paired MCP clients</string>
@@ -570,11 +490,6 @@
     <string name="settings_paired_clients_unpair_message">It will have to be approved again the next time it connects, and any auto-approval is revoked.</string>
     <string name="settings_paired_clients_unpair_confirm">Un-pair</string>
     <string name="settings_paired_clients_unpaired_toast">Un-paired \'%1$s\'</string>
-    <plurals name="settings_proot_idle_minutes">
-        <item quantity="one">%1$d minute</item>
-        <item quantity="other">%1$d minutes</item>
-    </plurals>
-
     <!-- #579: shown only when the Keystore has permanently lost the credential
          master key. Repair regenerates it; already-stored secrets are gone either way. -->
     <string name="settings_credential_keystore_broken_title">Credential storage unavailable</string>

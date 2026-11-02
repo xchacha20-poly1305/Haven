@@ -21,7 +21,7 @@ private const val TAG = "RdpSessionManager"
 @Singleton
 class RdpSessionManager @Inject constructor(
     @ApplicationContext private val context: android.content.Context,
-    private val tlsCertVerifier: sh.haven.core.data.agent.TlsCertVerifier,
+    private val tlsCertVerifier: sh.haven.core.data.security.TlsCertVerifier,
 ) {
 
     data class SessionState(

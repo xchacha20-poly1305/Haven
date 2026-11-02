@@ -46,7 +46,6 @@
     <string name="terminal_paste_no_active_tab">No active tab to paste into</string>
     <string name="terminal_link_open_failed">No app can open this link</string>
     <string name="terminal_link_scheme_blocked">Blocked link (unsupported scheme)</string>
-    <string name="terminal_local_vnc_failed">Couldn\'t start the local desktop</string>
     <string name="terminal_search">Search</string>
 
     <!-- New tab errors -->
@@ -56,7 +55,7 @@
     <string name="terminal_new_tab_host_key_unknown">Unknown host key for %s — open this connection first to verify and trust it</string>
     <string name="terminal_new_tab_connection_failed">Could not connect: %s</string>
     <string name="terminal_new_tab_shell_failed">Failed to open shell: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">No active Reticulum session to clone</string>
+
     <string name="terminal_new_tab_connecting">Connecting…</string>
 
     <!-- EmptyTerminalState -->
@@ -127,10 +126,7 @@
     <string name="terminal_attach_scan_camera_desc">Photograph a QR or barcode and paste its contents</string>
     <string name="terminal_attach_scan_gallery">Scan code (Photos)</string>
     <string name="terminal_attach_scan_gallery_desc">Pick a photo of a QR or barcode and paste its contents</string>
-    <string name="terminal_attach_ocr_camera">Recognise text (Camera)</string>
-    <string name="terminal_attach_ocr_camera_desc">Photograph printed text and paste what is detected</string>
-    <string name="terminal_attach_ocr_gallery">Recognise text (Photos)</string>
-    <string name="terminal_attach_ocr_gallery_desc">Pick a photo of printed text and paste what is detected</string>
+
     <string name="terminal_scan_no_code">No code detected in the image</string>
     <string name="terminal_scan_no_text">No text detected in the image</string>
     <string name="terminal_scan_failed">Scan failed: %s</string>

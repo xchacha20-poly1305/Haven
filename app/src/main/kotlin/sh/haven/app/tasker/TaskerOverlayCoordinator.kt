@@ -6,8 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import sh.haven.core.data.agent.AgentUiCommand
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommand
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.ssh.SshSessionManager
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +17,7 @@ import javax.inject.Singleton
  * VISIBLE terminal the user can watch, instead of the headless exec channel.
  *
  * Reuses a live session for the profile if one exists (just focus it);
- * otherwise emits [AgentUiCommand.ConnectProfile] — which navigates the UI to
+ * otherwise emits [UiCommand.ConnectProfile] — which navigates the UI to
  * a terminal tab — and waits for the session to come up. Then types the
  * command straight into the PTY.
  *
@@ -33,7 +33,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class TaskerOverlayCoordinator @Inject constructor(
-    private val agentUiCommandBus: AgentUiCommandBus,
+    private val uiCommandBus: UiCommandBus,
     private val sshSessionManager: SshSessionManager,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -42,11 +42,11 @@ class TaskerOverlayCoordinator @Inject constructor(
         scope.launch {
             val existing = connectedSessionFor(profileId)
             if (existing != null) {
-                agentUiCommandBus.emit(AgentUiCommand.FocusTerminalSession(existing))
+                uiCommandBus.emit(UiCommand.FocusTerminalSession(existing))
                 sendCommand(existing, command)
                 return@launch
             }
-            agentUiCommandBus.emit(AgentUiCommand.ConnectProfile(profileId))
+            uiCommandBus.emit(UiCommand.ConnectProfile(profileId))
             val sessionId = awaitConnectedSession(profileId, CONNECT_TIMEOUT_MS)
             if (sessionId == null) {
                 Log.w(TAG, "no connected session for $profileId within timeout; command not sent")

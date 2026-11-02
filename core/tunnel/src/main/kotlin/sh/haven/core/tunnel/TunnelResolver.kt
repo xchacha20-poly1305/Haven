@@ -12,35 +12,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.SocketFactory
 
-/**
- * Single dispatch point for "how does this connection profile reach the
- * network?". Replaces ad-hoc `if (profile.tunnelConfigId != null) ...`
- * checks scattered across per-transport viewmodels.
- *
- * Three surfaces, each picked by the consumer based on what its transport
- * library can accept:
- *
- *  - [dial] — direct in-process [TunneledConnection]. Simplest path; for
- *    transports that own their socket creation in Kotlin (VNC, Reticulum).
- *  - [socketFactory] — javax.net.SocketFactory wrapping the same tunnel.
- *    For transports that take a factory (smbj's SmbConfig).
- *  - [socksEndpoint] — localhost SOCKS5 listener address. For transports
- *    behind FFI (rclone gomobile, IronRDP Rust) that can talk SOCKS5 but
- *    can't have their socket creation intercepted from Kotlin. Currently
- *    returns null; wired up when [Tunnel.socksAddress] (and the matching
- *    Go / tsnet listener) lands.
- *
- * All three return null when the profile has no tunnel selected — the
- * caller falls through to dialling a real Socket directly.
- *
- * A fourth surface, [havenProxy], is for SSH consumers. It wraps the
- * tunnel as an opaque [HavenProxy] (over JSch's `Proxy` for now) and
- * *also* honours the legacy `proxyType`/`proxyHost`/`proxyPort` columns
- * on [ConnectionProfile] (SOCKS5 / SOCKS4 / HTTP). [dial] and
- * [socketFactory] don't yet honour
- * the SOCKS columns; that will land alongside non-SSH transport adoption
- * (step 7 of #149).
- */
 @Singleton
 class TunnelResolver @Inject constructor(
     private val tunnelManager: TunnelManager,
@@ -210,16 +181,6 @@ class TunnelResolver @Inject constructor(
         tunnelManager.release(profileId)
     }
 
-    /**
-     * Returns a non-suspend dialer closure that the caller invokes once
-     * per TCP connection — useful for libraries that own their socket
-     * lifecycle and dial outside a coroutine context (reticulum-kt's
-     * `TCPClientInterface`, for example). The tunnel is acquired
-     * up-front; subsequent dials reuse the same handle.
-     *
-     * Returns null when the profile has neither a tunnel nor a proxy
-     * configured — caller falls through to its default `Socket()` dial.
-     */
     suspend fun socketDialer(
         profile: ConnectionProfile,
     ): ((String, Int, Int) -> java.net.Socket)? {
@@ -239,15 +200,7 @@ class TunnelResolver @Inject constructor(
 
     private suspend fun tunnelFor(profile: ConnectionProfile): Tunnel? {
         val tunnelId = profile.tunnelConfigId ?: return null
-        return try {
-            tunnelManager.acquire(tunnelId, profile.id)
-        } catch (e: WireGuardSystemVpnConflict) {
-            Log.i(
-                TAG,
-                "WG tunnel $tunnelId refused: ${e.message} — falling back to direct dial",
-            )
-            null
-        }
+        return tunnelManager.acquire(tunnelId, profile.id)
     }
 
     private fun proxySocketFactoryFor(

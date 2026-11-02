@@ -1,43 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Tunnels list -->
-    <string name="tunnel_add">टनल जोड़ें</string>
-    <string name="tunnel_empty_title">अभी तक कोई टनल कॉन्फ़िगर नहीं किया गया</string>
-    <string name="tunnel_empty_subtitle">अलग-अलग कनेक्शन प्रोफ़ाइल को इसके माध्यम से रूट करने के लिए एक WireGuard config जोड़ें — किसी सिस्टम-व्यापी VPN की ज़रूरत नहीं।</string>
     <!-- %1$s = tunnel type (e.g. WireGuard), %2$s = date added -->
-    <string name="tunnel_row_subtitle">%1$s · %2$s को जोड़ा गया</string>
-    <string name="tunnel_type_unknown">अज्ञात</string>
-    <string name="tunnel_cf_sign_in_again">फिर से साइन इन करें</string>
-    <string name="tunnel_delete_content_desc">टनल हटाएँ</string>
-
     <!-- Delete confirmation -->
-    <string name="tunnel_delete_title">टनल हटाएँ?</string>
     <!-- %1$s = tunnel label -->
-    <string name="tunnel_delete_message">\"%1$s\" हटाएँ। इस टनल का संदर्भ देने वाली प्रोफ़ाइल तब तक कनेक्ट नहीं हो पाएँगी जब तक आप कोई दूसरा न चुनें।</string>
-    <string name="tunnel_delete_confirm">हटाएँ</string>
-    <string name="tunnel_cancel">रद्द करें</string>
-
     <!-- Add tunnel dialog -->
-    <string name="tunnel_type_label">टनल का प्रकार</string>
-    <string name="tunnel_label">लेबल</string>
-    <string name="tunnel_save">सहेजें</string>
-    <string name="tunnel_edit">टनल संपादित करें</string>
-    <string name="tunnel_wireguard_help">wg-quick शैली का config पेस्ट करें या .conf फ़ाइल लोड करें। केवल [Interface] और [Peer] फ़ील्ड पढ़े जाते हैं; अज्ञात कुंजियाँ (PostUp, Table, MTU) अनदेखी की जाती हैं। होस्टनाम endpoints और DNS नाम टनल शुरू होने पर हल किए जाते हैं।</string>
-    <string name="tunnel_load_from_file">फ़ाइल से लोड करें…</string>
-    <string name="tunnel_wireguard_config">WireGuard config</string>
-    <string name="tunnel_tailscale_help">Tailscale एडमिन कंसोल (Settings → Keys) में, या अपने Headscale CLI (`headscale preauthkeys create`) में एक authkey बनाएँ। Haven पहली बार उपयोग पर आपके tailnet में शामिल होता है और उसके बाद node state का पुनः उपयोग करता है, इसलिए एक-बार की कुंजी ठीक है। पुनः-उपयोग योग्य कुंजियाँ आपको पुनः-इंस्टॉल के बाद फिर से कनेक्ट करने देती हैं।</string>
-    <string name="tunnel_tailscale_authkey_label">Auth key (tskey-auth-…)</string>
-    <string name="tunnel_tailscale_control_url_label">Control plane URL (वैकल्पिक)</string>
-    <string name="tunnel_tailscale_control_url_help">Tailscale के होस्टेड controlplane के लिए खाली छोड़ें। स्व-होस्टेड coordination सर्वर के लिए Headscale URL पर सेट करें।</string>
-    <string name="tunnel_netbird_help">NetBird डैशबोर्ड में एक setup key बनाएं (Setup Keys → Add setup key)। Haven पहली बार उपयोग पर आपके नेटवर्क से जुड़ता है और उसके बाद peer state का पुनः उपयोग करता है, इसलिए एक बार उपयोग होने वाली key ही काफी है। पुनः उपयोग योग्य key से पुनर्स्थापना के बाद दोबारा कनेक्ट हुआ जा सकता है।</string>
-    <string name="tunnel_netbird_setup_key_label">Setup key</string>
-    <string name="tunnel_netbird_management_url_label">Management URL (वैकल्पिक)</string>
-    <string name="tunnel_netbird_management_url_help">NetBird के होस्टेड management के लिए खाली छोड़ें। स्व-होस्टेड management सेवा के लिए अपने सर्वर के URL पर सेट करें।</string>
-    <string name="tunnel_openvpn_help">एक .ovpn प्रोफ़ाइल पेस्ट करें या फ़ाइल लोड करें। यदि प्रोफ़ाइल बिना इनलाइन क्रेडेंशियल फ़ाइल के auth-user-pass का उपयोग करती है, तो नीचे एक username और password दर्ज करें।</string>
-    <string name="tunnel_openvpn_config_label">OpenVPN प्रोफ़ाइल (.ovpn)</string>
-    <string name="tunnel_openvpn_username_label">Username (वैकल्पिक)</string>
-    <string name="tunnel_openvpn_password_label">Password (वैकल्पिक)</string>
-
     <!-- Cloudflare Access SSH tunnel -->
     <string name="cf_experimental_banner">प्रयोगात्मक — Haven वही WebSocket वायर प्रोटोकॉल लागू करता है जो `cloudflared access ssh` करता है। कुछ tenants के एक छोटे सेट पर परखा गया; कृपया बेमेल की रिपोर्ट GitHub #154 के माध्यम से करें।</string>
     <string name="cf_intro_blurb">किसी Cloudflare Tunnel के प्रकाशित होस्टनाम के माध्यम से SSH रूट करें — यह `cloudflared access ssh --hostname &lt;host&gt;` के ऐप-भीतरी समकक्ष है। सार्वजनिक Tunnel मार्गों को केवल एक होस्टनाम चाहिए। Access-संरक्षित मार्गों को अतिरिक्त रूप से एक JWT चाहिए — अपनी टीम के IdP के माध्यम से एक कैप्चर करने के लिए साइन इन पर टैप करें।</string>
@@ -59,23 +26,4 @@
     <string name="cf_jump_destination_help">Bastion-मोड बहु-लक्ष्य टनल: `Cf-Access-Jump-Destination` के रूप में फ़ॉरवर्ड किया जाता है। एकल-लक्ष्य मार्गों के लिए खाली छोड़ें।</string>
     <string name="cf_jwt_paste_help">Headless सेटअप के लिए: किसी अन्य मशीन पर `cloudflared access token --app https://&lt;hostname&gt;` चलाएँ और JWT यहाँ पेस्ट करें। समाप्ति टोकन से स्वतः पार्स की जाती है।</string>
     <string name="cf_field_jwt">Cloudflare Access JWT (वैकल्पिक)</string>
-    <string name="tunnel_anyconnect_help">Cisco ऐप के बिना Cisco AnyConnect या ocserv (OpenConnect) VPN के ज़रिए कनेक्ट करें। केवल इस टनल से रूट होने वाली प्रोफ़ाइल इसका उपयोग करती हैं; फ़ोन का बाकी ट्रैफ़िक नहीं। उपयोगकर्ता नाम/पासवर्ड, ऑथ ग्रुप और TOTP या पुश दूसरा फ़ैक्टर समर्थित हैं; SAML/SSO और क्लाइंट प्रमाणपत्र नहीं।</string>
-    <string name="tunnel_anyconnect_server_label">सर्वर</string>
-    <string name="tunnel_anyconnect_server_help">गेटवे होस्ट जैसा आप Cisco ऐप में लिखते हैं, चाहें तो :पोर्ट या ग्रुप पाथ के साथ।</string>
-    <string name="tunnel_anyconnect_username_label">उपयोगकर्ता नाम</string>
-    <string name="tunnel_anyconnect_password_label">पासवर्ड</string>
-    <string name="tunnel_anyconnect_group_label">ऑथ ग्रुप (वैकल्पिक)</string>
-    <string name="tunnel_anyconnect_group_help">सर्वर की सूची से चुना जाने वाला ग्रुप या प्रोफ़ाइल। डिफ़ॉल्ट के लिए खाली छोड़ें।</string>
-    <string name="tunnel_anyconnect_otp_label">OTP सीक्रेट (वैकल्पिक)</string>
-    <string name="tunnel_anyconnect_otp_help">आपके ऑथेंटिकेटर सेटअप का Base32 सीक्रेट या otpauth:// लिंक। Haven कोड प्रॉम्प्ट का जवाब खुद देता है, जिससे टनल बिना आपकी मदद के फिर से कनेक्ट हो सकता है।</string>
-    <string name="tunnel_anyconnect_secondary_label">दूसरे फ़ैक्टर का उत्तर (वैकल्पिक)</string>
-    <string name="tunnel_anyconnect_secondary_help">दूसरे प्रॉम्प्ट का एक निश्चित उत्तर, जैसे Duo के लिए push। केवल तब उपयोग होता है जब OTP सीक्रेट सेट न हो।</string>
-    <string name="tunnel_anyconnect_cert_label">सर्वर प्रमाणपत्र (वैकल्पिक)</string>
-    <string name="tunnel_anyconnect_cert_help">केवल सेल्फ़-साइन्ड गेटवे के लिए: pin-sha256:… मान। प्रमाणपत्र भरोसेमंद न होने पर कनेक्शन त्रुटि यहाँ चिपकाने वाला मान दिखाती है।</string>
-    <string name="tunnel_status_connected">कनेक्टेड</string>
-    <string name="tunnel_sign_out">साइन आउट</string>
-    <string name="tunnel_anyconnect_password_help">साइन इन के समय पूछे जाने के लिए खाली छोड़ें।</string>
-    <string name="tunnel_anyconnect_prompt_help">SMS या ईमेल से भेजे गए कोड: OTP सीक्रेट और दूसरे फ़ैक्टर का उत्तर खाली छोड़ें, साइन इन के समय Haven कोड पूछेगा।</string>
-    <string name="tunnel_anyconnect_stay_connected_label">कनेक्टेड रहें</string>
-    <string name="tunnel_anyconnect_stay_connected_help">Cisco ऐप की तरह, आख़िरी कनेक्शन बंद होने के बाद भी VPN चालू रखें। बंद होने पर: VPN डिस्कनेक्ट हो जाता है, और जल्द दोबारा कनेक्ट करने पर सत्र बिना नए कोड के फिर शुरू होता है।</string>
 </resources>

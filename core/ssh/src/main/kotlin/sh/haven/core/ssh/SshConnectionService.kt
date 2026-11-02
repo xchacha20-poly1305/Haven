@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import sh.haven.core.data.agent.McpStatusHolder
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,35 +37,8 @@ class SshConnectionService : Service() {
     @Inject
     lateinit var participants: Set<@JvmSuppressWildcards ForegroundSessionParticipant>
 
-    /** Read by [hasAnythingForeground] so the notification is not torn down
-     *  while the MCP endpoint or a lingering AnyConnect tunnel still needs
-     *  the service foreground (#757). */
-    @Inject
-    lateinit var keepAlives: Set<@JvmSuppressWildcards ForegroundKeepAlive>
-
     @Inject
     lateinit var networkMonitor: NetworkMonitor
-
-    /**
-     * Transports the standard SSH recovery paths skip (e.g. the headless MCP
-     * reverse tunnel). Kicked on the same two triggers as the SSH sessions —
-     * return-to-foreground and network-available — so they don't wait out their
-     * own (Doze-deferrable) watchdog timers.
-     */
-    @Inject
-    lateinit var reviveHooks: Set<@JvmSuppressWildcards ForegroundReviveHook>
-
-    /**
-     * Runs the same hooks on a timer, because both of the triggers above need
-     * something an on-device MCP client never produces — a return to the
-     * foreground, or a network transition (#494).
-     */
-    @Inject
-    lateinit var reviveTicker: ForegroundReviveTicker
-
-    /** Live MCP activity, folded into the ongoing notification (#239). */
-    @Inject
-    lateinit var mcpStatusHolder: McpStatusHolder
 
     /** Stamps process background/foreground so a drop can be attributed (#495). */
     @Inject
@@ -87,9 +59,8 @@ class SshConnectionService : Service() {
         override fun onStart(owner: LifecycleOwner) {
             backgroundDisconnectDetector.onForegrounded()
             serviceScope.launch { sessionManager.probeAndReconnectStale() }
-            // probeAndReconnectStale skips headless transports (the MCP tunnel);
+
             // give them their own immediate kick rather than the deferrable watchdog.
-            reviveHooks.forEach { it.reviveNow() }
         }
 
         // Stamped here rather than in MainActivity.onPause because this is the
@@ -104,13 +75,6 @@ class SshConnectionService : Service() {
         const val CHANNEL_ID = "haven_connection"
         const val NOTIFICATION_ID = 1
         const val ACTION_DISCONNECT_ALL = "sh.haven.action.DISCONNECT_ALL"
-
-        /**
-         * Boolean extra on the launch intent fired by the notification's
-         * "Agent log" action; MainActivity routes it to
-         * [McpStatusHolder.requestOpenActivityLog] (#239).
-         */
-        const val EXTRA_OPEN_AGENT_LOG = "sh.haven.extra.OPEN_AGENT_LOG"
 
         /**
          * Boolean extra the service puts on the launch intent it fires after
@@ -147,7 +111,6 @@ class SshConnectionService : Service() {
         // Service.onCreate runs on the main thread, where ProcessLifecycleOwner
         // observers must be added.
         ProcessLifecycleOwner.get().lifecycle.addObserver(foregroundObserver)
-        reviveTicker.start()
         serviceScope.launch {
             networkMonitor.events
                 .debounce(2_000) // network changes fire rapidly during handoff
@@ -158,30 +121,18 @@ class SshConnectionService : Service() {
                         // requestReconnectAll only acts on already-DISCONNECTED/ERROR
                         // sessions; a roamed headless tunnel may still read stale
                         // CONNECTED, so kick it explicitly to revive/probe now.
-                        reviveHooks.forEach { it.reviveNow() }
                     }
                 }
         }
-        // Re-post the ongoing notification when MCP activity changes so the
+
         // endpoint line (running tool / last error) stays current (#239).
         // drop(1): skip the StateFlow's initial replay — the startForeground
         // in onStartCommand posts the first notification. Debounced because
         // tool calls can fire in quick bursts; the channel is IMPORTANCE_LOW
         // so updates are silent.
-        serviceScope.launch {
-            mcpStatusHolder.activity
-                .drop(1)
-                .debounce(400)
-                .collect {
-                    runCatching {
-                        getSystemService(NotificationManager::class.java)
-                            ?.notify(NOTIFICATION_ID, buildNotification())
-                    }
-                }
-        }
         // #757: keep the ongoing notification honest when a session ENDS.
         // The notification used to be rebuilt only at startForeground (a session
-        // starting) and on MCP activity, so a session dying on its own — typed
+
         // `exit`, dropped transport — left the count and labels stale: "2 active
         // sessions" naming one that had already closed. The teardown-on-empty
         // path lives in ConnectionsViewModel, which is only composed while the
@@ -196,7 +147,7 @@ class SshConnectionService : Service() {
         // Debounced so a burst of session churn doesn't spam the shade; the
         // channel is IMPORTANCE_LOW so updates are silent.
         serviceScope.launch {
-            foregroundChangeSignal(participants, keepAlives)
+            foregroundChangeSignal(participants)
                 .debounce(300)
                 .collect {
                     val notification = notificationForCurrentSessions() ?: return@collect
@@ -216,8 +167,7 @@ class SshConnectionService : Service() {
      * instance (#757).
      */
     internal fun notificationForCurrentSessions(): Notification? =
-        if (participants.any { it.activeSessions.isNotEmpty() } ||
-            keepAlives.any { it.isActive }
+        if (participants.any { it.activeSessions.isNotEmpty() }
         ) {
             buildNotification()
         } else {
@@ -242,7 +192,7 @@ class SshConnectionService : Service() {
         // specialUse, not dataSync: on Android 16 dataSync gets killed
         // by Stop FGS timeout every 10–30 s regardless of the 3-arg
         // startForeground call, which tears down any SSH session and
-        // the MCP reverse tunnel forwarded over it. specialUse fits the
+
         // long-lived-connection use case and isn't subject to the same
         // timeout schedule; subtype is declared via PROPERTY_SPECIAL_USE_FGS_SUBTYPE
         // on the <service> element in the manifest.
@@ -259,7 +209,6 @@ class SshConnectionService : Service() {
 
     override fun onDestroy() {
         ProcessLifecycleOwner.get().lifecycle.removeObserver(foregroundObserver)
-        reviveTicker.stop()
         networkMonitor.stop()
         serviceScope.cancel()
         super.onDestroy()
@@ -296,7 +245,7 @@ class SshConnectionService : Service() {
             .setSmallIcon(R.drawable.ic_haven_notification)
             .setContentTitle("Haven — $count active session${if (count != 1) "s" else ""}")
             .setContentText(labels.ifEmpty { "Connecting..." })
-            // Expanded view: one session per line, so the MCP status line
+
             // (running tool / last error) isn't truncated behind the other
             // session labels in the single collapsed row (#239).
             .setStyle(NotificationCompat.BigTextStyle().bigText(labelList.joinToString("\n").ifEmpty { "Connecting..." }))
@@ -307,22 +256,7 @@ class SshConnectionService : Service() {
                 "Disconnect All",
                 disconnectPending,
             )
-        if (mcpStatusHolder.activity.value.running) {
-            val agentLogIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                putExtra(EXTRA_OPEN_AGENT_LOG, true)
-            }
-            if (agentLogIntent != null) {
-                builder.addAction(
-                    R.drawable.ic_haven_notification,
-                    "Agent log",
-                    PendingIntent.getActivity(
-                        this, 2, agentLogIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    ),
-                )
-            }
-        }
+
         return builder.build()
     }
 
@@ -348,6 +282,6 @@ class SshConnectionService : Service() {
  */
 internal fun foregroundChangeSignal(
     participants: Set<ForegroundSessionParticipant>,
-    keepAlives: Set<ForegroundKeepAlive>,
+
 ): kotlinx.coroutines.flow.Flow<Unit> =
-    (participants.map { it.changes } + keepAlives.map { it.changes }).merge()
+    participants.map { it.changes }.merge()

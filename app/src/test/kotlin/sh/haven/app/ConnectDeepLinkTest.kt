@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import sh.haven.core.data.agent.AgentUiCommand
+import sh.haven.core.data.navigation.UiCommand
 import sh.haven.core.data.db.entities.ConnectionProfile
 
 /** Unit coverage for the `haven://connect` deep-link parsing + matching (#305). */
@@ -132,8 +132,8 @@ class ConnectDeepLinkTest {
             listOf(match, profile(id = "other", host = "elsewhere")),
             ConnectDeepLink.Params("h", "me", null, null, "work"),
         )
-        assertTrue(cmd is AgentUiCommand.ConnectFromDeepLink)
-        cmd as AgentUiCommand.ConnectFromDeepLink
+        assertTrue(cmd is UiCommand.ConnectFromDeepLink)
+        cmd as UiCommand.ConnectFromDeepLink
         assertEquals("p1", cmd.profileId)
         assertEquals("work", cmd.sessionName)
     }
@@ -144,8 +144,8 @@ class ConnectDeepLinkTest {
             emptyList(),
             ConnectDeepLink.Params("newhost", "me", 2022, null, "work"),
         )
-        assertTrue(cmd is AgentUiCommand.PrefillNewConnection)
-        cmd as AgentUiCommand.PrefillNewConnection
+        assertTrue(cmd is UiCommand.PrefillNewConnection)
+        cmd as UiCommand.PrefillNewConnection
         assertEquals("newhost", cmd.host)
         assertEquals("me", cmd.username)
         assertEquals(2022, cmd.port)
@@ -158,7 +158,7 @@ class ConnectDeepLinkTest {
         val a = profile(id = "a", host = "h", username = "me")
         val b = profile(id = "b", host = "h", username = "me")
         val cmd = ConnectDeepLink.resolve(listOf(a, b), ConnectDeepLink.Params("h", "me", null, null, null))
-        assertTrue(cmd is AgentUiCommand.PrefillNewConnection)
+        assertTrue(cmd is UiCommand.PrefillNewConnection)
     }
 
     @Test
@@ -179,7 +179,7 @@ class ConnectDeepLinkTest {
         val a = profile(id = "a", host = "h", username = "me")
         val b = profile(id = "b", host = "h", username = "me")
         val all = listOf(a, b)
-        
+
         // matching with id="b" should return only "b", bypassing any ambiguity on host/user
         val p = ConnectDeepLink.Params(host = "h", username = "me", port = null, transport = null, session = null, id = "b")
         val result = ConnectDeepLink.matches(all, p)
@@ -205,8 +205,8 @@ class ConnectDeepLinkTest {
         val a = profile(id = "a", host = "h", username = "me")
         val b = profile(id = "b", host = "h", username = "me")
         val cmd = ConnectDeepLink.resolve(listOf(a, b), ConnectDeepLink.Params("h", "me", null, null, null, null, "b"))
-        assertTrue(cmd is AgentUiCommand.ConnectFromDeepLink)
-        cmd as AgentUiCommand.ConnectFromDeepLink
+        assertTrue(cmd is UiCommand.ConnectFromDeepLink)
+        cmd as UiCommand.ConnectFromDeepLink
         assertEquals("b", cmd.profileId)
     }
 
@@ -222,8 +222,8 @@ class ConnectDeepLinkTest {
             listOf(prof),
             ConnectDeepLink.parse(query("host" to "h", "id" to "old-id"))!!,
         )
-        assertTrue(cmd is AgentUiCommand.ConnectFromDeepLink)
-        assertEquals("new-id", (cmd as AgentUiCommand.ConnectFromDeepLink).profileId)
+        assertTrue(cmd is UiCommand.ConnectFromDeepLink)
+        assertEquals("new-id", (cmd as UiCommand.ConnectFromDeepLink).profileId)
     }
 
     @Test
@@ -244,7 +244,7 @@ class ConnectDeepLinkTest {
             listOf(a, b),
             ConnectDeepLink.parse(query("host" to "h", "user" to "one", "id" to "b"))!!,
         )
-        assertEquals("b", (cmd as AgentUiCommand.ConnectFromDeepLink).profileId)
+        assertEquals("b", (cmd as UiCommand.ConnectFromDeepLink).profileId)
     }
 
     @Test
@@ -255,7 +255,7 @@ class ConnectDeepLinkTest {
             listOf(a, b),
             ConnectDeepLink.parse(query("host" to "h", "session" to "play"))!!,
         )
-        assertEquals("b", (cmd as AgentUiCommand.ConnectFromDeepLink).profileId)
+        assertEquals("b", (cmd as UiCommand.ConnectFromDeepLink).profileId)
     }
 
     @Test
@@ -268,7 +268,7 @@ class ConnectDeepLinkTest {
             listOf(a, b),
             ConnectDeepLink.parse(query("host" to "h", "session" to "work"))!!,
         )
-        assertTrue(cmd is AgentUiCommand.PrefillNewConnection)
+        assertTrue(cmd is UiCommand.PrefillNewConnection)
     }
 
     // --- standard URI schemes (#751) ---
@@ -353,8 +353,8 @@ class ConnectDeepLinkTest {
     fun `resolve prefills an rdp draft for an unmatched rdp link`() {
         val p = ConnectDeepLink.parseStandardScheme("rdp", "admin", "newpc", 3390)!!
         val cmd = ConnectDeepLink.resolve(emptyList(), p)
-        assertTrue(cmd is AgentUiCommand.PrefillNewConnection)
-        cmd as AgentUiCommand.PrefillNewConnection
+        assertTrue(cmd is UiCommand.PrefillNewConnection)
+        cmd as UiCommand.PrefillNewConnection
         assertEquals("newpc", cmd.host)
         assertEquals("admin", cmd.username)
         assertEquals(3390, cmd.port)

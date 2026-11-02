@@ -23,7 +23,6 @@ com.sun.mail.smtp.SMTPSSLTransport
 
 # Reticulum (rns-core) — link/transport methods resolved by name
 # (verified: Transport -> w4.q when the -keep rule is absent)
-network.reticulum.transport.Transport
 
 # Eternal Terminal (et-kotlin) — transport reflected
 # (verified: EtTransport -> h5.b when the -keep rule is absent)

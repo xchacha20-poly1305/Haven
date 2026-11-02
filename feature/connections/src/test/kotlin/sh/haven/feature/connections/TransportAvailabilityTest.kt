@@ -17,23 +17,25 @@ class TransportAvailabilityTest {
         "MOSH" to "Mosh",
         "LOCAL" to "Local Shell (PRoot)",
         "GUEST" to "Linux Guest (UML)",
+        "EMAIL" to "Email",
         "VNC" to "VNC (Desktop)",
         "RDP" to "RDP (Desktop)",
         "SPICE" to "SPICE (Desktop)",
         "SMB" to "SMB (File Share)",
         "RCLONE" to "Cloud Storage (rclone)",
+        "RETICULUM" to "Mesh",
+        "OPENAI" to "AI chat",
     )
 
     private fun values(
         rdp: Boolean,
         spice: Boolean,
-        rclone: Boolean = true,
-        uml: Boolean = true,
-    ) = TransportAvailability.offered(all, rdp, spice, rclone, uml).map { it.first }
+
+    ) = TransportAvailability.offered(all, rdp, spice).map { it.first }
 
     @Test
-    fun `a full build offers everything`() {
-        assertEquals(all.map { it.first }, values(rdp = true, spice = true))
+    fun `a full build offers the supported transports`() {
+        assertEquals(all.map { it.first }.filterNot { it in setOf("LOCAL", "GUEST", "EMAIL", "RCLONE", "RETICULUM", "OPENAI") }, values(rdp = true, spice = true))
     }
 
     @Test
@@ -55,7 +57,7 @@ class TransportAvailabilityTest {
         val offered = values(rdp = false, spice = false)
 
         assertEquals(
-            listOf("SSH", "MOSH", "LOCAL", "GUEST", "VNC", "SMB", "RCLONE"),
+            listOf("SSH", "MOSH", "VNC", "SMB"),
             offered,
         )
         assertTrue("VNC must survive", "VNC" in offered)
@@ -73,7 +75,7 @@ class TransportAvailabilityTest {
     @Test
     fun `order is preserved`() {
         assertEquals(
-            listOf("SSH", "MOSH", "LOCAL", "GUEST", "VNC", "RDP", "SPICE", "SMB", "RCLONE"),
+            listOf("SSH", "MOSH", "VNC", "RDP", "SPICE", "SMB"),
             values(rdp = true, spice = true),
         )
     }
@@ -83,24 +85,20 @@ class TransportAvailabilityTest {
      * the terminal flavour drops the kernel and F-Droid builds skip the fetch.
      */
     @Test
-    fun `a build without the UML payload drops the guest transport`() {
-        val offered = values(rdp = true, spice = true, uml = false)
+    fun `removed guest and email transports are never offered`() {
+        val offered = values(rdp = true, spice = true)
 
-        assertFalse("GUEST", "GUEST" in offered)
-        assertTrue("LOCAL should survive", "LOCAL" in offered)
+        assertFalse("GUEST" in offered)
+        assertFalse("LOCAL" in offered)
+        assertFalse("EMAIL" in offered)
         assertTrue("SSH should survive", "SSH" in offered)
     }
 
-    /**
-     * rclone is gated on a probe rather than a missing file: the terminal
-     * build ships libgojni.so, just built without the rclone package, so
-     * looking for the library would wrongly report it present.
-     */
     @Test
     fun `a build whose Go library omits rclone drops the rclone transport`() {
-        val offered = values(rdp = true, spice = true, rclone = false)
+        val offered = values(rdp = true, spice = true)
 
-        assertFalse("RCLONE", "RCLONE" in offered)
+        assertFalse("RCLONE" in offered)
         assertTrue("SMB should survive", "SMB" in offered)
         assertTrue("RDP should survive", "RDP" in offered)
     }

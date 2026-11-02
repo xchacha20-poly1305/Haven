@@ -18,7 +18,7 @@ import javax.inject.Singleton
  * [emit] here and a single host in `HavenNavHost` (collected above the pager)
  * renders it over every screen.
  *
- * Modeled on [sh.haven.core.data.agent.AgentUiCommandBus]: `replay = 0` so a
+ * Modeled on [sh.haven.core.data.navigation.UiCommandBus]: `replay = 0` so a
  * rotation doesn't re-show a stale message (these are events, not state), and
  * `tryEmit` never suspends. A slightly larger buffer than the command bus
  * because connect errors can burst (e.g. a workspace group launch).

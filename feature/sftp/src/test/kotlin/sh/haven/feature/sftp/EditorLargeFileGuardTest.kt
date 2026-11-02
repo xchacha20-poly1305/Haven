@@ -18,7 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.data.preferences.UserPreferencesRepository
 import sh.haven.feature.sftp.transport.FileBackend
 
@@ -45,7 +45,7 @@ class EditorLargeFileGuardTest {
     }
 
     private fun newViewModel(): SftpViewModel {
-        val bus = mockk<AgentUiCommandBus>(relaxed = true)
+        val bus = mockk<UiCommandBus>(relaxed = true)
         every { bus.commands } returns MutableSharedFlow()
         val prefs = mockk<UserPreferencesRepository>(relaxed = true)
         every { prefs.sftpSortMode } returns flowOf("NAME_ASC")
@@ -58,23 +58,19 @@ class EditorLargeFileGuardTest {
             moshSessionManager = mockk(relaxed = true),
             etSessionManager = mockk(relaxed = true),
             smbSessionManager = mockk(relaxed = true),
-            rcloneSessionManager = mockk(relaxed = true),
-            reticulumSessionManager = mockk(relaxed = true),
-            rcloneClient = mockk(relaxed = true),
+
             repository = mockk(relaxed = true),
             connectionLogRepository = mockk(relaxed = true),
-            syncProfileRepository = mockk(relaxed = true),
+
             ageIdentityRepository = mockk(relaxed = true),
             preferencesRepository = prefs,
             transportSelector = mockk(relaxed = true),
-            ffmpegExecutor = mockk(relaxed = true),
-            hlsStreamServer = mockk(relaxed = true),
+
             sftpStreamServer = mockk(relaxed = true),
             pasteQueueDao = mockk(relaxed = true),
-            agentUiCommandBus = bus,
+            uiCommandBus = bus,
             attachCoordinator = mockk(relaxed = true),
-            chatAttachBroker = mockk(relaxed = true),
-            servedFileTracker = mockk(relaxed = true),
+
             appContext = app,
         ).also { it.backendOverride = { fakeBackend } }
     }
@@ -122,7 +118,7 @@ class EditorLargeFileGuardTest {
         val vm = newViewModel()
         advanceUntilIdle()
 
-        // AgentUiCommand.OpenInEditor builds the entry with size=0.
+        // UiCommand.OpenInEditor builds the entry with size=0.
         vm.openInEditor(entry(0L))
         advanceUntilIdle()
 

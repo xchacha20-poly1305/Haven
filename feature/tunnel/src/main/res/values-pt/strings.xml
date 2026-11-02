@@ -1,36 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tunnel_add">Adicionar túnel</string>
-    <string name="tunnel_empty_title">Nenhum túnel configurado ainda</string>
-    <string name="tunnel_empty_subtitle">Adicione uma configuração WireGuard para rotear perfis de conexão individuais por ela — sem necessidade de VPN para todo o sistema.</string>
-    <string name="tunnel_row_subtitle">%1$s · adicionado %2$s</string>
-    <string name="tunnel_type_unknown">desconhecido</string>
-    <string name="tunnel_cf_sign_in_again">Entrar novamente</string>
-    <string name="tunnel_delete_content_desc">Excluir túnel</string>
-    <string name="tunnel_delete_title">Excluir túnel?</string>
-    <string name="tunnel_delete_message">Remover \"%1$s\". Perfis que referenciam este túnel falharão ao conectar até você escolher outro.</string>
-    <string name="tunnel_delete_confirm">Excluir</string>
-    <string name="tunnel_cancel">Cancelar</string>
-    <string name="tunnel_type_label">Tipo de túnel</string>
-    <string name="tunnel_label">Rótulo</string>
-    <string name="tunnel_save">Salvar</string>
-    <string name="tunnel_edit">Editar túnel</string>
-    <string name="tunnel_wireguard_help">Cole uma configuração no estilo wg-quick ou carregue um arquivo .conf. Apenas os campos [Interface] e [Peer] são lidos; chaves desconhecidas (PostUp, Table, MTU) são ignoradas. Endpoints de nome de host e nomes DNS são resolvidos ao iniciar o túnel.</string>
-    <string name="tunnel_load_from_file">Carregar do arquivo…</string>
-    <string name="tunnel_wireguard_config">Configuração WireGuard</string>
-    <string name="tunnel_tailscale_help">Gere uma authkey no console de administração do Tailscale (Settings → Keys) ou na sua CLI do Headscale (`headscale preauthkeys create`). O Haven entra na sua tailnet no primeiro uso e reutiliza o estado do nó depois disso, então uma chave de uso único é suficiente. Chaves reutilizáveis permitem reconectar após a reinstalação.</string>
-    <string name="tunnel_tailscale_authkey_label">Chave de autenticação (tskey-auth-…)</string>
-    <string name="tunnel_tailscale_control_url_label">URL do plano de controle (opcional)</string>
-    <string name="tunnel_tailscale_control_url_help">Deixe em branco para o controlplane hospedado do Tailscale. Defina uma URL do Headscale para um servidor de coordenação auto-hospedado.</string>
-    <string name="tunnel_netbird_help">Gere uma setup key no painel do NetBird (Setup Keys → Adicionar setup key). O Haven entra na sua rede no primeiro uso e reutiliza o estado do par depois disso, então uma chave de uso único serve. Chaves reutilizáveis permitem reconectar após reinstalar.</string>
-    <string name="tunnel_netbird_setup_key_label">Chave de configuração (setup key)</string>
-    <string name="tunnel_netbird_management_url_label">URL de gerenciamento (opcional)</string>
-    <string name="tunnel_netbird_management_url_help">Deixe em branco para o gerenciamento hospedado do NetBird. Defina a URL do seu servidor para um serviço de gerenciamento auto-hospedado.</string>
-    <string name="tunnel_openvpn_help">Cole um perfil .ovpn ou carregue um arquivo. Se o perfil usar auth-user-pass sem um arquivo de credenciais embutido, insira um nome de usuário e senha abaixo.</string>
-    <string name="tunnel_openvpn_config_label">Perfil OpenVPN (.ovpn)</string>
-    <string name="tunnel_openvpn_username_label">Usuário (opcional)</string>
-    <string name="tunnel_openvpn_password_label">Senha (opcional)</string>
-
     <!-- Cloudflare Access SSH tunnel -->
     <string name="cf_experimental_banner">Experimental — o Haven implementa o mesmo protocolo de fio WebSocket que `cloudflared access ssh`. Testado com um pequeno conjunto de tenants; relate divergências via GitHub #154.</string>
     <string name="cf_intro_blurb">Roteie SSH por um nome de host publicado de um Cloudflare Tunnel — o equivalente no app de `cloudflared access ssh --hostname &lt;host&gt;`. Rotas de Tunnel públicas precisam apenas de um nome de host. Rotas protegidas por Access exigem também um JWT — toque em Entrar para capturar um pelo IdP da sua equipe.</string>
@@ -52,23 +21,4 @@
     <string name="cf_jump_destination_help">Túneis multi-destino em modo bastion: encaminhado como `Cf-Access-Jump-Destination`. Deixe em branco para rotas de destino único.</string>
     <string name="cf_jwt_paste_help">Para configurações headless: execute `cloudflared access token --app https://&lt;hostname&gt;` em outra máquina e cole o JWT aqui. A expiração é analisada automaticamente a partir do token.</string>
     <string name="cf_field_jwt">JWT do Cloudflare Access (opcional)</string>
-    <string name="tunnel_anyconnect_help">Conecte-se por uma VPN Cisco AnyConnect ou ocserv (OpenConnect) sem o app da Cisco. Só os perfis roteados por este túnel o usam; o resto do telefone não. São suportados usuário/senha, grupos de autenticação e segundo fator TOTP ou push; SAML/SSO e certificados de cliente não.</string>
-    <string name="tunnel_anyconnect_server_label">Servidor</string>
-    <string name="tunnel_anyconnect_server_help">Host do gateway como você digitaria no app da Cisco, opcionalmente com :porta ou um caminho de grupo.</string>
-    <string name="tunnel_anyconnect_username_label">Usuário</string>
-    <string name="tunnel_anyconnect_password_label">Senha</string>
-    <string name="tunnel_anyconnect_group_label">Grupo de autenticação (opcional)</string>
-    <string name="tunnel_anyconnect_group_help">O grupo ou perfil a escolher na lista do servidor. Deixe em branco para o padrão.</string>
-    <string name="tunnel_anyconnect_otp_label">Segredo OTP (opcional)</string>
-    <string name="tunnel_anyconnect_otp_help">Segredo Base32 ou link otpauth:// da configuração do seu autenticador. O Haven responde ao pedido de código sozinho, o que permite ao túnel reconectar sem intervenção.</string>
-    <string name="tunnel_anyconnect_secondary_label">Resposta do segundo fator (opcional)</string>
-    <string name="tunnel_anyconnect_secondary_help">Uma resposta fixa ao segundo pedido, ex.: push para Duo. Usada apenas quando não há segredo OTP.</string>
-    <string name="tunnel_anyconnect_cert_label">Certificado do servidor (opcional)</string>
-    <string name="tunnel_anyconnect_cert_help">Apenas para gateways autoassinados: um valor pin-sha256:…. Se o certificado não for confiável, o erro de conexão mostra o valor a colar aqui.</string>
-    <string name="tunnel_status_connected">Conectado</string>
-    <string name="tunnel_sign_out">Sair</string>
-    <string name="tunnel_anyconnect_password_help">Deixe vazio para ser perguntado ao entrar.</string>
-    <string name="tunnel_anyconnect_prompt_help">Códigos enviados por SMS ou e-mail: deixe vazios o segredo OTP e a resposta do segundo fator, e o Haven pede o código ao entrar.</string>
-    <string name="tunnel_anyconnect_stay_connected_label">Manter conectado</string>
-    <string name="tunnel_anyconnect_stay_connected_help">Mantém a VPN ativa após fechar sua última conexão, como o app da Cisco. Desligado: ela desconecta, e reconectar logo depois retoma a sessão sem um novo código.</string>
 </resources>

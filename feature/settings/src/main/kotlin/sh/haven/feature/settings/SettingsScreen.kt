@@ -1,5 +1,8 @@
 package sh.haven.feature.settings
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -33,9 +36,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Laptop
 import androidx.compose.material.icons.filled.Mouse
-import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
@@ -56,10 +57,7 @@ import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.LockReset
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Reorder
-import androidx.compose.material.icons.filled.Usb
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Image
@@ -111,7 +109,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import sh.haven.core.security.CredentialEncryption
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -119,7 +116,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -136,12 +132,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -186,8 +179,6 @@ fun SettingsScreen(
     val updateCheckEnabled by viewModel.updateCheckEnabled.collectAsState()
     val updateCheckResult by viewModel.updateCheckResult.collectAsState()
     val updateCheckRunning by viewModel.updateCheckRunning.collectAsState()
-    val showLinuxVmCard by viewModel.showLinuxVmCard.collectAsState()
-    val showDesktopsCard by viewModel.showDesktopsCard.collectAsState()
     val lockTimeout by viewModel.lockTimeout.collectAsState()
     val fontSize by viewModel.terminalFontSize.collectAsState()
     val horizontalPadding by viewModel.terminalHorizontalPadding.collectAsState()
@@ -219,15 +210,10 @@ fun SettingsScreen(
     val verboseLoggingEnabled by viewModel.verboseLoggingEnabled.collectAsState()
     val rdpProgressiveUpgrade by viewModel.rdpProgressiveUpgrade.collectAsState()
     val rdpAvcEnabled by viewModel.rdpAvcEnabled.collectAsState()
-    val mcpAgentEndpointEnabled by viewModel.mcpAgentEndpointEnabled.collectAsState()
-    val agentAllowFileRead by viewModel.agentAllowFileRead.collectAsState()
-    val unseenAgentActivity by viewModel.unseenAgentActivity.collectAsState()
-    val requireAgentConsentForWrites by viewModel.requireAgentConsentForWrites.collectAsState()
     val mouseInputEnabled by viewModel.mouseInputEnabled.collectAsState()
     val remoteClipboardToLocal by viewModel.remoteClipboardToLocalEnabled.collectAsState()
     val sudoPromptDetectionEnabled by viewModel.sudoPromptDetectionEnabled.collectAsState()
     val desktopInputMode by viewModel.desktopInputMode.collectAsState()
-    val gpuUseVenus by viewModel.gpuUseVenus.collectAsState()
     val bandwidthAutoSuggest by viewModel.bandwidthAutoSuggest.collectAsState()
     val terminalRightClick by viewModel.terminalRightClick.collectAsState()
     val terminalSwipeArrows by viewModel.terminalSwipeArrows.collectAsState()
@@ -243,15 +229,9 @@ fun SettingsScreen(
     val terminalInlineImages by viewModel.terminalInlineImages.collectAsState()
     val showTerminalTabBar by viewModel.showTerminalTabBar.collectAsState()
     val backupStatus by viewModel.backupStatus.collectAsState()
-    val waylandShellCommand by viewModel.waylandShellCommand.collectAsState()
-    val mediaExtensions by viewModel.mediaExtensions.collectAsState()
     val terminalPromptChars by viewModel.terminalPromptChars.collectAsState()
     val terminalLocale by viewModel.terminalLocale.collectAsState()
     var showAuditLog by remember { mutableStateOf(false) }
-    var showProotInstallLog by remember { mutableStateOf(false) }
-    var showAgentActivity by remember { mutableStateOf(false) }
-    var showPairedClients by remember { mutableStateOf(false) }
-    var showMcpTools by remember { mutableStateOf(false) }
     var showFontUrlDialog by remember { mutableStateOf(false) }
     var showRecommendedFontsDialog by remember { mutableStateOf(false) }
     // Lifted to SettingsScreen scope so a dialog's confirm handler can
@@ -262,10 +242,6 @@ fun SettingsScreen(
     // the launched coroutine produced anything — silent install bug.
     val settingsScope = rememberCoroutineScope()
     var showLanguageDialog by remember { mutableStateOf(false) }
-    var showWaylandShellDialog by remember { mutableStateOf(false) }
-    var showProotIdleDialog by remember { mutableStateOf(false) }
-    val prootIdleMinutes by viewModel.prootIdleTimeoutMinutes.collectAsState()
-    var showMediaExtensionsDialog by remember { mutableStateOf(false) }
     var showPromptCharsDialog by remember { mutableStateOf(false) }
     var showLocaleDialog by remember { mutableStateOf(false) }
     var showFontSizeDialog by remember { mutableStateOf(false) }
@@ -309,8 +285,6 @@ fun SettingsScreen(
 
     val context = LocalContext.current
 
-    // #510: the terminal build ships no RDP client, no Wayland compositor and
-    // no ffmpeg, so the settings that tune them are noise there — a toggle for
     // something that cannot run is worse than no toggle at all.
     //
     // Gated per row rather than by hiding whole sections: the Desktop section
@@ -329,9 +303,6 @@ fun SettingsScreen(
     val fontInstallingToastTmpl = stringResource(R.string.settings_font_installing_toast)
     val fontNamedInstalledToastTmpl = stringResource(R.string.settings_font_named_installed_toast)
     val fontResetMsg = stringResource(R.string.settings_terminal_font_reset_toast)
-    val mcpUrlCopiedMsg = stringResource(R.string.settings_mcp_url_copied_toast)
-    val mcpConfigCopiedMsg = stringResource(R.string.settings_mcp_config_copied_toast)
-    val agentAllowsClearedMsg = stringResource(R.string.settings_agent_allows_cleared_toast)
 
     // SAF launchers for backup/restore
     var pendingPassword by remember { mutableStateOf("") }
@@ -405,22 +376,7 @@ fun SettingsScreen(
         AuditLogScreen(onBack = { showAuditLog = false })
         return
     }
-    if (showProotInstallLog) {
-        ProotInstallLogScreen(onBack = { showProotInstallLog = false })
-        return
-    }
-    if (showAgentActivity) {
-        AgentActivityScreen(onBack = { showAgentActivity = false })
-        return
-    }
-    if (showPairedClients) {
-        PairedClientsScreen(onBack = { showPairedClients = false })
-        return
-    }
-    if (showMcpTools) {
-        McpToolsScreen(onBack = { showMcpTools = false })
-        return
-    }
+
     if (showFontUrlDialog) {
         FontFromUrlDialog(
             onInstall = { url ->
@@ -467,7 +423,7 @@ fun SettingsScreen(
     val settingsExpanded = remember {
         androidx.compose.runtime.mutableStateListOf(
             false, false, false, false, false, false, false, false, false, false,
-            false, // [10] AI agent (MCP)
+            false,
         )
     }
     Column(modifier = Modifier.fillMaxSize()) {
@@ -909,15 +865,7 @@ fun SettingsScreen(
             },
         )
         // Selects the GPU stack for the native compositor.
-        if (nativeFeatures.wayland) {
-            SettingsToggleItem(
-                icon = Icons.Filled.DesktopWindows,
-                title = stringResource(R.string.settings_gpu_venus_title),
-                subtitle = stringResource(R.string.settings_gpu_venus_subtitle),
-                checked = gpuUseVenus,
-                onCheckedChange = viewModel::setGpuUseVenus,
-            )
-        }
+
         SettingsToggleItem(
             icon = Icons.Filled.CloudDownload,
             title = stringResource(R.string.settings_bandwidth_suggest_title),
@@ -928,42 +876,12 @@ fun SettingsScreen(
 
         }
         CollapsibleSettingsSection(stringResource(R.string.settings_section_connections_screen), settingsExpanded[5], { settingsExpanded[5] = !settingsExpanded[5] }) {
-        SettingsToggleItem(
-            icon = Icons.Filled.DesktopWindows,
-            title = stringResource(R.string.settings_show_desktops_title),
-            subtitle = stringResource(R.string.settings_show_desktops_subtitle),
-            checked = showDesktopsCard,
-            onCheckedChange = viewModel::setShowDesktopsCard,
-        )
-        SettingsToggleItem(
-            icon = Icons.Filled.Laptop,
-            title = stringResource(R.string.settings_show_linux_vm_title),
-            subtitle = stringResource(R.string.settings_show_linux_vm_subtitle),
-            checked = showLinuxVmCard,
-            onCheckedChange = viewModel::setShowLinuxVmCard,
-        )
         // USB-to-guest is a privileged capability: once on, any app in the
         // Linux guest can reach a USB device the agent attaches. Off by
         // default; each attach still asks for consent on top of this.
-        val usbGuestExposure by viewModel.usbGuestExposureEnabled.collectAsState()
-        SettingsToggleItem(
-            icon = Icons.Filled.Usb,
-            title = stringResource(R.string.settings_usb_guest_title),
-            subtitle = stringResource(R.string.settings_usb_guest_subtitle),
-            checked = usbGuestExposure,
-            onCheckedChange = viewModel::setUsbGuestExposureEnabled,
-        )
         // GPS-to-guest mirrors the USB toggle: once on, any process in the
         // Linux guest can read the phone's GPS position via the NMEA bridge.
         // Off by default; each attach still asks for consent on top of this.
-        val gpsGuestExposure by viewModel.gpsGuestExposureEnabled.collectAsState()
-        SettingsToggleItem(
-            icon = Icons.Filled.LocationOn,
-            title = stringResource(R.string.settings_gps_guest_title),
-            subtitle = stringResource(R.string.settings_gps_guest_subtitle),
-            checked = gpsGuestExposure,
-            onCheckedChange = viewModel::setGpsGuestExposureEnabled,
-        )
 
         // Tailscale peer discovery (#654): off stops the quad-100 LocalAPI
         // probe reading the peer list during scans; Tailscale itself is
@@ -980,14 +898,6 @@ fun SettingsScreen(
         // Audio bridge (#257): play Linux app sound through the speaker via an
         // in-guest PulseAudio daemon. Experimental — streams continuously while
         // on, so it's off by default.
-        val audioBridge by viewModel.audioBridgeEnabled.collectAsState()
-        SettingsToggleItem(
-            icon = Icons.Filled.VolumeUp,
-            title = stringResource(R.string.settings_audio_bridge_title),
-            subtitle = stringResource(R.string.settings_audio_bridge_subtitle),
-            checked = audioBridge,
-            onCheckedChange = viewModel::setAudioBridgeEnabled,
-        )
 
         }
         CollapsibleSettingsSection(stringResource(R.string.settings_section_diagnostics), settingsExpanded[6], { settingsExpanded[6] = !settingsExpanded[6] }) {
@@ -1025,12 +935,6 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_view_connection_log_subtitle),
                 onClick = { showAuditLog = true },
             )
-            SettingsItem(
-                icon = Icons.Filled.ListAlt,
-                title = stringResource(R.string.settings_proot_install_log_title),
-                subtitle = stringResource(R.string.settings_proot_install_log_subtitle),
-                onClick = { showProotInstallLog = true },
-            )
             SettingsToggleItem(
                 icon = Icons.Filled.BugReport,
                 title = stringResource(R.string.settings_verbose_logging_title),
@@ -1041,7 +945,7 @@ fun SettingsScreen(
         }
         run {
             val context = LocalContext.current
-            val helper = sh.haven.core.local.WaylandSocketHelper
+            val helper = sh.haven.core.security.ShizukuExecutor
             var capturing by remember { mutableStateOf(helper.isCapturingLogcat) }
             // Hoisted out of the onClick callback (lint LocalContextGetResourceValueCall).
             val logcatSavedMsg = stringResource(R.string.settings_logcat_saved_toast)
@@ -1074,27 +978,10 @@ fun SettingsScreen(
         }
         CollapsibleSettingsSection(stringResource(R.string.settings_section_advanced), settingsExpanded[7], { settingsExpanded[7] = !settingsExpanded[7] }) {
         // The command the native compositor launches.
-        if (nativeFeatures.wayland) {
-            SettingsItem(
-                icon = Icons.Filled.DesktopWindows,
-                title = stringResource(R.string.settings_wayland_shell_title),
-                subtitle = waylandShellCommand,
-                onClick = { showWaylandShellDialog = true },
-            )
-        }
-        SettingsItem(
-            icon = Icons.Filled.Timer,
-            title = stringResource(R.string.settings_proot_idle_title),
-            subtitle = if (prootIdleMinutes <= 0) {
-                stringResource(R.string.settings_proot_idle_off)
-            } else {
-                stringResource(R.string.settings_proot_idle_on, prootIdleMinutes)
-            },
-            onClick = { showProotIdleDialog = true },
-        )
+
         run {
             val context = LocalContext.current
-            val helper = sh.haven.core.local.WaylandSocketHelper
+            val helper = sh.haven.core.security.ShizukuExecutor
             val shizukuRunning = helper.isShizukuAvailable()
             val shizukuInstalled = shizukuRunning || helper.isShizukuInstalled(context)
             val shizukuGranted = shizukuRunning && helper.hasShizukuPermission()
@@ -1150,305 +1037,10 @@ fun SettingsScreen(
             onCheckedChange = viewModel::setExcludeFromRecents,
         )
 
-        // Media extensions stays in Advanced (moved up from below the MCP
-        // block when the MCP/agent settings were split into their own section).
-        // Which file extensions get ffmpeg previews and streaming.
-        if (nativeFeatures.ffmpeg) {
-            SettingsItem(
-                icon = Icons.Filled.PlayArrow,
-                title = stringResource(R.string.settings_media_extensions_title),
-                subtitle = mediaExtensions,
-                onClick = { showMediaExtensionsDialog = true },
-            )
-        }
         }
 
-        // ── AI agent (MCP) — its own top-level section ──
-        // Every "lets an outside thing poke Haven via MCP" surface in one place:
         // the endpoint master switch, per-capability gates, network exposure,
         // trust-loopback, copy URL/config, paired clients and standing policies.
-        CollapsibleSettingsSection(stringResource(R.string.settings_section_mcp), settingsExpanded[10], { settingsExpanded[10] = !settingsExpanded[10] }) {
-        // MCP agent endpoint. OFF by default. Read tools run unprompted; write
-        // tools require a per-call (or per-session) bottom-sheet consent.
-        SettingsToggleItem(
-            icon = Icons.Filled.Hub,
-            title = stringResource(R.string.settings_agent_endpoint_title),
-            subtitle = if (mcpAgentEndpointEnabled) {
-                stringResource(R.string.settings_agent_endpoint_subtitle_on)
-            } else {
-                stringResource(R.string.settings_agent_endpoint_subtitle_off)
-            },
-            checked = mcpAgentEndpointEnabled,
-            onCheckedChange = viewModel::setMcpAgentEndpointEnabled,
-        )
-        if (mcpAgentEndpointEnabled) {
-            // Per-capability gate above per-call consent. Enabling the
-            // endpoint isn't enough on its own — raw file reads need
-            // this extra opt-in, because they let an agent exfiltrate
-            // any file in one call where other tools are scoped to
-            // narrower surfaces (terminal scrollback, list-only, etc.).
-            SettingsToggleItem(
-                icon = Icons.Filled.Hub,
-                title = stringResource(R.string.settings_agent_file_read_title),
-                subtitle = if (agentAllowFileRead) {
-                    stringResource(R.string.settings_agent_file_read_subtitle_on)
-                } else {
-                    stringResource(R.string.settings_agent_file_read_subtitle_off)
-                },
-                checked = agentAllowFileRead,
-                onCheckedChange = viewModel::setAgentAllowFileRead,
-            )
-
-            // Power-user gate for `queue_terminal_input` — lets agents
-            // type text + ENTER into any connected SSH session at the
-            // next matching prompt. Off by default; this is real
-            // keystroke injection.
-            val agentAllowTerminalInputQueue by viewModel.agentAllowTerminalInputQueue.collectAsState()
-            SettingsToggleItem(
-                icon = Icons.Filled.Hub,
-                title = stringResource(R.string.settings_agent_terminal_input_title),
-                subtitle = if (agentAllowTerminalInputQueue) {
-                    stringResource(R.string.settings_agent_terminal_input_subtitle_on)
-                } else {
-                    stringResource(R.string.settings_agent_terminal_input_subtitle_off)
-                },
-                checked = agentAllowTerminalInputQueue,
-                onCheckedChange = viewModel::setAgentAllowTerminalInputQueue,
-            )
-
-            // Dedicated reverse-tunnel endpoint. The MCP server only
-            // binds loopback on-device; to reach it from a laptop as the
-            // network roams, Haven brings up a headless, auto-reconnecting
-            // `-R` forward over the chosen SSH profile (decoupled from any
-            // interactive terminal session). Unset = on-device only.
-            val sshProfiles by viewModel.sshProfiles.collectAsState()
-            val mcpTunnelEndpointProfileId by viewModel.mcpTunnelEndpointProfileId.collectAsState()
-            var tunnelEndpointExpanded by remember { mutableStateOf(false) }
-            val selectedEndpointLabel = sshProfiles
-                .firstOrNull { it.id == mcpTunnelEndpointProfileId }?.label
-            Box {
-                SettingsItem(
-                    icon = Icons.Filled.Hub,
-                    title = stringResource(R.string.settings_reverse_tunnel_title),
-                    subtitle = selectedEndpointLabel?.let {
-                        stringResource(R.string.settings_reverse_tunnel_subtitle_set, it)
-                    } ?: stringResource(R.string.settings_reverse_tunnel_subtitle_unset),
-                    onClick = { tunnelEndpointExpanded = true },
-                )
-                DropdownMenu(
-                    expanded = tunnelEndpointExpanded,
-                    onDismissRequest = { tunnelEndpointExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_reverse_tunnel_none)) },
-                        onClick = {
-                            viewModel.setMcpTunnelEndpointProfileId(null)
-                            tunnelEndpointExpanded = false
-                        },
-                    )
-                    sshProfiles.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                viewModel.setMcpTunnelEndpointProfileId(option.id)
-                                tunnelEndpointExpanded = false
-                            },
-                        )
-                    }
-                }
-            }
-
-            // Live status: is MCP actually riding a connected session right
-            // now? The picker above only says what's *configured* — this
-            // says what's actually open, so "why isn't MCP reaching my
-            // laptop" has an answer without checking logs.
-            val nearCarrierStatus by viewModel.mcpNearCarrierStatus.collectAsState()
-            nearCarrierStatus.profileLabel?.let { label ->
-                Text(
-                    text = if (nearCarrierStatus.active) {
-                        stringResource(R.string.settings_reverse_tunnel_status_active, label)
-                    } else {
-                        stringResource(R.string.settings_reverse_tunnel_status_inactive, label)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (nearCarrierStatus.active) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
-                )
-            }
-
-            // Expose the endpoint on the active WireGuard tunnel too — a
-            // stable netstack address WG peers can reach across roams, no
-            // reverse forward. Off by default (wider surface than loopback).
-            val mcpWireguardEnabled by viewModel.mcpWireguardEnabled.collectAsState()
-            SettingsToggleItem(
-                icon = Icons.Filled.Hub,
-                title = stringResource(R.string.settings_mcp_wireguard_title),
-                subtitle = if (mcpWireguardEnabled) {
-                    stringResource(R.string.settings_mcp_wireguard_subtitle_on)
-                } else {
-                    stringResource(R.string.settings_mcp_wireguard_subtitle_off)
-                },
-                checked = mcpWireguardEnabled,
-                onCheckedChange = viewModel::setMcpWireguardEnabled,
-            )
-
-            // Warn when another app's system VPN holds the same address Haven's
-            // userspace WireGuard netstack binds — the kernel VPN shadows our
-            // listener so the WG endpoint is silently unreachable.
-            val mcpWireguardCollision by viewModel.mcpWireguardCollision.collectAsState()
-            mcpWireguardCollision?.takeIf { mcpWireguardEnabled }?.let { collision ->
-                androidx.compose.foundation.layout.Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Icon(
-                        Icons.Filled.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .padding(end = 12.dp, top = 2.dp)
-                            .size(20.dp),
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.settings_mcp_wireguard_collision,
-                            collision.vpnInterface,
-                            collision.address,
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-
-            // Also bind the device's Wi-Fi/LAN address so a same-network
-            // client reaches the endpoint directly (no WireGuard, no reverse
-            // forward). Off by default (wider surface than loopback, though
-            // still gated by client pairing).
-            val mcpLanBindEnabled by viewModel.mcpLanBindEnabled.collectAsState()
-            SettingsToggleItem(
-                icon = Icons.Filled.Wifi,
-                title = stringResource(R.string.settings_mcp_lan_title),
-                subtitle = if (mcpLanBindEnabled) {
-                    stringResource(R.string.settings_mcp_lan_subtitle_on)
-                } else {
-                    stringResource(R.string.settings_mcp_lan_subtitle_off)
-                },
-                checked = mcpLanBindEnabled,
-                onCheckedChange = viewModel::setMcpLanBindEnabled,
-            )
-
-            // Loopback auto-trust: local clients (127.0.0.1 via adb forward
-            // or on-device) skip pairing + per-call consent prompts. On by
-            // default — a local client is already as trusted as the device.
-            // LAN / WireGuard clients always keep the full gate. (#214)
-            val trustLoopbackMcpClients by viewModel.trustLoopbackMcpClients.collectAsState()
-            SettingsToggleItem(
-                icon = Icons.Filled.Devices,
-                title = stringResource(R.string.settings_mcp_trust_loopback_title),
-                subtitle = if (trustLoopbackMcpClients) {
-                    stringResource(R.string.settings_mcp_trust_loopback_subtitle_on)
-                } else {
-                    stringResource(R.string.settings_mcp_trust_loopback_subtitle_off)
-                },
-                checked = trustLoopbackMcpClients,
-                onCheckedChange = viewModel::setTrustLoopbackMcpClients,
-            )
-
-            // Endpoint URL is always the canonical port range start —
-            // the server binds to the first free port in 8730..8739
-            val endpointUrl = "http://127.0.0.1:8730/mcp"
-            val mcpConfigJson = """
-                {
-                  "mcpServers": {
-                    "haven": {
-                      "type": "http",
-                      "url": "$endpointUrl"
-                    }
-                  }
-                }
-            """.trimIndent()
-            SettingsItem(
-                icon = Icons.Filled.ContentCopy,
-                title = stringResource(R.string.settings_mcp_copy_url_title),
-                subtitle = endpointUrl,
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                        as? android.content.ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText("Haven MCP endpoint", endpointUrl),
-                    )
-                    Toast.makeText(context, mcpUrlCopiedMsg, Toast.LENGTH_SHORT).show()
-                },
-            )
-            SettingsItem(
-                icon = Icons.Filled.ContentCopy,
-                title = stringResource(R.string.settings_mcp_copy_config_title),
-                subtitle = stringResource(R.string.settings_mcp_copy_config_subtitle),
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                        as? android.content.ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText(
-                            "Haven MCP server config",
-                            mcpConfigJson,
-                        ),
-                    )
-                    Toast.makeText(context, mcpConfigCopiedMsg, Toast.LENGTH_SHORT).show()
-                },
-            )
-            SettingsItem(
-                icon = Icons.Filled.Info,
-                title = stringResource(R.string.settings_mcp_proot_title),
-                subtitle = "~/.config/haven/mcp-servers.json",
-                onClick = {},
-            )
-            SettingsItem(
-                icon = Icons.Filled.History,
-                title = if (unseenAgentActivity)
-                    stringResource(R.string.settings_agent_activity_title) + "  ●"
-                else
-                    stringResource(R.string.settings_agent_activity_title),
-                subtitle = stringResource(R.string.settings_agent_activity_subtitle),
-                onClick = { showAgentActivity = true },
-            )
-            SettingsItem(
-                icon = Icons.Filled.Devices,
-                title = stringResource(R.string.settings_paired_clients_title),
-                subtitle = stringResource(R.string.settings_paired_clients_subtitle),
-                onClick = { showPairedClients = true },
-            )
-            SettingsItem(
-                icon = Icons.Filled.Tune,
-                title = stringResource(R.string.settings_mcp_tools_title),
-                subtitle = stringResource(R.string.settings_mcp_tools_subtitle),
-                onClick = { showMcpTools = true },
-            )
-            SettingsToggleItem(
-                icon = Icons.Filled.Fingerprint,
-                title = stringResource(R.string.settings_agent_confirm_destructive_title),
-                subtitle = stringResource(R.string.settings_agent_confirm_destructive_subtitle),
-                checked = requireAgentConsentForWrites,
-                onCheckedChange = viewModel::setRequireAgentConsentForWrites,
-            )
-            SettingsItem(
-                icon = Icons.Filled.LockReset,
-                title = stringResource(R.string.settings_agent_forget_allows_title),
-                subtitle = stringResource(R.string.settings_agent_forget_allows_subtitle),
-                onClick = {
-                    viewModel.forgetMemoisedAgentAllows()
-                    Toast.makeText(context, agentAllowsClearedMsg, Toast.LENGTH_SHORT).show()
-                },
-            )
-        }
-
-        }
         CollapsibleSettingsSection(stringResource(R.string.settings_section_backup), settingsExpanded[8], { settingsExpanded[8] = !settingsExpanded[8] }) {
         SettingsItem(
             icon = Icons.Filled.CloudUpload,
@@ -1466,7 +1058,7 @@ fun SettingsScreen(
                 importLauncher.launch(arrayOf("*/*"))
             },
         )
-        // Push/pull the encrypted backup to an existing SFTP/SMB/rclone
+
         // connection, so config moves between devices without shuffling files
         // by hand (#323).
         run {
@@ -1745,84 +1337,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showWaylandShellDialog) {
-        var shellCmd by rememberSaveable { mutableStateOf(waylandShellCommand) }
-        val shellOptions = listOf("/bin/sh -l", "/bin/ash -l", "/bin/bash -l", "/bin/zsh", "/bin/fish")
-        AlertDialog(
-            onDismissRequest = { showWaylandShellDialog = false },
-            title = { Text(stringResource(R.string.settings_wayland_dialog_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.settings_wayland_dialog_description),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    OutlinedTextField(
-                        value = shellCmd,
-                        onValueChange = { v -> shellCmd = v },
-                        label = { Text(stringResource(R.string.settings_wayland_shell_command_label)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    shellOptions.forEach { option ->
-                        FilterChip(
-                            selected = shellCmd == option,
-                            onClick = { shellCmd = option },
-                            label = { Text(option) },
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setWaylandShellCommand(shellCmd)
-                    showWaylandShellDialog = false
-                }) { Text(stringResource(R.string.common_save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWaylandShellDialog = false }) { Text(stringResource(R.string.common_cancel)) }
-            },
-        )
-    }
-
-    if (showMediaExtensionsDialog) {
-        var extText by rememberSaveable { mutableStateOf(mediaExtensions) }
-        AlertDialog(
-            onDismissRequest = { showMediaExtensionsDialog = false },
-            title = { Text(stringResource(R.string.settings_media_extensions_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.settings_media_extensions_description),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    OutlinedTextField(
-                        value = extText,
-                        onValueChange = { extText = it },
-                        label = { Text(stringResource(R.string.settings_media_extensions_label)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 3,
-                        maxLines = 5,
-                    )
-                    TextButton(onClick = {
-                        extText = UserPreferencesRepository.DEFAULT_MEDIA_EXTENSIONS
-                    }) {
-                        Text(stringResource(R.string.common_reset))
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setMediaExtensions(extText.trim())
-                    showMediaExtensionsDialog = false
-                }) { Text(stringResource(R.string.common_save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showMediaExtensionsDialog = false }) { Text(stringResource(R.string.common_cancel)) }
-            },
-        )
-    }
-
     if (showPromptCharsDialog) {
         var promptText by rememberSaveable { mutableStateOf(terminalPromptChars) }
         AlertDialog(
@@ -2072,17 +1586,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showProotIdleDialog) {
-        ProotIdleTimeoutDialog(
-            currentMinutes = prootIdleMinutes,
-            onDismiss = { showProotIdleDialog = false },
-            onConfirm = { minutes ->
-                viewModel.setProotIdleTimeoutMinutes(minutes)
-                showProotIdleDialog = false
-            },
-        )
-    }
-
     if (showToolbarConfigDialog) {
         ToolbarConfigDialog(
             layout = toolbarLayout,
@@ -2303,12 +1806,6 @@ private sealed interface BackupAction {
     data object EnableAutoPull : BackupAction
 }
 
-/**
- * Configure and trigger encrypted backup push/pull to an existing remote (#323).
- * Destination = one of the user's SFTP/SMB/rclone connections + a file path;
- * changes persist immediately. Push/Pull hand off to [BackupPasswordDialog] for
- * the passphrase (Push encrypts, Pull decrypts + restores).
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BackupSyncDialog(
@@ -2613,12 +2110,10 @@ private fun AboutDialog(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 val libraries = listOf(
-                    "rclone" to "Cloud storage engine (60+ providers) — MIT",
                     "IronRDP" to "RDP protocol (Rust/UniFFI) — MIT/Apache-2.0",
                     "JSch" to "SSH/SFTP protocol — BSD",
                     "smbj" to "SMB/CIFS protocol — Apache-2.0",
                     "ConnectBot termlib" to "Terminal emulator — Apache-2.0",
-                    "PRoot" to "Local Linux shell — GPL-2.0",
                     "Jetpack Compose" to "UI toolkit — Apache-2.0",
                     "Hack Nerd Font Mono" to "Terminal default font — Hack (MIT/Bitstream Vera) + Nerd Fonts patcher (MIT) + Font Awesome (CC-BY 4.0) + Material Design Icons (Apache-2.0) + Devicons/Octicons/Codicons/Powerline/Pomicons/Seti UI (MIT) + Weather Icons (SIL OFL 1.1) + IEC Power Symbols (Public Domain). See NOTICE-Fonts.md.",
                 )
@@ -3270,63 +2765,6 @@ private fun ScrollbackRowsDialog(
                 )
                 presets.forEach { preset ->
                     val label = stringResource(R.string.settings_scrollback_rows_value, preset)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selected = preset }
-                            .padding(vertical = 6.dp),
-                    ) {
-                        RadioButton(
-                            selected = selected == preset,
-                            onClick = { selected = preset },
-                        )
-                        Text(label, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(selected) }) {
-                Text(stringResource(R.string.common_ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
-        },
-    )
-}
-
-/**
- * Idle-timeout picker for the PRoot auto-stop (#409). Presets in minutes; 0 = off.
- */
-@Composable
-private fun ProotIdleTimeoutDialog(
-    currentMinutes: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit,
-) {
-    val presets = listOf(0, 5, 15, 30, 60)
-    var selected by remember { mutableIntStateOf(currentMinutes) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_proot_idle_dialog_title)) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.settings_proot_idle_dialog_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-                presets.forEach { preset ->
-                    val label = if (preset <= 0) {
-                        stringResource(R.string.settings_proot_idle_off_label)
-                    } else {
-                        pluralStringResource(R.plurals.settings_proot_idle_minutes, preset, preset)
-                    }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -4305,7 +3743,7 @@ private fun DevInstallDialog(
                 onClick = {
                     installing = true
                     status = "Starting..."
-                    sh.haven.core.local.WaylandSocketHelper.installApkFromUrl(
+                    sh.haven.core.security.ShizukuExecutor.installApkFromUrl(
                         context = context,
                         url = url.trim(),
                         onProgress = { msg -> status = msg },

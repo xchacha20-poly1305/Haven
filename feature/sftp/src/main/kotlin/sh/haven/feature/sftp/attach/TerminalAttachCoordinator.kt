@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import sh.haven.core.data.repository.ConnectionRepository
-import sh.haven.core.rclone.RcloneClient
 import sh.haven.core.security.posixShellQuote as shellQuote
 import sh.haven.feature.sftp.transport.TransportSelector
 import java.io.File
@@ -21,25 +20,10 @@ import javax.inject.Singleton
 
 private const val TAG = "AttachCoordinator"
 
-/**
- * Mediates the terminal's "attach (paperclip)" flow:
- *
- *  1. The terminal screen launches a SAF picker, then calls [attach] with
- *     the resulting URI. [attach] suspends and publishes a [pendingRequest]
- *     so the SFTP screen can render a folder-picker mode.
- *  2. The user navigates to a destination folder and confirms via
- *     [confirmFolder], or backs out via [cancel].
- *  3. On confirm, [attach] uploads the file (SSH or rclone) and returns
- *     the shell-quoted reference (absolute path or share URL) for the
- *     terminal to inject at the cursor. On cancel, [attach] returns null.
- *
- * Singleton-scoped so the SFTP and terminal screens — which live in
- * separate ViewModels — both observe the same [pendingRequest] state.
- */
 @Singleton
 class TerminalAttachCoordinator @Inject constructor(
     private val transportSelector: TransportSelector,
-    private val rcloneClient: RcloneClient,
+
     private val connectionRepository: ConnectionRepository,
     @ApplicationContext private val appContext: Context,
 ) {
@@ -57,9 +41,7 @@ class TerminalAttachCoordinator @Inject constructor(
     /** What the picker resolved to. */
     data class DestinationChoice(
         val profileId: String,
-        val isRclone: Boolean,
-        /** Non-null iff [isRclone]. The rclone backend name (e.g. "gdrive"). */
-        val rcloneRemote: String?,
+
         val folderPath: String,
     )
 
@@ -96,9 +78,9 @@ class TerminalAttachCoordinator @Inject constructor(
     }
 
     /** Called by the SFTP screen when the user taps "Use this folder". */
-    fun confirmFolder(profileId: String, isRclone: Boolean, rcloneRemote: String?, folderPath: String) {
+    fun confirmFolder(profileId: String,   folderPath: String) {
         val req = _pendingRequest.value ?: return
-        req.deferred.complete(DestinationChoice(profileId, isRclone, rcloneRemote, folderPath))
+        req.deferred.complete(DestinationChoice(profileId, folderPath))
     }
 
     /** Called by the SFTP screen when the user backs out of pick mode. */
@@ -134,13 +116,9 @@ class TerminalAttachCoordinator @Inject constructor(
         fileSize: Long,
     ): String = withContext(Dispatchers.IO) {
         val destPath = choice.folderPath.trimEnd('/') + "/" + fileName
-        if (choice.isRclone) {
-            val remote = choice.rcloneRemote
-                ?: error("Rclone destination missing remote name")
-            uploadToRclone(remote, destPath, fileName, sourceUri, fileSize)
-        } else {
+
             uploadToSsh(choice.profileId, destPath, fileName, sourceUri, fileSize)
-        }
+
     }
 
     private suspend fun uploadToSsh(
@@ -168,36 +146,4 @@ class TerminalAttachCoordinator @Inject constructor(
         return shellQuote(destPath)
     }
 
-    private fun uploadToRclone(
-        remote: String,
-        destPath: String,
-        fileName: String,
-        sourceUri: Uri,
-        fileSize: Long,
-    ): String {
-        // rclone copyfile takes a srcFs/srcRemote pair. For a SAF URI we
-        // first stage the bytes to the cache dir so the local filesystem
-        // backend can address it as <cacheDir>/<fileName>.
-        val tempFile = File(appContext.cacheDir, "attach_${System.currentTimeMillis()}_$fileName")
-        try {
-            _progress.value = Progress(fileName, fileSize, 0)
-            appContext.contentResolver.openInputStream(sourceUri)?.use { input ->
-                tempFile.outputStream().use { input.copyTo(it) }
-            } ?: error("Cannot read source $sourceUri")
-            rcloneClient.copyFile(tempFile.parent!!, tempFile.name, remote, destPath)
-            _progress.value = Progress(fileName, fileSize, fileSize)
-        } finally {
-            tempFile.delete()
-            _progress.value = null
-        }
-
-        val supportsLink = runCatching { rcloneClient.getCapabilities(remote).publicLink }
-            .getOrDefault(false)
-        if (supportsLink) {
-            runCatching { rcloneClient.publicLink(remote, destPath) }
-                .onSuccess { return shellQuote(it) }
-                .onFailure { Log.w(TAG, "publicLink($remote, $destPath) failed", it) }
-        }
-        return shellQuote("$remote:$destPath")
-    }
 }

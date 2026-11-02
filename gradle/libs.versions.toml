@@ -37,14 +37,11 @@ orgjson = "20240303"
 # terminal's Scan/Recognize attach options and remote-desktop MCP OCR.
 # ZXing core is pure Java (Apache 2.0). ONNX Runtime is MIT-licensed on Central.
 zxing = "3.5.4"
-onnxruntime = "1.31.1"
 # USB serial driver library (mik3y). MIT-licensed, no transitive deps — pure
 # Android USB host API. Drives CDC-ACM + CH34x/FTDI/CP21xx/Prolific adapters
 # for the USB-serial terminal connection type. JitPack, like jsch.
 usbSerial = "3.11.0"
-# Pure-Java XZ decoder, BSD-licensed. Needed to extract tar.xz rootfs
 # tarballs (Debian / Ubuntu / Arch from proot-distro). Tiny (~110KB).
-xz = "1.12"
 
 [libraries]
 # Compose BOM
@@ -111,11 +108,7 @@ termlib = { group = "org.connectbot", name = "termlib", version.ref = "termlib" 
 # remote-desktop MCP OCR + k-d tree spatial index. ZXing-core stays pure Java
 # (no Android dep), and ONNX Runtime ships native libs per ABI on Maven Central.
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
-onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
 usbserial = { group = "com.github.mik3y", name = "usb-serial-for-android", version.ref = "usbSerial" }
-
-# XZ decoder for tar.xz rootfs tarballs (Debian / Ubuntu via proot-distro).
-xz = { group = "org.tukaani", name = "xz", version.ref = "xz" }
 
 # JNA (for UniFFI-generated bindings — keep in sync with rdp-kotlin/build.gradle.kts)
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }

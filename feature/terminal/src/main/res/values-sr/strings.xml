@@ -42,7 +42,6 @@
     <string name="terminal_paste_no_active_tab">Нема активне картице у коју може да се налепи</string>
     <string name="terminal_link_open_failed">Овај линк не може да отвори ниједна апликација</string>
     <string name="terminal_link_scheme_blocked">Блокирани линк (схема се не подржава)</string>
-    <string name="terminal_local_vnc_failed">Није могао да се покрене локални десктоп</string>
     <string name="terminal_search">Претражи</string>
     <string name="terminal_new_tab_no_active">Нема активне сесије која може да се клонира</string>
     <string name="terminal_new_tab_no_config">Није пронађена конфиг везе \t— пробајте прво да поново успоставите везу</string>
@@ -50,7 +49,7 @@
     <string name="terminal_new_tab_host_key_unknown">Непознати кључ хоста за %s — најпре отворите ову везу да је проверите и поставите поверење</string>
     <string name="terminal_new_tab_connection_failed">Не може да се повеже: %s</string>
     <string name="terminal_new_tab_shell_failed">Не може да се отвори љуска: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">Нема активне Reticulum сесије која може да се клонира</string>
+
     <string name="terminal_new_tab_connecting">Повезивање…</string>
     <string name="terminal_connect_prompt">Повежите се на сервер да започнете сесију.</string>
     <string name="terminal_sessions_title">%s сесија</string>
@@ -107,10 +106,7 @@
     <string name="terminal_attach_scan_camera_desc">Фотографише QR или баркод и налепљује његов садржај</string>
     <string name="terminal_attach_scan_gallery">Скенирај кôд (фотографије)</string>
     <string name="terminal_attach_scan_gallery_desc">Бира фотографију QR или баркода и налепљује његов садржај</string>
-    <string name="terminal_attach_ocr_camera">Препознај текст (камера)</string>
-    <string name="terminal_attach_ocr_camera_desc">Фотографише одштампани текст и налепљује оно што детектује</string>
-    <string name="terminal_attach_ocr_gallery">Препознај текст (фотографије)</string>
-    <string name="terminal_attach_ocr_gallery_desc">Бира фотографију одштампаног текста и налепљује оно што детектује</string>
+
     <string name="terminal_scan_no_code">На слици није детектован ниједан кôд</string>
     <string name="terminal_scan_no_text">На слици није детектован текст</string>
     <string name="terminal_scan_failed">Није успело скенирање: %s</string>

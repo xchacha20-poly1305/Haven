@@ -71,12 +71,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: false
-      # Unit tests don't compile the Wayland native build, so we skip
-      # `wayland-android` entirely — its freedesktop submodule chain
-      # (cairo, mesa-drm, fontconfig, libinput) goes through
-      # gitlab.freedesktop.org which intermittently 5xxs and breaks
-      # this job for non-test reasons. The build job below still does
-      # the full recursive init.
       - uses: ./.github/actions/init-submodules-with-retry
         with:
           paths: |
@@ -84,10 +78,6 @@ jobs:
             mosh-kotlin
             et-kotlin
             spice-kotlin
-            reticulum-kt
-            rnsh-kt
-            build-proot/proot-termux
-            prns
       - uses: ./.github/actions/setup-toolchain
       - name: Run release unit tests
         # Same gating set as ci.yml: the sshlib contract tests are excluded
@@ -96,7 +86,7 @@ jobs:
         # bump failing them deterministically killed the v5.89.27 release run
         # while CI on the same SHA was green (#692). The default JSch engine
         # is what ships; restore the gate here when a fixed sshlib lands.
-        run: ./gradlew testDebugUnitTest -PexcludeSshlibContractTests=true -PskipWaylandNatives=true -PskipFfmpegNatives=true
+        run: ./gradlew testDebugUnitTest -PexcludeSshlibContractTests=true -PskipFfmpegNatives=true
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -137,21 +127,6 @@ jobs:
       - uses: ./.github/actions/setup-toolchain
       - name: Decode release keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > haven-release.jks
-      # -PtargetAbi lets core/wayland's buildWaylandNatives skip on the ABIs it
-      # has no binaries for. The five wayland natives are arm64-v8a only, so the
-      # x64 and armv7 jobs would otherwise spend ~20 minutes each building
-      # libraries they never package (#493).
-      # Both flavours ship from GitHub: `full` is the complete app and the
-      # only one F-Droid builds, `terminal` drops the desktop and media
-      # native payload for a ~20 MB smaller download (#510). The AAB stays
-      # full-only — it exists for store distribution, which the stripped
-      # flavour is not part of.
-      # The MEMSAMPLE loop prints host memory every 30s alongside the Gradle
-      # output. The v5.87.36 release attempts died five times in a row with
-      # "runner has received a shutdown signal" 26-31 min in (mid-minify) and
-      # nothing in the log to attribute it; this puts the ground truth in the
-      # log up to the moment of death, since evicted runners upload nothing
-      # afterwards.
       - name: Build signed APK + AAB (${{ matrix.abi }})
         run: |
           ( while true; do
@@ -166,14 +141,6 @@ jobs:
           # 15.2G used of ~16G, 625M available at the kill). One R8/bundle
           # peak at a time keeps the host inside its memory.
           set +e
-          # No -PskipUml here: the full flavour ships the UML guest, so this
-          # job is where the pinned fetch (core/local/fetch-uml.sh) is proven.
-          # -Pkotlin.compiler.execution.strategy=in-process removes the
-          # separate Kotlin daemon JVM (~3.5G committed at idle): its compile
-          # memory lives inside the 8G-capped Gradle daemon instead, which
-          # frees it before R8 allocates. v5.89.0's runners were evicted
-          # mid-R8 at 15.6G used / 373M available with the idle Kotlin daemon
-          # and a concurrent lintVitalAnalyze both sitting in that peak.
           ./gradlew :app:assemble${{ matrix.variant }}FullRelease \
             -PtargetAbi=${{ matrix.abi }} \
             -PnoLintVital \
@@ -208,7 +175,7 @@ jobs:
             pkill -f KotlinCompileDaemon || true
             sleep 5
             ./gradlew :app:assemble${{ matrix.variant }}TerminalRelease \
-              -PtargetAbi=${{ matrix.abi }} -PskipUml=true -PnoLintVital
+              -PtargetAbi=${{ matrix.abi }} -PnoLintVital
             rc=$?
           fi
           kill "$MEMSAMPLER" 2>/dev/null
@@ -331,7 +298,7 @@ jobs:
           **`haven-<version>-<abi>-terminal-release.apk`** — the same app with the
           desktop and media parts left out, for people who only use Haven for SSH,
           terminals, files and storage. Less than half the size on arm64. It drops
-          RDP and SPICE remote desktop, the native Wayland desktop, and ffmpeg — so
+          RDP and SPICE remote desktop — so
           no media conversion, and no video previews or streaming in the file
           browser. VNC is kept, so a Linux desktop running inside Haven's guest
           still works.

@@ -353,7 +353,6 @@
     <string name="connections_section_general">عام</string>
     <string name="connections_section_local_shell">الصدفة المحلية</string>
     <string name="connections_section_guest">ضيف لينكس</string>
-    <string name="connections_guest_desc">يُقلِع نواة لينكس حقيقية على هذا الجهاز، بنظام ملفات خاص وشبكة مستقلة. يُفكّ نظام الملفات (~512 ميغابايت) عند أول استخدام. لا حاجة لمضيف أو بيانات دخول.</string>
     <string name="connections_section_cloud_storage">التخزين السحابي</string>
     <string name="connections_section_vnc">إعدادات VNC</string>
     <string name="connections_section_rdp">إعدادات RDP</string>
@@ -362,27 +361,21 @@
     <string name="connections_section_terminal">الطرفية</string>
     <string name="connections_section_authentication">المصادقة</string>
     <string name="connections_section_embedded_vnc">VNC المضمّن</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">التوجيه</string>
-    <string name="connections_toggle_mcp_tunnel">إتاحة خادم MCP الخاص بـ Haven</string>
-    <string name="connections_helper_mcp_tunnel">يتيح MCP الخاص بـ Haven لكل جلسة على هذا الاتصال — تصل إلى http://127.0.0.1:8730/mcp وتتخطى (عبر الاسترجاع) الإقران والموافقة. يُطبَّق عند الاتصال. للوصول الدائم دون جلسة مفتوحة، عيّنه كاتصال MCP دائم التشغيل في الإعدادات → نقطة نهاية الوكيل.</string>
+
     <string name="connections_section_reconnect">إعادة الاتصال</string>
-    <string name="connections_local_shell_android_desc">يشغّل صدفة أندرويد الأصلية (/system/bin/sh). الوصول إلى أوامر أندرويد ونظام الملفات والجذر (إن توفّر).</string>
-    <string name="connections_local_shell_proot_desc">يشغّل صدفة Alpine Linux محليًا عبر PRoot. ينزّل نظام جذر أدنى (~4 ميجابايت) عند أول استخدام. لا حاجة إلى الجذر أو اتصال بالشبكة.</string>
     <string name="connections_dropdown_select_provider">اختر مزوّدًا…</string>
-    <string name="connections_helper_rclone_signin">سجّل الدخول عبر متصفحك عند أول اتصال.</string>
-    <string name="connections_helper_rclone_credentials">أدخل تفاصيل حساب هذا المزوّد، ثم اضغط تهيئة لحفظ السجل البعيد والتحقق منه.</string>
-    <string name="connections_rclone_configure">تهيئة والتحقق</string>
-    <string name="connections_rclone_configured_ok">تمت تهيئة السجل البعيد والتحقق منه.</string>
+
     <string name="connections_dropdown_select_ssh">اختر اتصال SSH</string>
     <string name="connections_helper_add_ssh_first">أضِف اتصال SSH أولًا</string>
     <string name="connections_ai_route_section">ناقل مسار الذكاء الاصطناعي</string>
     <string name="connections_ai_route_via_ssh">عبر SSH</string>
-    <string name="connections_ai_route_via_reticulum">عبر Reticulum</string>
+
     <string name="connections_field_ai_route_carrier">الوصلة الناقلة</string>
     <string name="connections_dropdown_select_carrier">اختر وصلة</string>
     <string name="connections_helper_ai_route">وجّه نقطة النهاية عبر ناقل: يفتح SSH تحويلاً محلياً من خلال جلسة الناقل، ويجسر Reticulum عبر الشبكة. يجب أن يكون الناقل متصلاً لمسارات Reticulum.</string>
-    <string name="connections_helper_add_reticulum_first">أضف وصلة Reticulum أولاً</string>
+
     <string name="connections_toggle_rdp_nla">مصادقة على مستوى الشبكة (NLA)</string>
     <string name="connections_helper_mosh_required">يتطلب mosh-server على المضيف البعيد</string>
     <string name="connections_helper_et_required">يتطلب etserver على المضيف البعيد (المنفذ %1$s)</string>
@@ -436,8 +429,7 @@
     <string name="connections_spa_host_blank">المضيف فارغ</string>
     <string name="connections_spa_success">تم إرسال حزمة SPA بحجم %1$d بايت في %2$d مللي ثانية</string>
     <string name="connections_spa_failed">فشل بعد %1$d مللي ثانية: %2$s</string>
-    <string name="connections_agent_active">الوكيل نشط</string>
-    <string name="connections_agent_activity">نشاط الوكيل</string>
+
     <string name="connections_pf_type_local">محلي</string>
     <string name="connections_pf_type_remote">بعيد</string>
     <string name="connections_pf_type_dynamic">ديناميكي (SOCKS5)</string>
@@ -465,7 +457,7 @@
     <string name="connections_pf_dynamic_explanation">يمكن لعملاء SOCKS5 على جهازك الاتصال بـ %1$s:%2$s وطلب أي وجهة. كل طلب يفتح قناة tcpip مباشرة جديدة عبر خادم SSH.</string>
     <string name="connections_pf_dynamic_port_fallback">&lt;port&gt;</string>
     <string name="connections_hosts_discovered">تم اكتشاف %1$d مضيف</string>
-    <string name="connections_rclone_provider_cloud">سحابي</string>
+
     <string name="connections_list_via">عبر %1$s</string>
     <string name="connections_auth_methods_title">طرق المصادقة</string>
     <string name="connections_auth_methods_description">تُجرَّب بالترتيب في اتصال واحد — للخوادم التي تتطلب أكثر من طريقة (مثل مفتاح + كلمة مرور، أو سلاسل PAM/OTP).</string>
@@ -484,35 +476,10 @@
     <string name="connections_auth_confirm_otp_desc">عرض الرمز المُنشأ لتأكيد بنقرة واحدة بدلًا من إرساله تلقائيًا.</string>
     <string name="connections_vm_copied_short">تم النسخ</string>
     <string name="connections_vm_terminal_not_found">تطبيق الطرفية غير موجود</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_local_distro_label">فتح في نظام التشغيل</string>
-    <string name="connections_local_distro_active_default">التوزيعة النشطة (افتراضي)</string>
 
-    <string name="connections_section_openai">نقطة نهاية الذكاء الاصطناعي</string>
-    <string name="connections_field_openai_host">عنوان الخادم</string>
-    <string name="connections_field_openai_host_hint">عنوان IP أو اسم مضيف أو رابط http:// كامل</string>
-    <string name="connections_field_openai_api_key">مفتاح API (اختياري)</string>
-    <string name="connections_field_openai_api_key_hint">يُرسَل كرمز Bearer. اتركه فارغًا للخوادم بدون مفتاح.</string>
-    <string name="connections_field_openai_path_prefix">بادئة المسار (اختيارية)</string>
-    <string name="connections_field_openai_path_prefix_hint">تُدرَج قبل /v1 — مثل /api</string>    <string name="connections_field_openai_protocol">بروتوكول الاتصال</string>
-    <string name="connections_field_openai_protocol_hint">متوافق مع OpenAI افتراضيًا؛ Ollama وAnthropic وGemini تغيّر المسارات والمصادقة.</string>
-
-    <string name="connections_openai_url_preview">عنوان نقطة النهاية: %1$s</string>
     <!-- Email account -->
     <string name="connections_section_email">حساب البريد الإلكتروني</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">المزوّد: ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">يستخدم واجهة Proton غير الرسمية. هذه الواجهة عُكست هندسيًا وتخالف شروط Proton — قد يُقيَّد حسابك أو يُقفل. تابع على مسؤوليتك الخاصة.</string>
-    <string name="connections_field_email_address">عنوان البريد الإلكتروني</string>
-    <string name="connections_field_email_password">كلمة المرور</string>
-    <string name="connections_field_email_mailbox_password">كلمة مرور صندوق البريد (وضع كلمتَي المرور فقط)</string>
-    <string name="connections_email_mailbox_password_hint">اتركه فارغًا ما لم يكن لحساب Proton الخاص بك كلمة مرور منفصلة لصندوق البريد.</string>
-    <string name="connections_email_2fa_hint">إذا كان لحسابك تحقق بخطوتين، فاربط سرّ TOTP الخاص به في مدير مفاتيح SSH / TOTP وسيُطبَّق تلقائيًا.</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">استخدم كلمة مرورك، أو كلمة مرور التطبيق إذا كان مزوّدك يتطلبها (Fastmail، iCloud، Yahoo، Gmail/تحقق بخطوتين).</string>
-    <string name="connections_email_preset_label">إعداد مسبق للمزوّد</string>
-    <string name="connections_email_app_password_link">إنشاء كلمة مرور تطبيق لـ %1$s</string>
     <string name="connections_field_imap_server">خادم IMAP</string>
     <string name="connections_field_smtp_server">خادم SMTP</string>
     <string name="connections_field_smtp_server_help">اتركه فارغًا لاستخدام خادم IMAP.</string>
@@ -533,10 +500,6 @@
     <string name="connections_fido_wrong_body">لا يحتوي هذا المفتاح على بيانات الاعتماد التي طلبها الخادم. قدّم المفتاح المطلوب والمسه.</string>
     <string name="connections_auth_key_picker">المفتاح: %1$s ▾</string>
     <string name="connections_auth_key_only">✓ استخدام هذا المفتاح فقط</string>
-    <string name="connections_mcp_active">الوكيل يعمل على هذا الاتصال — انقر لتعطيل MCP له</string>
-    <string name="connections_mcp_disabled">MCP معطّل لهذا الاتصال — انقر للتفعيل</string>
-    <string name="connections_toggle_mcp_enabled">السماح لوكيل MCP على هذا الاتصال</string>
-    <string name="connections_helper_mcp_enabled">عند الإيقاف، تُرفض أدوات وكيل الذكاء الاصطناعي (MCP) الموجّهة إلى هذا الاتصال. يستمر الاتصال في العمل كالمعتاد بالنسبة لك.</string>
 
     <!-- Backfill 2026-07: strings added since the last i18n pass -->
     <string name="connections_android_shell_label">‏shell الأصلي لنظام Android</string>
@@ -545,20 +508,9 @@
     <string name="connections_background_opacity_value">العتامة: %1$d%%</string>
     <string name="connections_reveal_password_title">إظهار كلمة المرور المحفوظة</string>
     <string name="connections_reveal_password_subtitle">أكّد هويتك لعرض كلمة المرور المحفوظة</string>
-    <string name="rclone_import_title">استيراد سجلات rclone البعيدة</string>
-    <string name="rclone_import_intro">الصق ملف rclone.conf من Linux أو اختر الملف. تُستورد السجلات البعيدة (بما فيها رموز OAuth) كما هي، فلا تحتاج إلى إعادة تهيئتها.</string>
-    <string name="rclone_import_pick_file">اختيار rclone.conf…</string>
-    <string name="rclone_import_paste_label">محتوى rclone.conf</string>
-    <string name="rclone_import_parse">البحث عن السجلات البعيدة</string>
-    <string name="rclone_import_encrypted">هذا الملف هو تهيئة rclone مشفّرة بكلمة مرور. نفّذ \"rclone config show\" على الحاسوب والصق المخرجات المفكوكة التشفير بدلًا منه.</string>
-    <string name="rclone_import_already_added">أُضيف بالفعل</string>
-    <string name="rclone_import_no_type">بدون نوع</string>
-    <string name="rclone_import_select_count">استيراد %1$d من السجلات البعيدة</string>
-    <string name="rclone_import_done">تم استيراد %1$d، وتخطي %2$d، وفشل %3$d.</string>
-    <string name="rclone_import_menu">استيراد تهيئة rclone…</string>
+
     <string name="connections_section_spice">إعدادات SPICE</string>
-    <string name="connections_section_mcp">وكيل الذكاء الاصطناعي (MCP)</string>
-    <string name="connections_rclone_configure_first">اضغط “تهيئة والتحقق” لحفظ هذا السجل البعيد قبل أن تتمكن من حفظ الاتصال.</string>
+
     <string name="connections_helper_spice_auth">يستخدم SPICE تذكرة/كلمة مرور واحدة اختيارية. اتركها فارغة لخادم بدون تذكرة.</string>
     <string name="connections_auth_any_hardware_key">أي مفتاح أمان (FIDO)</string>
     <string name="connections_deeplink_confirm_title">هل تريد الاتصال؟</string>

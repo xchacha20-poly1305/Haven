@@ -21,7 +21,6 @@ import sh.haven.core.ssh.SshSessionManager
 import sh.haven.core.ssh.TerminalAttachment
 import sh.haven.core.ssh.TerminalAttachmentProvider
 import sh.haven.core.ssh.TerminalSession
-import sh.haven.feature.terminal.agent.TerminalSessionRegistry
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -63,7 +62,7 @@ class SshTerminalEmulatorOwner @Inject constructor(
     private val connectionRepository: ConnectionRepository,
     @ApplicationContext private val appContext: Context,
     private val preferencesRepository: UserPreferencesRepository,
-    private val registry: TerminalSessionRegistry,
+
     private val inlineImageConsent: InlineImageConsentRegistry,
 ) {
     /** Per-session emulator + output pipeline, owned here across ViewModel cycles. */
@@ -270,19 +269,7 @@ class SshTerminalEmulatorOwner @Inject constructor(
             closeBundleResources(previous)
         }
 
-        // Pre-register so MCP reads (read_terminal_snapshot / feed_terminal_output)
         // work from connect time, before any UI tab mounts.
-        registry.register(sessionId, emulator)
-        registry.setAgentHandles(
-            sessionId,
-            mouseTracker.mouseMode,
-            mouseTracker.activeMouseMode,
-            mouseTracker.bracketPasteMode,
-            mouseTracker.altScreen,
-            mouseTracker.cursorKeyAppMode,
-            oscHandler,
-            feedOutput,
-        )
 
         return object : TerminalAttachment {
             override val onData: (ByteArray, Int, Int) -> Unit = feedOutput
@@ -322,13 +309,12 @@ class SshTerminalEmulatorOwner @Inject constructor(
         }
         b.closed = true
         b.recorder?.close()
-        registry.unregister(sessionId, b.profileId, b.label)
         // Deny + free the consent state: a prompt parked on this emulator's
         // gate must not outlive it (#583).
         inlineImageConsent.drop(sessionId)
         // Frees the native terminal now rather than whenever the collector next
         // runs (#509). Unregistering and marking closed first matters: it stops
-        // the MCP agent and EmulatorWriteBuffer from handing out or writing to
+
         // this emulator before close runs.
         closeEmulatorSafely(b)
         Log.d(TAG, "Disposed SSH emulator bundle for $sessionId")

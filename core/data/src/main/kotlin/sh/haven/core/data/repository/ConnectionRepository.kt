@@ -60,13 +60,6 @@ class ConnectionRepository @Inject constructor(
 
     suspend fun markConnected(id: String) = connectionDao.updateLastConnected(id)
 
-    /** Toggle whether the MCP agent may operate on this connection (targeted, no re-encrypt). */
-    suspend fun updateMcpEnabled(id: String, enabled: Boolean) =
-        connectionDao.updateMcpEnabled(id, enabled)
-
-    /** Cheap mcpEnabled lookup (no decryption) for the MCP dispatch hot path; null if unknown. */
-    suspend fun isMcpEnabled(id: String): Boolean? = connectionDao.isMcpEnabled(id)
-
     suspend fun updateSortOrder(id: String, sortOrder: Int) = connectionDao.updateSortOrder(id, sortOrder)
 
     /** Targeted host update, no re-encrypt — #376 rediscovery follows a device to its new DHCP address. */

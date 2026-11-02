@@ -17,23 +17,10 @@ import sh.haven.core.data.repository.WorkspaceRepository
 import sh.haven.core.ssh.SessionManagerRegistry
 import sh.haven.core.ssh.SessionStatus
 import sh.haven.core.ssh.Transport
-import sh.haven.core.wayland.WaylandBridge
 import javax.inject.Inject
 
 private const val TAG = "WorkspaceViewModel"
 
-/**
- * Connections-screen-scoped ViewModel for workspace profile management.
- * Wraps [WorkspaceRepository] (CRUD) and [WorkspaceLauncher]
- * (orchestration) so the UI has a single observable surface.
- *
- * The "save current" flow snapshots state visible from app-singleton
- * sources only — [SessionManagerRegistry] for live transport sessions
- * and [WaylandBridge] for the compositor. VNC tabs and SFTP active
- * profile/path live in page-scoped ViewModels and are intentionally
- * out of scope for v1's automatic capture; users can add those items
- * manually in the save dialog (Stage 4).
- */
 @HiltViewModel
 class WorkspaceViewModel @Inject constructor(
     private val workspaceRepository: WorkspaceRepository,
@@ -113,14 +100,6 @@ class WorkspaceViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Snapshot the live state visible to app singletons — every
-     * connected transport session and the Wayland compositor running
-     * flag — into a draft list. The dialog renders each as a checkable
-     * row (see [CapturedDraft.host]/[CapturedDraft.sessionType] for its
-     * "&lt;host&gt; tmux &lt;name&gt;" label), so the user picks which to
-     * keep, then calls [save] with the selected subset.
-     */
     suspend fun captureFromSingletons(workspaceId: String): List<CapturedDraft> =
         withContext(Dispatchers.IO) {
             val sessions = sessionManagerRegistry.allSessions
@@ -148,31 +127,10 @@ class WorkspaceViewModel @Inject constructor(
                 )
             }
 
-            if (waylandIsRunning()) {
-                drafts += CapturedDraft(
-                    item = WorkspaceItem(
-                        workspaceId = workspaceId,
-                        kind = WorkspaceItem.Kind.WAYLAND,
-                        connectionProfileId = null,
-                        sortOrder = drafts.size,
-                    ),
-                    host = null,
-                    sessionType = null,
-                )
-            }
-
             Log.d(TAG, "captureFromSingletons → ${drafts.size} draft items")
             drafts
         }
 
-    private fun waylandIsRunning(): Boolean = try {
-        WaylandBridge.isCompositorRunning()
-    } catch (e: UnsatisfiedLinkError) {
-        // The Wayland native lib isn't loaded under unit tests. Treat
-        // as "not running" rather than failing the whole capture.
-        Log.d(TAG, "Wayland native lib unavailable; treating as not running: ${e.message}")
-        false
-    }
 }
 
 /**
@@ -188,27 +146,12 @@ data class CapturedDraft(
     val sessionType: String?,
 )
 
-/**
- * Map the unified [Transport] enum to its [WorkspaceItem.Kind]:
- * - SSH / Mosh / ET / Reticulum / Local → TERMINAL
- * - SMB → FILE_BROWSER
- * - RDP → DESKTOP
- *
- * VNC is not in [SessionManagerRegistry] (no session manager), so it
- * isn't represented here — automatic capture skips VNC tabs in v1.
- * MAIL has no workspace Kind yet, so it's likewise skipped (null).
- * RCLONE never reaches here: it contributes no sessions to the registry
- * (storage handles, not live sessions — #363), so nothing carries that
- * transport into a workspace item.
- */
 private fun Transport.toWorkspaceKind(): WorkspaceItem.Kind? = when (this) {
-    Transport.SSH, Transport.MOSH, Transport.ET, Transport.RETICULUM, Transport.LOCAL, Transport.GUEST,
+    Transport.SSH, Transport.MOSH, Transport.ET,
     Transport.BTSERIAL, Transport.BLESERIAL, Transport.USBSERIAL ->
         WorkspaceItem.Kind.TERMINAL
     Transport.SMB -> WorkspaceItem.Kind.FILE_BROWSER
     Transport.RDP -> WorkspaceItem.Kind.DESKTOP
-    Transport.MAIL, Transport.RCLONE -> null
     // OPENAI is an HTTP chat session — no terminal, no file tree; not
     // captured into workspaces, like MAIL above.
-    Transport.OPENAI -> null
 }

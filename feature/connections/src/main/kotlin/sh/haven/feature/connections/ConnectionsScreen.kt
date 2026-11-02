@@ -1,5 +1,8 @@
 package sh.haven.feature.connections
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -32,8 +35,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Close
@@ -45,12 +46,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
@@ -60,38 +59,22 @@ import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SyncAlt
-import androidx.compose.material.icons.filled.Laptop
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.VpnKey
-import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -105,9 +88,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -115,7 +96,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -125,7 +105,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -160,12 +139,9 @@ fun ConnectionsScreen(
     // (HavenNavHost), not here — so a tab opens regardless of which screen is
     // composed (fixes Retry / connect_profile reliability, #121).
     onNavigateToSmb: (profileId: String) -> Unit = {},
-    onNavigateToRclone: (profileId: String) -> Unit = {},
-    onNavigateToEmail: (profileId: String) -> Unit = {},
-    onNavigateToChat: (profileId: String) -> Unit = {},
-    onNavigateToWayland: () -> Unit = {},
+
     onNavigateToConnections: () -> Unit = {},
-    onNavigateToAgentActivity: () -> Unit = {},
+
     /**
      * Slot for the Workspaces section, supplied by the host (HavenNavHost
      * provides it via WorkspaceSection). Rendered as the first item in
@@ -184,21 +160,8 @@ fun ConnectionsScreen(
     // Installed distros for a LOCAL profile's "open in" picker. Snapshotted
     // for this screen's lifetime — installs are rare and re-entering the
     // screen refreshes it.
-    val availableLocalDistros = remember { viewModel.installedLocalDistros() }
     val availableUsbDevices = remember { viewModel.availableUsbDevices() }
-    var showTunnelsScreen by remember { mutableStateOf(false) }
-    // When the user picks "+ New WireGuard tunnel" from a profile's
-    // Route-through dropdown, navigate to the Tunnels screen with the
-    // Add dialog auto-opened on that type. null means "Manage tunnels…"
-    // (no auto-open). Cloudflare Tunnel used to live here too but is
-    // now an inline SSH-profile transport — see #154.
-    var pendingTunnelAddType by remember {
-        mutableStateOf<sh.haven.core.data.db.entities.TunnelConfigType?>(null)
-    }
-    // (showDesktopsScreen removed in 3c — Desktops UI moved to top-level Desktop tab.)
     val profileStatuses by viewModel.profileStatuses.collectAsState()
-    val mcpExposure by viewModel.mcpExposure.collectAsState()
-    val agentActiveProfiles by viewModel.agentActiveProfiles.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
 
     // Derive profile colors matching terminal tab colors (by session registration order)
@@ -213,13 +176,8 @@ fun ConnectionsScreen(
             .withIndex()
             .associate { (i, id) -> id to PROFILE_COLORS[i % PROFILE_COLORS.size] }
     }
-    val discoveredDestinations by viewModel.discoveredDestinations.collectAsState()
     val discoveredHosts by viewModel.discoveredHosts.collectAsState()
-    val localVmStatus by viewModel.localVmStatus.collectAsState()
-    val showLinuxVmCard by viewModel.showLinuxVmCard.collectAsState()
-    val showDesktopsCard by viewModel.showDesktopsCard.collectAsState()
     val connectingProfileId by viewModel.connectingProfileId.collectAsState()
-    val launchingDesktop by viewModel.launchingDesktop.collectAsState()
     val error by viewModel.error.collectAsState()
     val warning by viewModel.warning.collectAsState()
     // haven://connect deep link (#305): confirm sheet for a matched profile,
@@ -228,10 +186,6 @@ fun ConnectionsScreen(
     val prefillNewConnection by viewModel.prefillNewConnection.collectAsState()
     val navigateToTerminal by viewModel.navigateToTerminal.collectAsState()
     val navigateToSmb by viewModel.navigateToSmb.collectAsState()
-    val navigateToRclone by viewModel.navigateToRclone.collectAsState()
-    val navigateToEmail by viewModel.navigateToEmail.collectAsState()
-    val navigateToChat by viewModel.navigateToChat.collectAsState()
-    val navigateToWayland by viewModel.navigateToWayland.collectAsState()
     val navigateBackToConnections by viewModel.navigateToConnections.collectAsState()
     val deploySuccess by viewModel.deploySuccess.collectAsState()
     val sessionSelection by viewModel.sessionSelection.collectAsState()
@@ -246,14 +200,10 @@ fun ConnectionsScreen(
     val subnetScanning by viewModel.subnetScanning.collectAsState()
     val jumpScanning by viewModel.jumpScanning.collectAsState()
     val jumpScanError by viewModel.jumpScanError.collectAsState()
-    val reticulumScanning by viewModel.reticulumScanning.collectAsState()
     val discoveredSmbHosts by viewModel.discoveredSmbHosts.collectAsState()
     val smbSubnetScanning by viewModel.smbSubnetScanning.collectAsState()
     val showMoshSetupGuide by viewModel.showMoshSetupGuide.collectAsState()
     val showMoshClientMissing by viewModel.showMoshClientMissing.collectAsState()
-    val desktopSetupState by viewModel.desktopSetupState.collectAsState()
-    val desktopStates by viewModel.desktopStates.collectAsState()
-    val desktopVncPasswordPrompt by viewModel.desktopVncPasswordPrompt.collectAsState()
     val groupLaunchState by viewModel.groupLaunchState.collectAsState()
     val certRenewing by viewModel.certRenewing.collectAsState()
 
@@ -264,37 +214,9 @@ fun ConnectionsScreen(
         }
     }
 
-    LaunchedEffect(navigateToWayland) {
-        if (navigateToWayland) {
-            onNavigateToWayland()
-            viewModel.consumeNavigateToWayland()
-        }
-    }
-
     LaunchedEffect(navigateToSmb) {
         navigateToSmb?.let { profileId ->
             onNavigateToSmb(profileId)
-            viewModel.onNavigated()
-        }
-    }
-
-    LaunchedEffect(navigateToRclone) {
-        navigateToRclone?.let { profileId ->
-            onNavigateToRclone(profileId)
-            viewModel.onNavigated()
-        }
-    }
-
-    LaunchedEffect(navigateToEmail) {
-        navigateToEmail?.let { profileId ->
-            onNavigateToEmail(profileId)
-            viewModel.onNavigated()
-        }
-    }
-
-    LaunchedEffect(navigateToChat) {
-        navigateToChat?.let { profileId ->
-            onNavigateToChat(profileId)
             viewModel.onNavigated()
         }
     }
@@ -318,9 +240,6 @@ fun ConnectionsScreen(
     // link with no saved match (#305). Cleared when the dialog closes so a
     // later manual "Add" isn't pre-filled.
     var prefillDraft by remember { mutableStateOf<ConnectionProfile?>(null) }
-    var showOverflowMenu by remember { mutableStateOf(false) }
-    var showImportRclone by rememberSaveable { mutableStateOf(false) }
-    var showVmSetup by rememberSaveable { mutableStateOf(false) }
     var editingProfileId by rememberSaveable { mutableStateOf<String?>(null) }
     val editingProfile = editingProfileId?.let { id -> connections.firstOrNull { it.id == id } }
     var connectingProfile by remember { mutableStateOf<ConnectionProfile?>(null) }
@@ -416,16 +335,10 @@ fun ConnectionsScreen(
 
     // Request POST_NOTIFICATIONS permission on Android 13+ so the foreground
     // service notification is visible and "Disconnect All" action works.
-    val reticulumIdentityHash by viewModel.reticulumIdentityHash.collectAsState()
 
     // #585: the identity a server whitelists is a private key, so it can only
-    // arrive as a file. Any MIME — Reticulum identity files have no registered
-    // type and pickers hide what they cannot name.
-    val reticulumIdentityPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.importReticulumIdentity(it) } }
 
-    LaunchedEffect(Unit) { viewModel.refreshReticulumIdentity() }
+    // type and pickers hide what they cannot name.
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -462,7 +375,7 @@ fun ConnectionsScreen(
         val action = viewModel.batteryPromptCheck(exempt)
         if (action != BatteryPromptAction.NONE) {
             // If Shizuku is available, silently whitelist without bothering the user
-            if (sh.haven.core.local.WaylandSocketHelper.tryDisableBatteryOptimization(context.packageName)) {
+            if (sh.haven.core.security.ShizukuExecutor.tryDisableBatteryOptimization(context.packageName)) {
                 viewModel.dismissBatteryPrompt()
             } else {
                 batteryDropDetected = action == BatteryPromptAction.OFFER_DROPPED
@@ -533,7 +446,7 @@ fun ConnectionsScreen(
     if (showAddDialog) {
         ConnectionEditDialog(
             prefill = prefillDraft,
-            discoveredDestinations = discoveredDestinations,
+
             discoveredHosts = discoveredHosts,
             discoveredSmbHosts = discoveredSmbHosts,
             sshProfiles = connections,
@@ -542,26 +455,19 @@ fun ConnectionsScreen(
             sshKeys = sshKeys,
             totpSecrets = totpSecrets,
             tunnelConfigs = tunnelConfigs,
-            availableDistros = availableLocalDistros,
+
             usbDevices = availableUsbDevices,
-            onManageTunnels = { preselect ->
-                pendingTunnelAddType = preselect
-                showTunnelsScreen = true
-            },
+
             globalSessionManagerLabel = globalSessionManagerLabel,
             subnetScanning = subnetScanning,
             smbSubnetScanning = smbSubnetScanning,
-            reticulumScanning = reticulumScanning,
-            reticulumIdentityHash = reticulumIdentityHash,
-            onImportReticulumIdentity = { reticulumIdentityPicker.launch(arrayOf("*/*")) },
+
             onScanSubnet = { viewModel.scanSubnet() },
             onScanSubnetSmb = { viewModel.scanSubnetSmb() },
             jumpScanning = jumpScanning,
             jumpScanError = jumpScanError,
             onScanSubnetViaJump = { jumpId -> viewModel.scanSubnetViaJump(jumpId) },
-            onScanReticulum = { host, port, netName, passphrase ->
-                viewModel.scanReticulumDestinations(host, port, netName, passphrase)
-            },
+
             onTestKnock = { host, sequence, delayMs ->
                 viewModel.testKnock(host, sequence, delayMs)
             },
@@ -572,9 +478,8 @@ fun ConnectionsScreen(
                 showAddDialog = false
                 prefillDraft = null
             },
-            onSave = { profile, cfTunnel, mcpTunnel ->
+            onSave = { profile, cfTunnel ->
                 viewModel.saveProfileWithEmbeddedCloudflareTunnel(profile, cfTunnel)
-                viewModel.reconcileMcpReverseTunnel(profile.id, mcpTunnel)
                 showAddDialog = false
                 prefillDraft = null
             },
@@ -624,82 +529,6 @@ fun ConnectionsScreen(
         )
     }
 
-    if (showImportRclone) {
-        ImportRcloneConfigDialog(onDismiss = { showImportRclone = false })
-    }
-
-    if (showVmSetup) {
-        val linuxVmLabel = stringResource(R.string.connections_linux_vm)
-        LinuxVmSetupDialog(
-            vmStatus = localVmStatus,
-            onConnectSsh = { port ->
-                showVmSetup = false
-                val existing = connections.find {
-                    it.host in listOf("localhost", "127.0.0.1") && it.port == port && it.username == "droid"
-                }
-                val profile = existing ?: ConnectionProfile(
-                    label = linuxVmLabel,
-                    host = "localhost",
-                    port = port,
-                    username = "droid",
-                )
-                if (existing == null) viewModel.saveConnection(profile)
-                connectingProfile = profile
-            },
-            onConnectSshDirect = { ip, port ->
-                showVmSetup = false
-                val existing = connections.find {
-                    it.host == ip && it.port == port && it.username == "droid"
-                }
-                val profile = existing ?: ConnectionProfile(
-                    label = linuxVmLabel,
-                    host = ip,
-                    port = port,
-                    username = "droid",
-                )
-                if (existing == null) viewModel.saveConnection(profile)
-                connectingProfile = profile
-            },
-            onConnectVnc = { port ->
-                showVmSetup = false
-                val sshPort = localVmStatus.sshPort ?: 8022
-                val existing = connections.find {
-                    it.host in listOf("localhost", "127.0.0.1") && it.port == sshPort && it.username == "droid"
-                }
-                val profile = (existing?.copy(vncPort = port, vncSshForward = false))
-                    ?: ConnectionProfile(
-                        label = linuxVmLabel,
-                        host = "localhost",
-                        port = sshPort,
-                        username = "droid",
-                        vncPort = port,
-                        vncSshForward = false,
-                    )
-                viewModel.saveConnection(profile)
-                connectingProfile = profile
-            },
-            onConnectVncDirect = { ip, port ->
-                showVmSetup = false
-                val existing = connections.find {
-                    it.host == ip && it.username == "droid"
-                }
-                val sshPort = localVmStatus.directSshPort ?: 22
-                val profile = (existing?.copy(vncPort = port, vncSshForward = false))
-                    ?: ConnectionProfile(
-                        label = linuxVmLabel,
-                        host = ip,
-                        port = sshPort,
-                        username = "droid",
-                        vncPort = port,
-                        vncSshForward = false,
-                    )
-                viewModel.saveConnection(profile)
-                connectingProfile = profile
-            },
-            onDismiss = { showVmSetup = false },
-        )
-    }
-
     editingProfile?.let { profile ->
         // Load the embedded Cloudflare Tunnel (if any) before showing the
         // dialog so the inline transport fields can pre-populate. Loading
@@ -711,9 +540,6 @@ fun ConnectionsScreen(
         ) {
             value = viewModel.embeddedCloudflareTunnelFor(profile.id)
         }
-        val mcpReverseTunnel = produceState(initialValue = false, key1 = profile.id) {
-            value = viewModel.hasMcpReverseTunnel(profile.id)
-        }
         // #274: stored credential fields are pre-filled with the decrypted
         // secret, so gate the eye-reveal behind a biometric prompt.
         val revealTitle = stringResource(R.string.connections_reveal_password_title)
@@ -721,7 +547,7 @@ fun ConnectionsScreen(
         ConnectionEditDialog(
             existing = profile,
             onRevealSavedSecret = { viewModel.authToRevealPassword(revealTitle, revealSubtitle) },
-            discoveredDestinations = discoveredDestinations,
+
             discoveredHosts = discoveredHosts,
             discoveredSmbHosts = discoveredSmbHosts,
             sshProfiles = connections,
@@ -730,28 +556,20 @@ fun ConnectionsScreen(
             sshKeys = sshKeys,
             totpSecrets = totpSecrets,
             tunnelConfigs = tunnelConfigs,
-            availableDistros = availableLocalDistros,
+
             usbDevices = availableUsbDevices,
             embeddedCloudflareTunnel = embeddedCf.value,
-            mcpReverseTunnelEnabled = mcpReverseTunnel.value,
-            onManageTunnels = { preselect ->
-                pendingTunnelAddType = preselect
-                showTunnelsScreen = true
-            },
+
             globalSessionManagerLabel = globalSessionManagerLabel,
             subnetScanning = subnetScanning,
             smbSubnetScanning = smbSubnetScanning,
-            reticulumScanning = reticulumScanning,
-            reticulumIdentityHash = reticulumIdentityHash,
-            onImportReticulumIdentity = { reticulumIdentityPicker.launch(arrayOf("*/*")) },
+
             onScanSubnet = { viewModel.scanSubnet() },
             onScanSubnetSmb = { viewModel.scanSubnetSmb() },
             jumpScanning = jumpScanning,
             jumpScanError = jumpScanError,
             onScanSubnetViaJump = { jumpId -> viewModel.scanSubnetViaJump(jumpId) },
-            onScanReticulum = { host, port, netName, passphrase ->
-                viewModel.scanReticulumDestinations(host, port, netName, passphrase)
-            },
+
             onTestKnock = { host, sequence, delayMs ->
                 viewModel.testKnock(host, sequence, delayMs)
             },
@@ -759,9 +577,8 @@ fun ConnectionsScreen(
                 viewModel.testSpa(host, config)
             },
             onDismiss = { editingProfileId = null },
-            onSave = { updated, cfTunnel, mcpTunnel ->
+            onSave = { updated, cfTunnel ->
                 viewModel.saveProfileWithEmbeddedCloudflareTunnel(updated, cfTunnel)
-                viewModel.reconcileMcpReverseTunnel(updated.id, mcpTunnel)
                 editingProfileId = null
             },
         )
@@ -821,7 +638,7 @@ fun ConnectionsScreen(
             onDismiss = { viewModel.dismissPasswordFallback() },
             onConnect = { username, password, rememberPassword ->
                 // Tunnel-mode (#121a) vs normal SSH login + the dismiss are all
-                // handled inside answerPasswordFallback, shared with the MCP
+
                 // answer_auth_prompt verb so both paths stay identical.
                 viewModel.answerPasswordFallback(
                     password,
@@ -876,25 +693,6 @@ fun ConnectionsScreen(
 
     // Rendered as a full-screen overlay Dialog so it's above the profile
     // edit dialog when the user taps "Manage tunnels…" from the picker.
-    if (showTunnelsScreen) {
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = {
-                showTunnelsScreen = false
-                pendingTunnelAddType = null
-            },
-            properties = androidx.compose.ui.window.DialogProperties(
-                usePlatformDefaultWidth = false,
-            ),
-        ) {
-            sh.haven.feature.tunnel.TunnelsScreen(
-                onBack = {
-                    showTunnelsScreen = false
-                    pendingTunnelAddType = null
-                },
-                initialAddType = pendingTunnelAddType,
-            )
-        }
-    }
 
     // (Desktops overlay removed in 3c — see app/desktop/DesktopManagerScreen.kt
     //  and the Manage toggle in app/navigation/DesktopScreen.kt.)
@@ -1017,32 +815,6 @@ fun ConnectionsScreen(
 
     // Desktop VNC password prompt — shown when starting a desktop that requires auth
     // but no stored password is available
-    desktopVncPasswordPrompt?.let { prompt ->
-        var vncPwd by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissDesktopVncPasswordPrompt() },
-            title = { Text(stringResource(R.string.connections_vnc_password_title)) },
-            text = {
-                sh.haven.core.ui.PasswordField(
-                    value = vncPwd,
-                    onValueChange = { vncPwd = it },
-                    label = stringResource(R.string.common_password),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { viewModel.onDesktopVncPasswordEntered(vncPwd) },
-                    enabled = vncPwd.isNotBlank(),
-                ) { Text(stringResource(R.string.common_connect)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissDesktopVncPasswordPrompt() }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
 
     var showNewGroupDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -1068,12 +840,11 @@ fun ConnectionsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.connections_title)) },
                 actions = {
-                    // Lit when the MCP transport has been called in the
+
                     // last 30s; absent entirely until the audit table
                     // has its first row. Tapping jumps to the audit
                     // log. Driven off the same Room table the
                     // AgentActivityScreen reads from.
-                    AgentActiveChip(onClick = onNavigateToAgentActivity)
                     // (Local Shell quick-launch icon removed in 3c — local
                     // shells are now a normal Connection +, no special
                     // topbar entrypoint needed.)
@@ -1083,29 +854,8 @@ fun ConnectionsScreen(
                     // WireGuard configs that other profiles route
                     // through), so they belong on this screen rather
                     // than in app Settings where they used to live.
-                    IconButton(onClick = {
-                        pendingTunnelAddType = null
-                        showTunnelsScreen = true
-                    }) {
-                        Icon(Icons.Filled.VpnLock, contentDescription = stringResource(R.string.connections_action_tunnels))
-                    }
                     IconButton(onClick = { showNewGroupDialog = true }) {
                         Icon(Icons.Filled.CreateNewFolder, contentDescription = stringResource(R.string.connections_new_group_action))
-                    }
-                    IconButton(onClick = { showOverflowMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = null)
-                    }
-                    DropdownMenu(
-                        expanded = showOverflowMenu,
-                        onDismissRequest = { showOverflowMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.rclone_import_menu)) },
-                            onClick = {
-                                showOverflowMenu = false
-                                showImportRclone = true
-                            },
-                        )
                     }
                 },
             )
@@ -1427,9 +1177,7 @@ fun ConnectionsScreen(
                                     indent = 0,
                                     isLastChild = false,
                                     profileStatuses = profileStatuses,
-                                    mcpExposure = mcpExposure,
-                                    agentActiveProfiles = agentActiveProfiles,
-                                    onToggleMcp = { enabled -> viewModel.toggleMcpEnabled(profile.id, enabled) },
+
                                     profileColors = profileColors,
                                     isConnecting = connectingProfileId == profile.id ||
                                         groupLaunchState?.connectingIds?.contains(profile.id) == true,
@@ -1441,7 +1189,7 @@ fun ConnectionsScreen(
                                         onTapProfile(
                                             profile, profileStatuses[profile.id], sshKeys,
                                             id != null && (id.keyId != null || id.password != null),
-                                            viewModel, onNavigateToSmb, onNavigateToRclone, onNavigateToEmail, onNavigateToChat,
+                                            viewModel, onNavigateToSmb,
                                         ) { connectingProfile = profile }
                                     },
                                     onRename = { newLabel -> viewModel.saveConnection(profile.copy(label = newLabel)) },
@@ -1453,8 +1201,7 @@ fun ConnectionsScreen(
                                     onConnectWithPassword = { connectingProfile = profile },
                                     onForgetPassword = { viewModel.forgetPassword(profile.id) },
                                     onPortForwards = { portForwardProfile = profile },
-                                    onReauthRclone = { viewModel.reauthRcloneProfile(profile) },
-                                    onCancelOAuth = { viewModel.cancelPendingOAuth(profile) },
+
                                     onNewSession = { viewModel.openNewSession(profile.id) },
                                     enableDrag = !isFiltering,
                                     dragModifier = if (!isFiltering) Modifier
@@ -1548,9 +1295,7 @@ fun ConnectionsScreen(
                                         indent = depIndent,
                                         isLastChild = isLastAtLevel,
                                         profileStatuses = profileStatuses,
-                                        mcpExposure = mcpExposure,
-                                        agentActiveProfiles = agentActiveProfiles,
-                                        onToggleMcp = { enabled -> viewModel.toggleMcpEnabled(dep.id, enabled) },
+
                                         profileColors = profileColors,
                                         isConnecting = connectingProfileId == dep.id ||
                                             groupLaunchState?.connectingIds?.contains(dep.id) == true,
@@ -1562,7 +1307,7 @@ fun ConnectionsScreen(
                                             onTapProfile(
                                                 dep, profileStatuses[dep.id], sshKeys,
                                                 id != null && (id.keyId != null || id.password != null),
-                                                viewModel, onNavigateToSmb, onNavigateToRclone, onNavigateToEmail, onNavigateToChat,
+                                                viewModel, onNavigateToSmb,
                                             ) { connectingProfile = dep }
                                         },
                                         onRename = { newLabel -> viewModel.saveConnection(dep.copy(label = newLabel)) },
@@ -1574,8 +1319,7 @@ fun ConnectionsScreen(
                                         onConnectWithPassword = { connectingProfile = dep },
                                         onForgetPassword = { viewModel.forgetPassword(dep.id) },
                                         onPortForwards = { portForwardProfile = dep },
-                                        onReauthRclone = { viewModel.reauthRcloneProfile(dep) },
-                                        onCancelOAuth = { viewModel.cancelPendingOAuth(dep) },
+
                                         onNewSession = { viewModel.openNewSession(dep.id) },
                                         dragModifier = if (ancestorDragged) Modifier
                                             .zIndex(1f)
@@ -1651,19 +1395,11 @@ private fun onTapProfile(
     hasUsableIdentity: Boolean,
     viewModel: ConnectionsViewModel,
     onNavigateToSmb: (String) -> Unit,
-    onNavigateToRclone: (String) -> Unit,
-    onNavigateToEmail: (String) -> Unit,
-    onNavigateToChat: (String) -> Unit,
+
     showPasswordDialog: () -> Unit,
 ) {
     if (profile.isLocal) {
         viewModel.connect(profile, "")
-    } else if (profileStatus == ProfileStatus.CONNECTED && profile.isEmail) {
-        onNavigateToEmail(profile.id)
-    } else if (profileStatus == ProfileStatus.CONNECTED && profile.isOpenai) {
-        onNavigateToChat(profile.id)
-    } else if (profileStatus == ProfileStatus.CONNECTED && profile.isRclone) {
-        onNavigateToRclone(profile.id)
     } else if (profileStatus == ProfileStatus.CONNECTED && profile.isSmb) {
         onNavigateToSmb(profile.id)
     } else if (profileStatus == ProfileStatus.CONNECTED && (profile.isVnc || profile.isRdp || profile.isSpice || profile.isGlkvm)) {
@@ -1697,25 +1433,6 @@ private fun onTapProfile(
         } else {
             showPasswordDialog()
         }
-    } else if (profile.isReticulum) {
-        viewModel.connect(profile, "")
-    } else if (profile.isEmail) {
-        // EMAIL profiles carry their own credentials (stored password / mailbox
-        // password / linked TOTP) — connectEmail handles SRP + unlock, so route
-        // straight through connect() like rclone rather than the password dialog.
-        viewModel.connect(profile, "")
-    } else if (profile.isOpenai) {
-        // OPENAI profiles carry their own (optional) API key on the profile —
-        // connectOpenAI verifies via /v1/models, so no password dialog.
-        viewModel.connect(profile, "")
-    } else if (profile.isRclone) {
-        // Rclone profiles don't take a Haven-side password — credentials
-        // live inside rclone's own config, and OAuth providers run their
-        // browser flow via RcloneSessionManager.connectSession. Routing
-        // straight through `connect()` lets connectRclone handle that
-        // (#108: previously fell through to the password catch-all and
-        // confused the user).
-        viewModel.connect(profile, "")
     } else if (hasUsableIdentity) {
         // An assigned identity supplies the username plus a key or password at
         // connect time (#360). connect() resolves it via applyTo(), so route
@@ -1748,9 +1465,7 @@ private fun ConnectionTreeItem(
     indent: Int,
     isLastChild: Boolean,
     profileStatuses: Map<String, ProfileStatus>,
-    mcpExposure: Map<String, McpExposureKind>,
-    agentActiveProfiles: Map<String, Long>,
-    onToggleMcp: (Boolean) -> Unit,
+
     profileColors: Map<String, Color>,
     isConnecting: Boolean,
     hasKeys: Boolean,
@@ -1766,8 +1481,7 @@ private fun ConnectionTreeItem(
     onConnectWithPassword: () -> Unit,
     onForgetPassword: () -> Unit,
     onPortForwards: () -> Unit,
-    onReauthRclone: () -> Unit,
-    onCancelOAuth: () -> Unit,
+
     onNewSession: () -> Unit,
     enableDrag: Boolean = true,
     dragModifier: Modifier = Modifier,
@@ -1934,51 +1648,13 @@ private fun ConnectionTreeItem(
             ListItem(
                 headlineContent = { Text(profile.label) },
                 supportingContent = {
-                    if (profile.isLocal) {
-                        Text(
-                            stringResource(
-                                if (profile.useAndroidShell) R.string.connections_android_shell_label
-                                else R.string.connections_proot_label,
-                            ),
-                        )
-                    } else if (profile.isReticulum) {
-                        Text("RNS: ${profile.destinationHash?.take(12) ?: ""}... via ${profile.reticulumHost}:${profile.reticulumPort}")
-                    } else if (profile.isRclone) {
-                        val providerLabel = when (profile.rcloneProvider) {
-                            "drive" -> "Google Drive"
-                            "dropbox" -> "Dropbox"
-                            "onedrive" -> "OneDrive"
-                            "s3" -> "Amazon S3"
-                            "b2" -> "Backblaze B2"
-                            "sftp" -> "SFTP (rclone)"
-                            "webdav" -> "WebDAV"
-                            "ftp" -> "FTP"
-                            "mega" -> "MEGA"
-                            "pcloud" -> "pCloud"
-                            "box" -> "Box"
-                            else -> profile.rcloneProvider ?: stringResource(R.string.connections_rclone_provider_cloud)
-                        }
-                        Text("$providerLabel \u2022 ${profile.rcloneRemoteName ?: ""}")
-                    } else {
                         val via = when {
                             jumpHostLabel != null && indent == 0 -> " " + stringResource(R.string.connections_list_via, jumpHostLabel)
                             profile.proxyType != null && !profile.proxyHost.isNullOrBlank() && indent == 0 -> " " + stringResource(R.string.connections_list_via, profile.proxyType.toString())
                             else -> ""
                         }
                         Text("${profile.username}@${profile.host}:${profile.port}$via")
-                    }
-                },
-                trailingContent = {
-                    // The single per-connection MCP element (the old "carries the MCP
-                    // endpoint" badge was dropped in favour of robot-only): a tri-state
-                    // robot — hidden when the agent has never used this connection, a
-                    // slashed grey robot when MCP is disabled for it, and red-eyed while
-                    // the agent is operating on it. Tap toggles MCP access.
-                    ConnectionMcpIndicator(
-                        lastActiveAt = agentActiveProfiles[profile.id],
-                        mcpEnabled = profile.mcpEnabled,
-                        onToggle = { onToggleMcp(!profile.mcpEnabled) },
-                    )
+
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -2027,31 +1703,6 @@ private fun ConnectionTreeItem(
                     text = { Text(stringResource(R.string.connections_forget_password)) },
                     leadingIcon = { Icon(Icons.Filled.NoEncryption, null) },
                     onClick = { showMenu = false; showForgetPasswordConfirm = true },
-                )
-            }
-            if (profile.isRclone) {
-                // For OAuth rclone providers (gdrive, dropbox, onedrive…)
-                // tokens go stale and the rclone backend silently fails
-                // to refresh, leaving Haven unable to connect. This
-                // forces a fresh OAuth flow without the user needing
-                // to delete + re-add the connection.
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.connections_action_reauthenticate)) },
-                    leadingIcon = { Icon(Icons.Filled.Refresh, null) },
-                    onClick = { showMenu = false; onReauthRclone() },
-                )
-            }
-            if (profile.isRclone && profileStatus == ProfileStatus.CONNECTING) {
-                // OAuth has a 5-min timeout, but if the user dismissed
-                // the browser or the callback never reaches rclone's
-                // listener, this lets them clear the spinner manually.
-                // Underlying gomobile worker keeps blocking until
-                // process restart — that's an rclone-android limitation
-                // documented in RcloneSessionManager.cancelPendingOAuth.
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.connections_action_cancel_oauth)) },
-                    leadingIcon = { Icon(Icons.Filled.Close, null) },
-                    onClick = { showMenu = false; onCancelOAuth() },
                 )
             }
             if (profile.isSsh && profileStatus == ProfileStatus.CONNECTED) {
@@ -2147,85 +1798,6 @@ private fun RenameDialog(
         },
     )
 }
-
-@Composable
-private fun LinuxVmCard(
-    vmStatus: LocalVmStatus,
-    onClick: () -> Unit,
-    onRefresh: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val hasLocalServices = vmStatus.sshPort != null || vmStatus.vncPort != null
-    val hasDirectServices = vmStatus.directSshPort != null || vmStatus.directVncPort != null
-    val hasServices = hasLocalServices || hasDirectServices
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
-        ) {
-            Icon(
-                Icons.Filled.Laptop,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.connections_linux_vm), style = MaterialTheme.typography.titleSmall)
-                if (hasServices) {
-                    val services = buildList {
-                        vmStatus.sshPort?.let { add("SSH :$it") }
-                        vmStatus.vncPort?.let { add("VNC :$it") }
-                    }
-                    if (services.isNotEmpty()) {
-                        Text(
-                            services.joinToString(" · ") + " on localhost",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (hasDirectServices) {
-                        val directServices = buildList {
-                            vmStatus.directSshPort?.let { add("SSH :$it") }
-                            vmStatus.directVncPort?.let { add("VNC :$it") }
-                        }
-                        Text(
-                            directServices.joinToString(" · ") + " on ${vmStatus.directIp}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    Text(
-                        stringResource(R.string.connections_vm_tap_to_setup),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            if (hasServices) {
-                Icon(
-                    Icons.Filled.Circle,
-                    contentDescription = stringResource(R.string.connections_vm_status_active),
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(10.dp),
-                )
-            }
-            IconButton(onClick = onRefresh, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Filled.Refresh,
-                    contentDescription = stringResource(R.string.connections_vm_refresh),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 private fun NewGroupDialog(

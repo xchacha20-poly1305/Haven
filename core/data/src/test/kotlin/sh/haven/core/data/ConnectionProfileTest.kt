@@ -3,12 +3,21 @@ package sh.haven.core.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import sh.haven.core.data.db.entities.ConnectionProfile
 
 class ConnectionProfileTest {
+
+    @Test
+    fun `retired connections are unavailable and never terminal profiles`() {
+        for (type in listOf("LOCAL", "GUEST", "EMAIL", "OPENAI", "RCLONE", "RETICULUM")) {
+            val profile = ConnectionProfile(label = type, host = "", username = "", connectionType = type)
+            assertFalse(profile.isSupported)
+            assertFalse(profile.isTerminal)
+        }
+        assert(ConnectionProfile(label = "remote", host = "host", username = "user").isSupported)
+    }
 
     @Test
     fun `default port is 22`() {

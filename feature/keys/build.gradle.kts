@@ -18,7 +18,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     buildFeatures {
         compose = true
     }
@@ -39,7 +38,6 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:fido"))
     implementation(project(":core:stepca"))
-    implementation(project(":core:scan"))
     implementation(libs.coroutines.core)
 
     implementation(libs.activity.compose)
@@ -58,3 +56,5 @@ kotlin {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
+
+dependencies { implementation(project(":core:scan")) }

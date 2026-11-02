@@ -353,7 +353,6 @@
     <string name="connections_section_general">Geral</string>
     <string name="connections_section_local_shell">Shell local</string>
     <string name="connections_section_guest">Convidado Linux</string>
-    <string name="connections_guest_desc">Arranca um núcleo Linux real neste dispositivo, com o seu próprio sistema de ficheiros raiz e rede. O rootfs é descomprimido (~512 MB) na primeira utilização. Não precisa de host nem credenciais.</string>
     <string name="connections_section_cloud_storage">Armazenamento na nuvem</string>
     <string name="connections_section_vnc">Configurações de VNC</string>
     <string name="connections_section_rdp">Configurações de RDP</string>
@@ -362,27 +361,21 @@
     <string name="connections_section_terminal">Terminal</string>
     <string name="connections_section_authentication">Autenticação</string>
     <string name="connections_section_embedded_vnc">VNC incorporado</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">Roteamento</string>
-    <string name="connections_toggle_mcp_tunnel">Expor o servidor MCP do Haven</string>
-    <string name="connections_helper_mcp_tunnel">Expõe o MCP do Haven a todas as sessões desta conexão — elas acessam http://127.0.0.1:8730/mcp e (via loopback) ignoram o emparelhamento e o consentimento. Aplicado ao conectar. Para acesso sempre ativo sem sessão aberta, defina-a como Conexão MCP sempre ativa em Configurações → Endpoint do agente.</string>
+
     <string name="connections_section_reconnect">Reconexão</string>
-    <string name="connections_local_shell_android_desc">Executa o shell nativo do Android (/system/bin/sh). Acesso a comandos do Android, sistema de arquivos e root (se disponível).</string>
-    <string name="connections_local_shell_proot_desc">Executa um shell Alpine Linux localmente via PRoot. Baixa um rootfs mínimo (~4 MB) no primeiro uso. Não requer root nem conexão de rede.</string>
     <string name="connections_dropdown_select_provider">Selecionar provedor…</string>
-    <string name="connections_helper_rclone_signin">Faça login pelo seu navegador na primeira conexão.</string>
-    <string name="connections_helper_rclone_credentials">Insira os dados da conta deste provedor e toque em Configurar para salvar e verificar o remoto.</string>
-    <string name="connections_rclone_configure">Configurar e verificar</string>
-    <string name="connections_rclone_configured_ok">Remoto configurado e verificado.</string>
+
     <string name="connections_dropdown_select_ssh">Selecionar conexão SSH</string>
     <string name="connections_helper_add_ssh_first">Adicione primeiro uma conexão SSH</string>
     <string name="connections_ai_route_section">Portador de rota de IA</string>
     <string name="connections_ai_route_via_ssh">Via SSH</string>
-    <string name="connections_ai_route_via_reticulum">Via Reticulum</string>
+
     <string name="connections_field_ai_route_carrier">Conexão portadora</string>
     <string name="connections_dropdown_select_carrier">Selecionar conexão</string>
     <string name="connections_helper_ai_route">Encaminha o ponto de extremidade por um portador: o SSH abre um encaminhamento local pela sessão do portador, o Reticulum faz a ponte pela malha. O portador deve estar conectado para rotas Reticulum.</string>
-    <string name="connections_helper_add_reticulum_first">Adicione primeiro uma conexão Reticulum</string>
+
     <string name="connections_toggle_rdp_nla">Autenticação em nível de rede (NLA)</string>
     <string name="connections_helper_mosh_required">Requer mosh-server no host remoto</string>
     <string name="connections_helper_et_required">Requer etserver no host remoto (porta %1$s)</string>
@@ -436,8 +429,7 @@
     <string name="connections_spa_host_blank">O host está vazio</string>
     <string name="connections_spa_success">Pacote SPA de %1$d bytes enviado em %2$d ms</string>
     <string name="connections_spa_failed">Falhou após %1$d ms: %2$s</string>
-    <string name="connections_agent_active">Agente ativo</string>
-    <string name="connections_agent_activity">Atividade do agente</string>
+
     <string name="connections_pf_type_local">LOCAL</string>
     <string name="connections_pf_type_remote">REMOTE</string>
     <string name="connections_pf_type_dynamic">DYNAMIC (SOCKS5)</string>
@@ -465,7 +457,7 @@
     <string name="connections_pf_dynamic_explanation">Clientes SOCKS5 neste dispositivo podem conectar-se a %1$s:%2$s e solicitar qualquer destino. Cada solicitação abre um novo canal direct-tcpip pelo servidor SSH.</string>
     <string name="connections_pf_dynamic_port_fallback">&lt;porta&gt;</string>
     <string name="connections_hosts_discovered">%1$d hosts descobertos</string>
-    <string name="connections_rclone_provider_cloud">Nuvem</string>
+
     <string name="connections_list_via">via %1$s</string>
     <string name="connections_auth_methods_title">Métodos de autenticação</string>
     <string name="connections_auth_methods_description">Tentados em ordem numa única conexão — para servidores que exigem mais de um (ex. chave + senha ou cadeias PAM/OTP).</string>
@@ -484,35 +476,10 @@
     <string name="connections_auth_confirm_otp_desc">Exibe o código gerado para confirmação com um toque em vez de enviá-lo automaticamente.</string>
     <string name="connections_vm_copied_short">Copiado</string>
     <string name="connections_vm_terminal_not_found">App Terminal não encontrado</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_local_distro_label">Abrir no SO</string>
-    <string name="connections_local_distro_active_default">Distro ativa (padrão)</string>
 
-    <string name="connections_section_openai">Endpoint de IA</string>
-    <string name="connections_field_openai_host">Endereço do servidor</string>
-    <string name="connections_field_openai_host_hint">IP, nome de host ou URL http:// completa</string>
-    <string name="connections_field_openai_api_key">Chave de API (opcional)</string>
-    <string name="connections_field_openai_api_key_hint">Enviada como token Bearer. Deixe em branco para servidores sem chave.</string>
-    <string name="connections_field_openai_path_prefix">Prefixo de caminho (opcional)</string>
-    <string name="connections_field_openai_path_prefix_hint">Inserido antes de /v1 — ex.: /api</string>    <string name="connections_field_openai_protocol">Protocolo</string>
-    <string name="connections_field_openai_protocol_hint">Compatível com OpenAI por padrão; Ollama, Anthropic e Gemini alteram caminhos e autenticação.</string>
-
-    <string name="connections_openai_url_preview">URL do endpoint: %1$s</string>
     <!-- Email account -->
     <string name="connections_section_email">Conta de e-mail</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">Provedor: ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">Usa a API não oficial do Proton. Ela foi obtida por engenharia reversa e viola os termos do Proton — sua conta pode sofrer limitação de taxa ou ser bloqueada. Prossiga por sua conta e risco.</string>
-    <string name="connections_field_email_address">Endereço de e-mail</string>
-    <string name="connections_field_email_password">Senha</string>
-    <string name="connections_field_email_mailbox_password">Senha da caixa de correio (apenas no modo de duas senhas)</string>
-    <string name="connections_email_mailbox_password_hint">Deixe em branco a menos que sua conta Proton tenha uma senha de caixa de correio separada.</string>
-    <string name="connections_email_2fa_hint">Se sua conta tiver 2FA, vincule o segredo TOTP no gerenciador de chaves SSH / TOTP e ele será aplicado automaticamente.</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">Use sua senha ou uma senha de app, se seu provedor exigir uma (Fastmail, iCloud, Yahoo, Gmail/2FA).</string>
-    <string name="connections_email_preset_label">Predefinição de provedor</string>
-    <string name="connections_email_app_password_link">Criar uma senha de app para %1$s</string>
     <string name="connections_field_imap_server">Servidor IMAP</string>
     <string name="connections_field_smtp_server">Servidor SMTP</string>
     <string name="connections_field_smtp_server_help">Deixe em branco para usar o servidor IMAP.</string>
@@ -533,10 +500,6 @@
     <string name="connections_fido_wrong_body">Essa chave não contém a credencial solicitada pelo servidor. Apresente a chave solicitada e toque nela.</string>
     <string name="connections_auth_key_picker">Chave: %1$s ▾</string>
     <string name="connections_auth_key_only">✓ Usar apenas esta chave</string>
-    <string name="connections_mcp_active">O agente está operando nesta conexão — toque para desativar o MCP nela</string>
-    <string name="connections_mcp_disabled">MCP desativado para esta conexão — toque para ativar</string>
-    <string name="connections_toggle_mcp_enabled">Permitir o agente MCP nesta conexão</string>
-    <string name="connections_helper_mcp_enabled">Quando desativado, as ferramentas do agente de IA (MCP) voltadas a esta conexão são recusadas. A conexão continua funcionando normalmente para você.</string>
 
     <!-- Backfill 2026-07: strings added since the last i18n pass -->
     <string name="connections_android_shell_label">Shell nativo do Android</string>
@@ -545,20 +508,9 @@
     <string name="connections_background_opacity_value">Opacidade: %1$d%%</string>
     <string name="connections_reveal_password_title">Revelar senha salva</string>
     <string name="connections_reveal_password_subtitle">Confirme que é você para mostrar a senha salva</string>
-    <string name="rclone_import_title">Importar remotos rclone</string>
-    <string name="rclone_import_intro">Cole seu rclone.conf do Linux ou escolha o arquivo. Os remotos (incluindo tokens OAuth) são importados como estão, então você não precisa reconfigurá-los.</string>
-    <string name="rclone_import_pick_file">Escolher rclone.conf…</string>
-    <string name="rclone_import_paste_label">Conteúdo do rclone.conf</string>
-    <string name="rclone_import_parse">Encontrar remotos</string>
-    <string name="rclone_import_encrypted">Esse arquivo é uma configuração rclone criptografada por senha. Execute \"rclone config show\" no computador e cole a saída descriptografada.</string>
-    <string name="rclone_import_already_added">já adicionado</string>
-    <string name="rclone_import_no_type">sem tipo</string>
-    <string name="rclone_import_select_count">Importar %1$d remoto(s)</string>
-    <string name="rclone_import_done">Importados %1$d, ignorados %2$d, com falha %3$d.</string>
-    <string name="rclone_import_menu">Importar configuração rclone…</string>
+
     <string name="connections_section_spice">Configurações SPICE</string>
-    <string name="connections_section_mcp">Agente de IA (MCP)</string>
-    <string name="connections_rclone_configure_first">Toque em “Configurar e verificar” para salvar este remoto antes de poder Salvar a conexão.</string>
+
     <string name="connections_helper_spice_auth">O SPICE usa um único ticket/senha opcional. Deixe em branco para um servidor sem ticket.</string>
     <string name="connections_auth_any_hardware_key">Qualquer chave de hardware (FIDO)</string>
     <string name="connections_deeplink_confirm_title">Conectar?</string>

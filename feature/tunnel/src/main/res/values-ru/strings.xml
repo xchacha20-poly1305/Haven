@@ -1,43 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Tunnels list -->
-    <string name="tunnel_add">Добавить туннель</string>
-    <string name="tunnel_empty_title">Туннели ещё не настроены</string>
-    <string name="tunnel_empty_subtitle">Добавьте конфигурацию WireGuard, чтобы направлять через неё отдельные профили подключений — общесистемный VPN не требуется.</string>
     <!-- %1$s = tunnel type (e.g. WireGuard), %2$s = date added -->
-    <string name="tunnel_row_subtitle">%1$s · добавлено %2$s</string>
-    <string name="tunnel_type_unknown">неизвестно</string>
-    <string name="tunnel_cf_sign_in_again">Войти снова</string>
-    <string name="tunnel_delete_content_desc">Удалить туннель</string>
-
     <!-- Delete confirmation -->
-    <string name="tunnel_delete_title">Удалить туннель?</string>
     <!-- %1$s = tunnel label -->
-    <string name="tunnel_delete_message">Удалить \"%1$s\". Профили, ссылающиеся на этот туннель, не смогут подключиться, пока вы не выберете другой.</string>
-    <string name="tunnel_delete_confirm">Удалить</string>
-    <string name="tunnel_cancel">Отмена</string>
-
     <!-- Add tunnel dialog -->
-    <string name="tunnel_type_label">Тип туннеля</string>
-    <string name="tunnel_label">Метка</string>
-    <string name="tunnel_save">Сохранить</string>
-    <string name="tunnel_edit">Изменить туннель</string>
-    <string name="tunnel_wireguard_help">Вставьте конфигурацию в стиле wg-quick или загрузите файл .conf. Читаются только поля [Interface] и [Peer]; неизвестные ключи (PostUp, Table, MTU) игнорируются. Конечные точки по имени хоста и DNS-имена разрешаются при запуске туннеля.</string>
-    <string name="tunnel_load_from_file">Загрузить из файла…</string>
-    <string name="tunnel_wireguard_config">Конфигурация WireGuard</string>
-    <string name="tunnel_tailscale_help">Создайте authkey в админ-консоли Tailscale (Settings → Keys) или в CLI Headscale (`headscale preauthkeys create`). Haven присоединяется к вашему tailnet при первом использовании и затем повторно использует состояние узла, поэтому одноразового ключа достаточно. Многоразовые ключи позволяют переподключаться после переустановки.</string>
-    <string name="tunnel_tailscale_authkey_label">Ключ аутентификации (tskey-auth-…)</string>
-    <string name="tunnel_tailscale_control_url_label">URL управляющего сервера (необязательно)</string>
-    <string name="tunnel_tailscale_control_url_help">Оставьте пустым для размещённого управляющего сервера Tailscale. Укажите URL Headscale для самостоятельно размещённого сервера координации.</string>
-    <string name="tunnel_netbird_help">Создайте ключ настройки в панели NetBird (Setup Keys → Add setup key). Haven присоединяется к вашей сети при первом использовании и затем переиспользует состояние узла, поэтому достаточно одноразового ключа. Многоразовые ключи позволяют переподключиться после переустановки.</string>
-    <string name="tunnel_netbird_setup_key_label">Ключ настройки</string>
-    <string name="tunnel_netbird_management_url_label">URL управления (необязательно)</string>
-    <string name="tunnel_netbird_management_url_help">Оставьте пустым для размещённого управления NetBird. Укажите URL вашего сервера для самостоятельно размещённой службы управления.</string>
-    <string name="tunnel_openvpn_help">Вставьте профиль .ovpn или загрузите файл. Если профиль использует auth-user-pass без встроенного файла учётных данных, введите имя пользователя и пароль ниже.</string>
-    <string name="tunnel_openvpn_config_label">Профиль OpenVPN (.ovpn)</string>
-    <string name="tunnel_openvpn_username_label">Имя пользователя (необязательно)</string>
-    <string name="tunnel_openvpn_password_label">Пароль (необязательно)</string>
-
     <!-- Cloudflare Access SSH tunnel (#154) -->
     <string name="cf_experimental_banner">Экспериментально — Haven реализует тот же сетевой протокол WebSocket, что и `cloudflared access ssh`. Протестировано на небольшом наборе тенантов; сообщайте о несоответствиях через GitHub #154.</string>
     <string name="cf_intro_blurb">Направьте SSH через опубликованное имя хоста Cloudflare Tunnel — внутриприложенческий эквивалент `cloudflared access ssh --hostname &lt;host&gt;`. Для публичных маршрутов Tunnel нужно только имя хоста. Маршрутам, защищённым Access, дополнительно требуется JWT — нажмите «Войти», чтобы получить его через IdP вашей команды.</string>
@@ -59,23 +26,4 @@
     <string name="cf_jump_destination_help">Многоцелевые туннели в режиме бастиона: передаётся как `Cf-Access-Jump-Destination`. Оставьте пустым для одноцелевых маршрутов.</string>
     <string name="cf_jwt_paste_help">Для headless-настроек: запустите `cloudflared access token --app https://&lt;hostname&gt;` на другой машине и вставьте JWT сюда. Срок действия определяется из токена автоматически.</string>
     <string name="cf_field_jwt">Cloudflare Access JWT (необязательно)</string>
-    <string name="tunnel_anyconnect_help">Подключение через VPN Cisco AnyConnect или ocserv (OpenConnect) без приложения Cisco. Его используют только профили, направленные через этот туннель; остальной трафик телефона — нет. Поддерживаются логин/пароль, группы аутентификации и второй фактор TOTP или push; SAML/SSO и клиентские сертификаты — нет.</string>
-    <string name="tunnel_anyconnect_server_label">Сервер</string>
-    <string name="tunnel_anyconnect_server_help">Адрес шлюза, как в приложении Cisco, при необходимости с :портом или путём группы.</string>
-    <string name="tunnel_anyconnect_username_label">Имя пользователя</string>
-    <string name="tunnel_anyconnect_password_label">Пароль</string>
-    <string name="tunnel_anyconnect_group_label">Группа аутентификации (необязательно)</string>
-    <string name="tunnel_anyconnect_group_help">Группа или профиль из списка сервера. Оставьте пустым для группы по умолчанию.</string>
-    <string name="tunnel_anyconnect_otp_label">Секрет OTP (необязательно)</string>
-    <string name="tunnel_anyconnect_otp_help">Секрет Base32 или ссылка otpauth:// из настройки аутентификатора. Haven сам отвечает на запрос кода, поэтому туннель может переподключаться без вашего участия.</string>
-    <string name="tunnel_anyconnect_secondary_label">Ответ второго фактора (необязательно)</string>
-    <string name="tunnel_anyconnect_secondary_help">Фиксированный ответ на второй запрос, например push для Duo. Используется, только если секрет OTP не задан.</string>
-    <string name="tunnel_anyconnect_cert_label">Сертификат сервера (необязательно)</string>
-    <string name="tunnel_anyconnect_cert_help">Только для шлюзов с самоподписанным сертификатом: значение pin-sha256:…. Если сертификат не доверенный, ошибка подключения покажет значение, которое нужно вставить сюда.</string>
-    <string name="tunnel_status_connected">Подключено</string>
-    <string name="tunnel_sign_out">Выйти</string>
-    <string name="tunnel_anyconnect_password_help">Оставьте пустым, чтобы ввести при входе.</string>
-    <string name="tunnel_anyconnect_prompt_help">Коды по SMS или e-mail: оставьте секрет OTP и ответ второго фактора пустыми, и Haven запросит код при входе.</string>
-    <string name="tunnel_anyconnect_stay_connected_label">Оставаться подключённым</string>
-    <string name="tunnel_anyconnect_stay_connected_help">Не отключать VPN после закрытия последнего подключения, как приложение Cisco. Если выключено: VPN отключится, а повторное подключение вскоре после этого продолжит сессию без нового кода.</string>
 </resources>

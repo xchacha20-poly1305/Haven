@@ -1,36 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tunnel_add">إضافة نفق</string>
-    <string name="tunnel_empty_title">لم يُهيَّأ أي نفق بعد</string>
-    <string name="tunnel_empty_subtitle">أضِف إعداد WireGuard لتوجيه ملفات اتصال فردية عبره — دون الحاجة إلى VPN على مستوى النظام.</string>
-    <string name="tunnel_row_subtitle">%1$s · أُضيف %2$s</string>
-    <string name="tunnel_type_unknown">غير معروف</string>
-    <string name="tunnel_cf_sign_in_again">تسجيل الدخول مجددًا</string>
-    <string name="tunnel_delete_content_desc">حذف النفق</string>
-    <string name="tunnel_delete_title">حذف النفق؟</string>
-    <string name="tunnel_delete_message">إزالة \"%1$s\". ستفشل ملفات الاتصال التي تشير إلى هذا النفق في الاتصال حتى تختار نفقًا آخر.</string>
-    <string name="tunnel_delete_confirm">حذف</string>
-    <string name="tunnel_cancel">إلغاء</string>
-    <string name="tunnel_type_label">نوع النفق</string>
-    <string name="tunnel_label">التسمية</string>
-    <string name="tunnel_save">حفظ</string>
-    <string name="tunnel_edit">تعديل النفق</string>
-    <string name="tunnel_wireguard_help">الصق إعدادًا بنمط wg-quick أو حمّل ملف ‎.conf. تُقرأ حقول [Interface] و[Peer] فقط؛ تُتجاهل المفاتيح غير المعروفة (PostUp وTable وMTU). تُحلَّل نقاط النهاية باسم المضيف وأسماء DNS عند بدء النفق.</string>
-    <string name="tunnel_load_from_file">تحميل من ملف…</string>
-    <string name="tunnel_wireguard_config">إعداد WireGuard</string>
-    <string name="tunnel_tailscale_help">أنشئ مفتاح مصادقة في وحدة تحكم Tailscale (الإعدادات ← Keys)، أو في واجهة Headscale الطرفية (`headscale preauthkeys create`). ينضم Haven إلى tailnet عند أول استخدام ويعيد استخدام حالة العقدة بعد ذلك، فمفتاح لمرة واحدة يكفي. تتيح لك المفاتيح القابلة لإعادة الاستخدام إعادة الاتصال بعد إعادة التثبيت.</string>
-    <string name="tunnel_tailscale_authkey_label">مفتاح المصادقة (tskey-auth-…)</string>
-    <string name="tunnel_tailscale_control_url_label">رابط مستوى التحكم (اختياري)</string>
-    <string name="tunnel_tailscale_control_url_help">اتركه فارغًا لمستوى التحكم المستضاف من Tailscale. اضبطه على رابط Headscale لخادم تنسيق ذاتي الاستضافة.</string>
-    <string name="tunnel_netbird_help">أنشئ مفتاح إعداد في لوحة NetBird (Setup Keys → Add setup key). ينضم Haven إلى شبكتك عند أول استخدام ويعيد استخدام حالة العقدة بعد ذلك، لذا يكفي مفتاح للاستخدام مرة واحدة. المفاتيح القابلة لإعادة الاستخدام تتيح لك إعادة الاتصال بعد إعادة التثبيت.</string>
-    <string name="tunnel_netbird_setup_key_label">مفتاح الإعداد</string>
-    <string name="tunnel_netbird_management_url_label">رابط الإدارة (اختياري)</string>
-    <string name="tunnel_netbird_management_url_help">اتركه فارغًا للإدارة المستضافة من NetBird. اضبطه على رابط الخادم لخدمة إدارة ذاتية الاستضافة.</string>
-    <string name="tunnel_openvpn_help">الصق ملف تعريف .ovpn أو قم بتحميل ملف. إذا كان الملف يستخدم auth-user-pass بدون ملف بيانات اعتماد مضمّن، أدخل اسم المستخدم وكلمة المرور أدناه.</string>
-    <string name="tunnel_openvpn_config_label">ملف تعريف OpenVPN (.ovpn)</string>
-    <string name="tunnel_openvpn_username_label">اسم المستخدم (اختياري)</string>
-    <string name="tunnel_openvpn_password_label">كلمة المرور (اختياري)</string>
-
     <!-- Cloudflare Access SSH tunnel (#154) -->
     <string name="cf_experimental_banner">تجريبي — ينفّذ Haven بروتوكول WebSocket السلكي نفسه الذي يستخدمه `cloudflared access ssh`. اختُبر مع مجموعة صغيرة من المستأجرين؛ يُرجى الإبلاغ عن أي تباين عبر GitHub #154.</string>
     <string name="cf_intro_blurb">توجيه SSH عبر اسم مضيف منشور لـ Cloudflare Tunnel — المكافئ داخل التطبيق لـ `cloudflared access ssh --hostname &lt;host&gt;`. تحتاج مسارات Tunnel العامة إلى اسم مضيف فقط. أما المسارات المحمية بـ Access فتتطلب إضافةً JWT — اضغط تسجيل الدخول لالتقاط واحد عبر IdP الخاص بفريقك.</string>
@@ -52,23 +21,4 @@
     <string name="cf_jump_destination_help">أنفاق متعددة الأهداف بوضع البوابة: تُمرَّر باسم `Cf-Access-Jump-Destination`. اتركها فارغة للمسارات أحادية الهدف.</string>
     <string name="cf_jwt_paste_help">للإعدادات بلا واجهة: شغّل `cloudflared access token --app https://&lt;hostname&gt;` على جهاز آخر والصق JWT هنا. يُحلَّل انتهاء الصلاحية من الرمز تلقائيًا.</string>
     <string name="cf_field_jwt">‏JWT الخاص بـ Cloudflare Access (اختياري)</string>
-    <string name="tunnel_anyconnect_help">اتصل عبر شبكة VPN من Cisco AnyConnect أو ocserv (OpenConnect) دون تطبيق Cisco. تستخدمها فقط الملفات الشخصية الموجّهة عبر هذا النفق، وليس بقية حركة الهاتف. يدعم اسم المستخدم/كلمة المرور ومجموعات المصادقة وعامل التحقق الثاني TOTP أو الإشعار؛ ولا يدعم SAML/SSO وشهادات العميل.</string>
-    <string name="tunnel_anyconnect_server_label">الخادم</string>
-    <string name="tunnel_anyconnect_server_help">مضيف البوابة كما تكتبه في تطبيق Cisco، مع :المنفذ أو مسار مجموعة اختياريًا.</string>
-    <string name="tunnel_anyconnect_username_label">اسم المستخدم</string>
-    <string name="tunnel_anyconnect_password_label">كلمة المرور</string>
-    <string name="tunnel_anyconnect_group_label">مجموعة المصادقة (اختياري)</string>
-    <string name="tunnel_anyconnect_group_help">المجموعة أو الملف الشخصي المطلوب اختياره من قائمة الخادم. اتركه فارغًا لاستخدام الافتراضي.</string>
-    <string name="tunnel_anyconnect_otp_label">سر OTP (اختياري)</string>
-    <string name="tunnel_anyconnect_otp_help">سر Base32 أو رابط otpauth:// من إعداد تطبيق المصادقة. يجيب Haven عن طلب الرمز بنفسه، ما يسمح للنفق بإعادة الاتصال تلقائيًا.</string>
-    <string name="tunnel_anyconnect_secondary_label">إجابة العامل الثاني (اختياري)</string>
-    <string name="tunnel_anyconnect_secondary_help">إجابة ثابتة عن الطلب الثاني، مثل push لـ Duo. تُستخدم فقط عند عدم تعيين سر OTP.</string>
-    <string name="tunnel_anyconnect_cert_label">شهادة الخادم (اختياري)</string>
-    <string name="tunnel_anyconnect_cert_help">للبوابات ذاتية التوقيع فقط: قيمة pin-sha256:…. إذا لم تكن الشهادة موثوقة، يعرض خطأ الاتصال القيمة التي يجب لصقها هنا.</string>
-    <string name="tunnel_status_connected">متصل</string>
-    <string name="tunnel_sign_out">تسجيل الخروج</string>
-    <string name="tunnel_anyconnect_password_help">اتركه فارغًا ليُطلب عند تسجيل الدخول.</string>
-    <string name="tunnel_anyconnect_prompt_help">الرموز المرسلة عبر الرسائل القصيرة أو البريد: اترك سر OTP وإجابة العامل الثاني فارغين، وسيطلب Haven الرمز عند تسجيل الدخول.</string>
-    <string name="tunnel_anyconnect_stay_connected_label">البقاء متصلاً</string>
-    <string name="tunnel_anyconnect_stay_connected_help">إبقاء الـ VPN متصلاً بعد إغلاق آخر اتصال، مثل تطبيق Cisco. عند الإيقاف: يُقطع الاتصال، وإعادة الاتصال بعد وقت قصير تستأنف الجلسة دون رمز جديد.</string>
 </resources>

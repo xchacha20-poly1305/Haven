@@ -68,7 +68,7 @@
     <string name="terminal_new_tab_host_key_changed">La clé d’hôte de %s a changé — connexion refusée par sécurité</string>
     <string name="terminal_new_tab_connection_failed">Connexion impossible : %s</string>
     <string name="terminal_new_tab_shell_failed">Impossible d’ouvrir le shell : %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">Aucune session Reticulum active à cloner</string>
+
     <string name="terminal_new_tab_connecting">Connecting…</string>
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="terminal_no_contact">Aucune réponse du serveur depuis %1$ds — nouvelle tentative</string>
@@ -87,7 +87,6 @@
     <!-- i18n sweep #210 -->
     <string name="terminal_link_open_failed">Aucune application ne peut ouvrir ce lien</string>
     <string name="terminal_link_scheme_blocked">Lien bloqué (schéma non pris en charge)</string>
-    <string name="terminal_local_vnc_failed">Impossible de démarrer le bureau local</string>
     <string name="terminal_attach_title">Joindre</string>
     <string name="terminal_attach_send_file">Envoyer un fichier</string>
     <string name="terminal_attach_send_file_desc">Téléverser sur le serveur distant et coller son chemin</string>
@@ -97,10 +96,7 @@
     <string name="terminal_attach_scan_camera_desc">Photographier un QR ou code-barres et coller son contenu</string>
     <string name="terminal_attach_scan_gallery">Scanner un code (Photos)</string>
     <string name="terminal_attach_scan_gallery_desc">Choisir une photo d\'un QR ou code-barres et coller son contenu</string>
-    <string name="terminal_attach_ocr_camera">Reconnaître le texte (Appareil photo)</string>
-    <string name="terminal_attach_ocr_camera_desc">Photographier du texte imprimé et coller ce qui est détecté</string>
-    <string name="terminal_attach_ocr_gallery">Reconnaître le texte (Photos)</string>
-    <string name="terminal_attach_ocr_gallery_desc">Choisir une photo de texte imprimé et coller ce qui est détecté</string>
+
     <string name="terminal_scan_no_code">Aucun code détecté dans l\'image</string>
     <string name="terminal_scan_no_text">Aucun texte détecté dans l\'image</string>
     <string name="terminal_scan_failed">Échec du scan : %s</string>

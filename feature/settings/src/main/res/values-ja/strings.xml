@@ -75,23 +75,16 @@
     <string name="settings_navigation_tabs_subtitle">タブの順番を並べ替え、表示するタブを選びます</string>
 
     <!-- Wayland section -->
-    <string name="settings_wayland_shell_title">Waylandデスクトップシェル</string>
-    <string name="settings_proot_idle_title">アイドル状態の Linux ゲストを自動停止</string>
-    <string name="settings_proot_idle_off">オフ — 手動で停止するまで Linux ゲストは動き続けます</string>
-    <string name="settings_proot_idle_on">Haven を離れて %1$d 分後にゲストを停止します（実行中のゲストサービスがあれば維持されます）</string>
-    <string name="settings_proot_idle_dialog_title">アイドル状態の Linux ゲストを自動停止</string>
-    <string name="settings_proot_idle_dialog_body">Haven がこの時間バックグラウンドにあったら、メモリを解放するために Linux ゲストのターミナルとデスクトップを停止します。実行中のゲストサービスがあれば維持されます。バックグラウンドのターミナルで実行中の長いジョブも停止されるため、アイドル時のリソース回収が不要ならオフのままにしてください。</string>
-    <string name="settings_proot_idle_off_label">オフ</string>
     <string name="settings_shizuku_title">Shizuku連携</string>
-    <string name="settings_shizuku_enabled">有効 — バッテリー最適化の自動除外、Waylandソケット共有</string>
+
     <string name="settings_shizuku_available">Shizukuインストール済み -- タップして権限を付与</string>
     <string name="settings_shizuku_not_running">Shizukuはインストール済みだが未起動 — タップしてワイヤレスデバッグで起動</string>
-    <string name="settings_shizuku_not_installed">バッテリー除外とWaylandアクセスにShizukuをインストール</string>
+
 
     <!-- Backup section -->
     <string name="settings_backup_sync_title">リモートに同期</string>
     <string name="settings_backup_sync_subtitle_set">%1$s : %2$s</string>
-    <string name="settings_backup_sync_subtitle_unset">暗号化バックアップを SFTP/SMB/rclone 接続にプッシュ/プル</string>
+    <string name="settings_backup_sync_subtitle_unset">暗号化バックアップを SFTP/SMB 接続にプッシュ/プル</string>
     <string name="settings_backup_sync_description">暗号化バックアップを既存の接続にプッシュまたはプルします。ファイルは端末を離れる前にパスフレーズで AES-256-GCM 暗号化されます — リモートが設定を平文で見ることはありません。</string>
     <string name="settings_backup_sync_no_remotes">SFTP、SMB、rclone 接続がまだありません。まず追加すると、そこにバックアップを保存できます。</string>
     <string name="settings_backup_sync_choose_remote">接続を選択…</string>
@@ -117,10 +110,6 @@
     <string name="settings_version_unknown">不明</string>
 
     <!-- Wayland shell dialog -->
-    <string name="settings_wayland_dialog_title">Waylandデスクトップシェル</string>
-    <string name="settings_wayland_dialog_description">Waylandデスクトップのfootターミナル内で実行するシェルコマンド。apkで追加シェルをインストール可能（例: apk add bash）。</string>
-    <string name="settings_wayland_shell_command_label">シェルコマンド</string>
-
     <!-- Lock timeout dialog -->
     <string name="settings_lock_timeout_dialog_title">ロックまでの時間</string>
 
@@ -149,7 +138,6 @@
     <!-- About dialog -->
     <string name="settings_about_dialog_title">Havenについて</string>
     <string name="settings_about_app_name">Haven</string>
-    <string name="settings_about_description">Android向けオープンソースSSH、VNC、RDP、クラウドストレージクライアント</string>
     <string name="settings_about_version">バージョン %1$s（ビルド %2$d）</string>
     <string name="settings_about_android">Android %1$s（API %2$d）</string>
     <string name="settings_about_libraries_title">オープンソースライブラリ</string>
@@ -213,9 +201,7 @@
     <string name="common_github">GitHub</string>
     <string name="common_simple">シンプル</string>
     <string name="settings_language_title">言語</string>
-    <string name="settings_media_extensions_title">メディア ファイルの拡張子</string>
-    <string name="settings_media_extensions_description">ファイル ブラウザーでストリーミング可能なメディアとして扱う拡張子を、スペース区切りで指定します。</string>
-    <string name="settings_media_extensions_label">拡張子</string>
+
     <string name="settings_show_desktops_title">デスクトップ カードを表示</string>
     <string name="settings_show_desktops_subtitle">接続画面にデスクトップ環境マネージャーを表示する</string>
     <string name="settings_show_linux_vm_title">Linux VM カードを表示</string>
@@ -320,46 +306,18 @@
     <string name="settings_usb_guest_subtitle">接続した USB デバイスを haven-usb シム経由でゲストアプリから使用できるようにします。各接続には同意が必要です。</string>
     <string name="settings_gps_guest_title">GPS を Linux ゲストに公開</string>
     <string name="settings_gps_guest_subtitle">端末の GPS 位置情報を NMEA デバイス (haven-gps) としてゲストへストリームします。有効にするとゲスト内のどのプロセスでも位置情報を読めます。各接続には同意が必要です。</string>
-    <string name="settings_proot_install_log_title">PRoot インストールログを表示</string>
-    <string name="settings_proot_install_log_subtitle">Linux ディストリビューションインストールのフェーズごとのイベント（issue #162）</string>
     <string name="settings_logcat_capture_title">Logcat キャプチャ</string>
     <string name="settings_logcat_capture_subtitle_on">/sdcard/Download/haven-logcat.txt に記録中</string>
     <string name="settings_logcat_capture_subtitle_off">リモートデバッグ用に logcat をキャプチャ</string>
     <string name="settings_logcat_saved_toast">Logcat を保存しました</string>
     <string name="settings_logcat_started_toast">Logcat キャプチャを開始しました</string>
     <string name="settings_logcat_start_failed_toast">キャプチャの開始に失敗しました</string>
-    <string name="settings_agent_endpoint_title">エージェントエンドポイント (MCP)</string>
-    <string name="settings_agent_endpoint_subtitle_on">有効 — ループバック上のローカル MCP サーバー。書き込みツールには同意が必要です。</string>
-    <string name="settings_agent_endpoint_subtitle_off">無効 — オンにするとローカル AI エージェントが状態を読み取り（同意を得て）操作できます</string>
-    <string name="settings_agent_file_read_title">エージェントによるファイル内容の読み取りを許可</string>
-    <string name="settings_agent_file_read_subtitle_on">有効 — `serve_file` は呼び出しごとの同意後に使い捨てダウンロード URL を返します</string>
-    <string name="settings_agent_file_read_subtitle_off">無効 — `serve_file` のリクエストはプロンプトなしで即座に失敗します</string>
-    <string name="settings_agent_terminal_input_title">エージェントによるターミナル入力のキューを許可</string>
-    <string name="settings_agent_terminal_input_subtitle_on">有効 — `queue_terminal_input` は SSH セッションの出力を監視し、次のプロンプトでキューのテキストを入力します（呼び出しごとの同意）</string>
-    <string name="settings_agent_terminal_input_subtitle_off">無効 — `queue_terminal_input` のリクエストはプロンプトなしで即座に失敗します</string>
+
     <string name="settings_reverse_tunnel_title">常時接続のMCP接続</string>
     <string name="settings_reverse_tunnel_subtitle_set">\"%1$s\" へトンネル中 — WiFi 変更やアプリ再起動後も維持</string>
     <string name="settings_reverse_tunnel_subtitle_unset">未設定 — エンドポイントはデバイス上のみでアクセス可能</string>
     <string name="settings_reverse_tunnel_none">なし（デバイス上のみ）</string>
-    <string name="settings_mcp_wireguard_title">WireGuard トンネルで公開</string>
-    <string name="settings_mcp_wireguard_subtitle_on">有効 — アクティブな WireGuard トンネルの &lt;wg-ip&gt;:8730 でもアクセス可能</string>
-    <string name="settings_mcp_wireguard_subtitle_off">無効 — アクティブな WireGuard トンネル経由でエンドポイントにアクセスするにはオンにしてください</string>
-    <string name="settings_mcp_lan_title">Wi-Fi/LAN で公開</string>
-    <string name="settings_mcp_lan_subtitle_on">有効 — ローカルネットワークの &lt;device-lan-ip&gt;:8730 でもアクセス可能</string>
-    <string name="settings_mcp_lan_subtitle_off">無効 — 同じ Wi-Fi/LAN 上のデバイスから直接アクセスするにはオンにしてください</string>
-    <string name="settings_mcp_copy_url_title">エージェントエンドポイント URL をコピー</string>
-    <string name="settings_mcp_url_copied_toast">エンドポイントをコピーしました</string>
-    <string name="settings_mcp_copy_config_title">MCP クライアント設定をコピー</string>
-    <string name="settings_mcp_copy_config_subtitle">任意の MCP クライアントに貼り付けられる標準 JSON スニペット</string>
-    <string name="settings_mcp_config_copied_toast">設定をコピーしました</string>
-    <string name="settings_mcp_proot_title">PRoot でも利用可能</string>
-    <string name="settings_agent_activity_title">エージェントのアクティビティを表示</string>
-    <string name="settings_agent_activity_subtitle">引数を伏せたすべての MCP 呼び出しを記録</string>
-    <string name="settings_agent_confirm_destructive_title">破壊的なエージェント操作を確認</string>
-    <string name="settings_agent_confirm_destructive_subtitle">書き込み、削除、アップロード、切断を行うエージェント呼び出しの前に確認します。読み取り専用の呼び出しは確認しません。</string>
-    <string name="settings_agent_forget_allows_title">記憶した許可を消去</string>
-    <string name="settings_agent_forget_allows_subtitle">セッションごとに承認されたツールをすべて再確認します。</string>
-    <string name="settings_agent_allows_cleared_toast">記憶した許可をクリアしました</string>
+
     <string name="settings_font_from_url_body">TTF または OTF フォントファイルへの直接リンクを貼り付けてください。一般的な Nerd Fonts の生の TTF は GitHub の github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/&lt;Name&gt;/Regular/&lt;Name&gt;NerdFont-Regular.ttf にあります — その URL をここにコピーしてください。</string>
     <string name="settings_font_from_url_placeholder">https://…/font.ttf</string>
     <string name="settings_recommended_fonts_dialog_body">タップして人気のモノスペースコーディングフォントをダウンロードして適用します。</string>
@@ -382,18 +340,7 @@
     <string name="settings_audit_log_share_chooser">ログを共有</string>
     <string name="settings_audit_log_status_sync">同期</string>
     <string name="settings_audit_log_status_sync_failed">同期に失敗</string>
-    <string name="settings_agent_activity_screen_title">エージェントのアクティビティ</string>
-    <string name="settings_agent_activity_cd_clear">履歴をクリア</string>
-    <string name="settings_agent_activity_empty">エージェントのアクティビティはまだありません。\n\nMCP クライアントがツールを呼び出すと、引数を伏せて結果を要約した呼び出しがここに表示されます。</string>
-    <string name="settings_agent_activity_clear_dialog_title">エージェントのアクティビティをクリアしますか？</string>
-    <string name="settings_agent_activity_clear_dialog_text">記録されたすべての MCP 呼び出しがこのデバイスから削除されます。この操作は取り消せません。</string>
-    <string name="settings_agent_activity_unknown_client">不明なクライアント</string>
-    <string name="settings_agent_activity_args_redacted">引数（伏せ字）</string>
-    <string name="settings_proot_install_log_screen_title">PRoot インストールログ</string>
-    <string name="settings_proot_install_log_cd_clear">ログをクリア</string>
-    <string name="settings_proot_install_log_empty">インストールイベントはまだ記録されていません。接続 → デスクトップからディストリビューションをインストールしてログを生成してください。</string>
-    <string name="settings_proot_install_log_clear_dialog_title">インストールログをクリアしますか？</string>
-    <string name="settings_proot_install_log_clear_dialog_text">記録されたすべてのインストールイベントが削除されます。</string>
+
     <string name="settings_ime_flag_no_suggestions_title">候補ストリップを非表示</string>
     <string name="settings_ime_flag_no_suggestions_detail">TYPE_TEXT_FLAG_NO_SUGGESTIONS — 広くサポートされています</string>
     <string name="settings_ime_flag_visible_password_title">自動修正 / 自動大文字 / 自動スペースを抑制</string>
@@ -406,14 +353,7 @@
     <string name="settings_ime_flag_no_extract_ui_detail">IME_FLAG_NO_EXTRACT_UI — 横向き時の全画面 IME UI を非表示にします。</string>
     <string name="settings_ime_flag_no_learning_title">IME の学習をブロック</string>
     <string name="settings_ime_flag_no_learning_detail">IME_FLAG_NO_PERSONALIZED_LEARNING — プライバシー: IME の単語バンクが入力テキストを無視します。Gboard ではマイクも非表示になるほど強力です。</string>
-    <string name="settings_mcp_tools_title">MCPツール</string>
-    <string name="settings_mcp_tools_subtitle">エージェントに表示される内容を減らすため、個々のツールをオフにします</string>
-    <string name="settings_mcp_tools_screen_title">MCPツール</string>
-    <string name="settings_mcp_tools_empty">ツール一覧はエージェントエンドポイントの起動後に表示されます。</string>
-    <string name="settings_mcp_tools_intro">オフにしたツールはエージェントのツール一覧から完全に削除されます — 小さなモデルはノイズが減り、すべての呼び出しのトークン数が少なくなります。エンドポイントスイッチ、ペアリング、同意プロンプトは引き続き適用されます。</string>
-    <string name="settings_mcp_tools_consent_every_call">呼び出しごとに確認</string>
-    <string name="settings_mcp_tools_consent_once">セッションごとに1回確認</string>
-    <string name="settings_mcp_tools_consent_never">呼び出しごとの確認なし</string>
+
     <string name="settings_paired_clients_title">ペアリング済み MCP クライアント</string>
     <string name="settings_paired_clients_subtitle">ペアリング済みクライアントの確認、クライアントごとの確認のスキップ、ペアリング解除</string>
     <string name="settings_paired_clients_screen_title">ペアリング済み MCP クライアント</string>
@@ -428,10 +368,6 @@
     <string name="settings_paired_clients_unpaired_toast">\'%1$s\' のペアリングを解除しました</string>
 
     <!-- MCP WireGuard / loopback -->
-    <string name="settings_mcp_wireguard_collision">別の VPN（%1$s）が %2$s を使用しています — このエンドポイントがバインドするアドレスと同じため、隠されてピアから到達できません。その VPN を停止するか、MCP クライアントをループバック（127.0.0.1）エンドポイントに向けてください。</string>
-    <string name="settings_mcp_trust_loopback_title">ローカルクライアントを信頼</string>
-    <string name="settings_mcp_trust_loopback_subtitle_on">有効 — ローカルクライアント（127.0.0.1）はペアリングや承認プロンプトなしで接続します。Wi-Fi/LAN と WireGuard クライアントは引き続き確認を求めます。</string>
-    <string name="settings_mcp_trust_loopback_subtitle_off">無効 — ローカルクライアントでもペアリングが必要で、リクエストごとに承認します</string>
 
     <!-- Terminal reflow, GPU stack, standing policies (#250) -->
     <string name="settings_reflow_on_keyboard_title">キーボードに合わせて端末をリサイズ</string>
@@ -461,7 +397,7 @@
     <string name="settings_terminal_opacity_title">背景の不透明度</string>
     <string name="settings_terminal_opacity_value">%1$d%%</string>
     <string name="settings_terminal_opacity_hint" formatted="false">100% 未満にすると Haven が半透明になり、すべての画面（ターミナル、リスト、設定）の背後にデバイスの壁紙が表示されます。接続ごとの上書きはそのターミナルにのみ適用されます。</string>
-    <string name="settings_section_mcp">AI エージェント (MCP)</string>
+
     <string name="settings_tailscale_discovery_title">Tailscale ピア検出</string>
     <string name="settings_tailscale_discovery_subtitle">スキャン時にローカル API を介して Tailscale ネットワーク上のホストを検索します。オフにすると Haven はピアリストを読まなくなります。Tailscale 自体には影響ありません。</string>
     <string name="settings_audio_bridge_title">Proot オーディオ（試験的）</string>
@@ -497,9 +433,6 @@
     <string name="settings_native_crash_copy">レポートをコピー</string>
     <string name="settings_native_crash_copied">クラッシュレポートをコピーしました</string>
     <string name="settings_native_crash_dismiss">閉じる</string>
-    <plurals name="settings_proot_idle_minutes">
-        <item quantity="other">%1$d 分</item>
-    </plurals>
     <string name="settings_hide_nav_bar_in_terminal_title">ターミナルでアプリのタブバーを非表示</string>
     <string name="settings_hide_nav_bar_in_terminal_subtitle">ターミナル画面で Haven の下部タブバーを非表示にします。Android のステータスバーとナビゲーションバーは表示されたままです。</string>
     <string name="settings_credential_keystore_broken_title">認証情報ストレージを利用できません</string>
@@ -544,19 +477,7 @@ Haven にすでに保存されているすべての秘密鍶は、再びイン�
     <string name="settings_ambiwidth_mode_auto_wide_desc">フォント幅を自動計測、未判定時は2セル (CJK)</string>
     <string name="settings_bell_notification_title">ベル通知</string>
     <string name="settings_bell_notification_subtitle">Haven がバックグラウンドにある間にターミナルのプログラムがベルを鳴らすと、タブ名を記した通知を表示します。ターミナルを見ている間は何も表示されません。</string>
-    <string name="settings_mcp_tools_category_off_count">%1$d 件オフ</string>
-    <string name="settings_mcp_tools_cat_terminal">ターミナル</string>
-    <string name="settings_mcp_tools_cat_connections">接続</string>
-    <string name="settings_mcp_tools_cat_files">ファイル</string>
-    <string name="settings_mcp_tools_cat_desktop">デスクトップ</string>
-    <string name="settings_mcp_tools_cat_guest">Linuxゲスト</string>
-    <string name="settings_mcp_tools_cat_usb">USBとシリアル</string>
-    <string name="settings_mcp_tools_cat_keys">鍵と認証情報</string>
-    <string name="settings_mcp_tools_cat_mail">メール</string>
-    <string name="settings_mcp_tools_cat_rclone">クラウドストレージ</string>
-    <string name="settings_mcp_tools_cat_senses">センサーと位置情報</string>
-    <string name="settings_mcp_tools_cat_agent">エージェントとデバイス制御</string>
-    <string name="settings_mcp_tools_cat_other">その他</string>
+
     <string name="settings_sudo_prompt_detection_title">sudo パスワードプロンプトを検出</string>
     <string name="settings_sudo_prompt_detection_subtitle">[sudo] や doas のプロンプトで生体認証による自動入力を提案します。パスワードはこの端末の Android Keystore 内で暗号化されたまま保持され、使用ごとの生体認証ロック解除が必要であり、AI/MCP ツールには一切公開されません。</string>
 </resources>

@@ -22,20 +22,8 @@ runs:
         docker-images: true
         swap-storage: true
 
-    - name: Install glibc cross-compilers for wayvnc shim
+    - name: Install native build tools
       shell: bash
-      # core/local's buildWayvncShim Gradle task needs glibc-targeted
-      # aarch64 + x86_64 C compilers — the wayvnc capture-fallback shim
-      # runs inside the proot rootfs alongside glibc-based wayvnc, not
-      # on Android. The NDK's bionic libc is incompatible. Same package
-      # the F-Droid recipe installs at `sudo apt: gcc-aarch64-linux-gnu`.
-      #
-      # `libc6-dev-arm64-cross` and `libc6-dev-amd64-cross` ship the
-      # multi-arch glibc headers (e.g. bits/wordsize.h that pulls in
-      # via features-time64.h on Debian trixie) — the GHA Ubuntu image
-      # only has the native-arch libc6-dev, and `jlumbroso/free-disk-space`
-      # below strips even more. Without these, the cross gcc fails at
-      # compile time with "bits/wordsize.h: No such file or directory".
       run: |
         # The runner image ships packages.microsoft.com apt sources
         # (azure-cli + microsoft-prod) that intermittently serve corrupt
@@ -72,32 +60,10 @@ runs:
         }
         apt_run 180 update -qq
         apt_run 600 install -y --no-install-recommends \
-          gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
-          gcc-x86-64-linux-gnu libc6-dev-amd64-cross \
-          gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
           meson ninja-build pkg-config bison \
           autoconf automake libtool libtool-bin libltdl-dev \
           libexpat1-dev libffi-dev xutils-dev python3-xcbgen \
           nasm yasm gperf
-
-    # The second group above is what core/wayland's buildWaylandNatives needs
-    # (#493). Those five binaries are cross-compiled from the wayland-android
-    # submodule through meson/ninja, with wayland-scanner, xcb-proto and
-    # libxcb's autotools chain in the middle — none of which the GHA runner
-    # image carries. F-Droid's recipe installs the same set in its `sudo:`
-    # block, which is why their builds worked while ours had never tried.
-    #
-    # nasm/yasm are for x264 inside core/ffmpeg's buildFfmpegNatives, and are
-    # needed by the x86_64 ABI only — aarch64 and armv7 assemble through the
-    # NDK's own toolchain, x86_64 does not. That asymmetry is why this was
-    # missed: `ci.yml` builds arm64 alone, so the first thing ever to compile
-    # x264 for x86_64 was the v5.86.36 release matrix, which failed with
-    # "Found no assembler / Minimum version is nasm-2.13". F-Droid's `sudo:`
-    # list had both all along — treat that list as the spec.
-    #
-    # Kept in one apt-get with the cross-compilers on purpose: a second
-    # `apt-get update` is another chance to hit the flaky third-party sources
-    # dropped above.
 
     - name: Set up JDK 17
       uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
@@ -116,55 +82,9 @@ runs:
         # itself via the accepted licenses.
         packages: platform-tools
 
-    # Only install the NDK we pin in per-module ndkVersion
-    # (core/local + termlib/lib: 29.0.14206865, r29 stable). F-Droid's
-    # buildserver no longer pre-installs NDKs in the Docker image —
-    # fdroidserver.common.auto_install_ndk fetches whatever the
-    # manifest's ndk: field requests via sdkmanager on demand. Bumped
-    # off r28c (28.2.13676358) once Google moved that to the
-    # unsupported list (GlassHaven/Haven#77).
     - name: Install SDK platforms 36+37, CMake, and NDK
       shell: bash
       run: sdkmanager "platforms;android-36" "platforms;android-37.0" "cmake;3.31.6" "ndk;29.0.14206865"
-
-    - name: Set up Go toolchain
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c  # v6.4.0
-      with:
-        go-version: '1.27'
-        cache-dependency-path: rclone-android/go/go.sum
-
-    # gomobile + gobind get re-downloaded + recompiled on every clean run
-    # (~1m). Cache the installed binaries in ~/go/bin keyed on the Go
-    # version so repeat runs skip the `go install`.
-    - name: Cache gomobile binaries
-      id: gomobile-cache
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
-      with:
-        path: |
-          ~/go/bin/gomobile
-          ~/go/bin/gobind
-        key: gomobile-${{ runner.os }}-go1.27-mobile20251021151156
-
-    - name: Install gomobile
-      if: steps.gomobile-cache.outputs.cache-hit != 'true'
-      shell: bash
-      # Pin gomobile/gobind to the golang.org/x/mobile pseudo-version recorded
-      # in rclone-android/go/go.sum so the binding generator that produces the
-      # shipped libgojni.so can't drift on a `@latest` resolve. Bump this in
-      # lockstep with the go.sum entry (and the gomobile-cache key above).
-      run: |
-        go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20251021151156-188f512ec823
-        go install golang.org/x/mobile/cmd/gobind@v0.0.0-20251021151156-188f512ec823
-
-    # fetchRapidOcrModels pulls ~15 MB from files.pythonhosted.org on a clean
-    # run. Restore the extracted ONNX models from cache so the task's checksum
-    # check short-circuits the download; keyed on the build script so a
-    # version/SHA bump refetches.
-    - name: Cache RapidOCR models
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
-      with:
-        path: core/scan/src/main/assets/rapidocr
-        key: rapidocr-${{ hashFiles('core/scan/build.gradle.kts') }}
 
     # Tool-version pins below match fdroiddata's sh.haven.app.yml recipe —
     # the F-Droid buildserver is the authoritative environment (failing
@@ -234,8 +154,7 @@ runs:
           ~/.cargo/registry
           ~/.cargo/git
           rdp-kotlin/rust/target
-          prns/prns-host/abi/c/target
-        key: cargo-${{ runner.os }}-${{ hashFiles('rdp-kotlin/rust/Cargo.lock', 'prns/prns-host/abi/c/Cargo.lock') }}
+        key: cargo-${{ runner.os }}-${{ hashFiles('rdp-kotlin/rust/Cargo.lock') }}
         restore-keys: cargo-${{ runner.os }}-
 
     - name: Grant execute permission for gradlew

@@ -68,7 +68,7 @@
     <string name="terminal_new_tab_host_key_changed">تغيّر مفتاح المضيف لـ %s — رُفض الاتصال لأسباب أمنية</string>
     <string name="terminal_new_tab_connection_failed">تعذّر الاتصال: %s</string>
     <string name="terminal_new_tab_shell_failed">تعذّر فتح الصدفة: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">لا توجد جلسة Reticulum نشطة لاستنساخها</string>
+
     <string name="terminal_new_tab_connecting">جارٍ الاتصال…</string>
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="terminal_no_contact">لا استجابة من الخادم منذ %1$d ث — تجري إعادة المحاولة</string>
@@ -87,7 +87,6 @@
     <!-- i18n sweep #210 -->
     <string name="terminal_link_open_failed">لا يوجد تطبيق يمكنه فتح هذا الرابط</string>
     <string name="terminal_link_scheme_blocked">رابط محظور (نظام غير مدعوم)</string>
-    <string name="terminal_local_vnc_failed">تعذّر تشغيل سطح المكتب المحلي</string>
     <string name="terminal_attach_title">إرفاق</string>
     <string name="terminal_attach_send_file">إرسال ملف</string>
     <string name="terminal_attach_send_file_desc">رفع إلى الجهاز البعيد ولصق مساره</string>
@@ -97,10 +96,7 @@
     <string name="terminal_attach_scan_camera_desc">التقط رمز QR أو الباركود والصق محتوياته</string>
     <string name="terminal_attach_scan_gallery">مسح الرمز (الصور)</string>
     <string name="terminal_attach_scan_gallery_desc">اختر صورة رمز QR أو الباركود والصق محتوياته</string>
-    <string name="terminal_attach_ocr_camera">التعرف على النص (الكاميرا)</string>
-    <string name="terminal_attach_ocr_camera_desc">التقط نصًا مطبوعًا والصق ما يُكتشف</string>
-    <string name="terminal_attach_ocr_gallery">التعرف على النص (الصور)</string>
-    <string name="terminal_attach_ocr_gallery_desc">اختر صورة نص مطبوع والصق ما يُكتشف</string>
+
     <string name="terminal_scan_no_code">لم يُكتشف رمز في الصورة</string>
     <string name="terminal_scan_no_text">لم يُكتشف نص في الصورة</string>
     <string name="terminal_scan_failed">فشل المسح: %s</string>

@@ -18,7 +18,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     buildFeatures {
         compose = true
     }
@@ -27,7 +26,6 @@ android {
 dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:data"))
-    implementation(project(":core:local"))
     implementation(project(":core:security"))
     // Lets the "Tunnel to a remote SSH profile…" Settings shortcut
     // live-activate the new -R rule on a currently-connected session,

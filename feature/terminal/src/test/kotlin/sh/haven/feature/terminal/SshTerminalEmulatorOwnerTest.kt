@@ -17,7 +17,6 @@ import sh.haven.core.data.repository.ConnectionRepository
 import sh.haven.core.ssh.SshClient
 import sh.haven.core.ssh.SshSessionManager
 import sh.haven.core.ssh.TerminalSession
-import sh.haven.feature.terminal.agent.TerminalSessionRegistry
 
 /**
  * JVM-level proof of the connect-time emulator owner's lifecycle (#290 issue
@@ -28,8 +27,7 @@ class SshTerminalEmulatorOwnerTest {
 
     private fun makeOwner(
         sessions: Map<String, SshSessionManager.SessionState>,
-    ): Pair<SshTerminalEmulatorOwner, TerminalSessionRegistry> {
-        val registry = TerminalSessionRegistry()
+    ): SshTerminalEmulatorOwner {
         val ssh = mockk<SshSessionManager>(relaxed = true) {
             every { this@mockk.sessions } returns MutableStateFlow(sessions)
         }
@@ -43,10 +41,10 @@ class SshTerminalEmulatorOwnerTest {
             every { terminalBellNotification } returns flowOf(true)
             every { terminalInlineImages } returns flowOf(UserPreferencesRepository.TerminalInlineImages.ASK)
         }
-        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, registry, InlineImageConsentRegistry())
+        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, InlineImageConsentRegistry())
         // No JNI in unit tests — stand in a mock emulator.
         owner.emulatorFactory = SshTerminalEmulatorOwner.EmulatorFactory { _, _, _, _, _, _, _, _ -> mockk(relaxed = true) }
-        return owner to registry
+        return owner
     }
 
     private fun state(id: String) = SshSessionManager.SessionState(
@@ -59,11 +57,10 @@ class SshTerminalEmulatorOwnerTest {
 
     @Test
     fun `attach registers the emulator and onReady routes input to the session`() {
-        val (owner, registry) = makeOwner(mapOf("s1" to state("s1")))
+        val owner = makeOwner(mapOf("s1" to state("s1")))
 
         val att = owner.attach("s1")
         assertNotNull("attach returns an attachment", att)
-        assertNotNull("emulator registered for agent reads at connect", registry.get("s1"))
 
         val session = mockk<TerminalSession>(relaxed = true)
         att!!.onReady(session)
@@ -74,7 +71,7 @@ class SshTerminalEmulatorOwnerTest {
 
     @Test
     fun `setInputSink swaps routing and resetSinks restores it to the session`() {
-        val (owner, _) = makeOwner(mapOf("s1" to state("s1")))
+        val owner = makeOwner(mapOf("s1" to state("s1")))
         val att = owner.attach("s1")!!
         val session = mockk<TerminalSession>(relaxed = true)
         att.onReady(session)
@@ -93,18 +90,15 @@ class SshTerminalEmulatorOwnerTest {
 
     @Test
     fun `dispose unregisters the emulator and drops the bundle`() {
-        val (owner, registry) = makeOwner(mapOf("s1" to state("s1")))
+        val owner = makeOwner(mapOf("s1" to state("s1")))
         owner.attach("s1")
-        assertNotNull(registry.get("s1"))
 
         owner.dispose("s1")
-        assertNull("registry entry cleared on dispose", registry.get("s1"))
         assertNull("bundle dropped on dispose", owner.bundleFor("s1"))
     }
 
     @Test
     fun `duplicate DataStore emissions do not re-trigger setAmbiwidthMode on attached emulators`() {
-        val registry = TerminalSessionRegistry()
         val ssh = mockk<SshSessionManager>(relaxed = true) {
             every { this@mockk.sessions } returns MutableStateFlow(mapOf("s1" to state("s1")))
         }
@@ -121,7 +115,7 @@ class SshTerminalEmulatorOwnerTest {
             every { terminalAmbiwidthMode } returns ambiwidthFlow
         }
         val emulator = mockk<TerminalEmulator>(relaxed = true)
-        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, registry, InlineImageConsentRegistry())
+        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, InlineImageConsentRegistry())
         owner.emulatorFactory = SshTerminalEmulatorOwner.EmulatorFactory { _, _, _, _, _, _, _, _ -> emulator }
         owner.start()
 
@@ -144,7 +138,6 @@ class SshTerminalEmulatorOwnerTest {
         val sessionsFlow = MutableStateFlow(
             mapOf("s1" to state("s1").copy(shellChannel = mockk(relaxed = true))),
         )
-        val registry = TerminalSessionRegistry()
         val ssh = mockk<SshSessionManager>(relaxed = true) {
             every { this@mockk.sessions } returns sessionsFlow
         }
@@ -159,7 +152,7 @@ class SshTerminalEmulatorOwnerTest {
             every { terminalInlineImages } returns flowOf(UserPreferencesRepository.TerminalInlineImages.ASK)
             every { terminalAmbiwidthMode } returns flowOf(UserPreferencesRepository.TerminalAmbiwidthMode.NARROW)
         }
-        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, registry, InlineImageConsentRegistry())
+        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, InlineImageConsentRegistry())
         owner.emulatorFactory = SshTerminalEmulatorOwner.EmulatorFactory { _, _, _, _, _, _, _, _ -> mockk(relaxed = true) }
         owner.start()
         owner.attach("s1")
@@ -171,11 +164,10 @@ class SshTerminalEmulatorOwnerTest {
             "s1" to state("s1").copy(tunnelOpened = true, shellChannel = null, terminalSession = null),
         )
         val deadline = System.currentTimeMillis() + 2_000
-        while ((owner.bundleFor("s1") != null || registry.get("s1") != null) && System.currentTimeMillis() < deadline) {
+        while (owner.bundleFor("s1") != null && System.currentTimeMillis() < deadline) {
             Thread.sleep(20)
         }
         assertNull("bundle disposed when session becomes shell-less tunnel carrier", owner.bundleFor("s1"))
-        assertNull("registry entry cleared when session becomes shell-less tunnel carrier", registry.get("s1"))
     }
 
     @Test
@@ -183,7 +175,6 @@ class SshTerminalEmulatorOwnerTest {
         val sessionsFlow = MutableStateFlow(
             mapOf("s1" to state("s1").copy(tunnelOpened = true, shellChannel = null, terminalSession = null)),
         )
-        val registry = TerminalSessionRegistry()
         val ssh = mockk<SshSessionManager>(relaxed = true) {
             every { this@mockk.sessions } returns sessionsFlow
         }
@@ -199,7 +190,7 @@ class SshTerminalEmulatorOwnerTest {
             every { terminalAmbiwidthMode } returns flowOf(UserPreferencesRepository.TerminalAmbiwidthMode.NARROW)
         }
         val emulators = mutableListOf<TerminalEmulator>()
-        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, registry, InlineImageConsentRegistry())
+        val owner = SshTerminalEmulatorOwner(ssh, repo, mockk(relaxed = true), prefs, InlineImageConsentRegistry())
         owner.emulatorFactory = SshTerminalEmulatorOwner.EmulatorFactory { _, _, _, _, _, _, _, _ ->
             mockk<TerminalEmulator>(relaxed = true).also { emulators.add(it) }
         }

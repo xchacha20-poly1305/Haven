@@ -1,6 +1,6 @@
 package sh.haven.app
 
-import sh.haven.core.data.agent.AgentUiCommand
+import sh.haven.core.data.navigation.UiCommand
 import sh.haven.core.data.db.entities.ConnectionProfile
 
 /**
@@ -161,12 +161,12 @@ object ConnectDeepLink {
      * The command to emit for [p]: connect a single matched profile, otherwise
      * (zero or ambiguous matches) open the pre-filled New-Connection editor.
      */
-    fun resolve(profiles: List<ConnectionProfile>, p: Params): AgentUiCommand {
+    fun resolve(profiles: List<ConnectionProfile>, p: Params): UiCommand {
         val match = matches(profiles, p).singleOrNull()
         return if (match != null) {
-            AgentUiCommand.ConnectFromDeepLink(match.id, p.session, p.command)
+            UiCommand.ConnectFromDeepLink(match.id, p.session, p.command)
         } else {
-            AgentUiCommand.PrefillNewConnection(p.host, p.username, p.port, p.transport ?: "ssh", p.session)
+            UiCommand.PrefillNewConnection(p.host, p.username, p.port, p.transport ?: "ssh", p.session)
         }
     }
 }

@@ -430,7 +430,6 @@
     <string name="connections_section_general">General</string>
     <string name="connections_section_local_shell">Local shell</string>
     <string name="connections_section_guest">Linux guest</string>
-    <string name="connections_guest_desc">Boots a real Linux kernel on this device, with its own root filesystem and network. The rootfs is unpacked (~512 MB) on first use. No host or credentials needed.</string>
     <!-- Bluetooth serial (#406) -->
     <string name="connections_section_btserial">Bluetooth serial</string>
     <string name="connections_btserial_desc">Connect to a paired Bluetooth-to-serial adapter (e.g. a switch or router console port).</string>
@@ -462,46 +461,15 @@
     <string name="connections_usbserial_flow_xonxoff">XON/XOFF</string>
     <string name="connections_section_cloud_storage">Cloud storage</string>
     <!-- Import rclone.conf (#251) -->
-    <string name="rclone_import_title">Import rclone remotes</string>
-    <string name="rclone_import_intro">Paste your Linux rclone.conf, or pick the file. Remotes (including OAuth tokens) are imported as-is, so you don\'t reconfigure them.</string>
-    <string name="rclone_import_pick_file">Pick rclone.conf…</string>
-    <string name="rclone_import_paste_label">rclone.conf contents</string>
-    <string name="rclone_import_parse">Find remotes</string>
-    <string name="rclone_import_encrypted">That file is a password-encrypted rclone config. Run \"rclone config show\" on the desktop and paste the decrypted output instead.</string>
-    <string name="rclone_import_already_added">already added</string>
-    <string name="rclone_import_no_type">no type</string>
-    <string name="rclone_import_select_count">Import %1$d remote(s)</string>
-    <string name="rclone_import_done">Imported %1$d, skipped %2$d, failed %3$d.</string>
-    <string name="rclone_import_menu">Import rclone config…</string>
+
     <string name="connections_section_vnc">VNC settings</string>
     <string name="connections_section_rdp">RDP settings</string>
     <string name="connections_section_spice">SPICE settings</string>
     <string name="connections_section_glkvm">GLKVM settings</string>
-    <string name="connections_section_openai">AI endpoint</string>
-    <string name="connections_field_openai_host">Server address</string>
-    <string name="connections_field_openai_host_hint">IP, hostname, or a full http:// URL</string>
-    <string name="connections_field_openai_api_key">API key (optional)</string>
-    <string name="connections_field_openai_api_key_hint">Sent as a Bearer token. Leave blank for keyless endpoints.</string>
-    <string name="connections_field_openai_path_prefix">Path prefix (optional)</string>
-    <string name="connections_field_openai_path_prefix_hint">Inserts before /v1 — e.g. /api</string>    <string name="connections_field_openai_protocol">Wire protocol</string>
-    <string name="connections_field_openai_protocol_hint">OpenAI-compatible by default; Ollama, Anthropic and Gemini change paths and auth.</string>
 
-    <string name="connections_openai_url_preview">Endpoint URL: %1$s</string>
     <string name="connections_section_smb">SMB settings</string>
     <string name="connections_section_email">Email account</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">Provider: ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">Uses Proton\'s unofficial API. This is reverse-engineered and against Proton\'s terms — your account could be rate-limited or locked. Proceed at your own risk.</string>
-    <string name="connections_field_email_address">Email address</string>
-    <string name="connections_field_email_password">Password</string>
-    <string name="connections_field_email_mailbox_password">Mailbox password (two-password mode only)</string>
-    <string name="connections_email_mailbox_password_hint">Leave blank unless your Proton account has a separate mailbox password.</string>
-    <string name="connections_email_2fa_hint">If your account has 2FA, link its TOTP secret in the SSH key / TOTP manager and it will be applied automatically.</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">Use your password, or an app-password if your provider requires one (Fastmail, iCloud, Yahoo, Gmail/2FA).</string>
-    <string name="connections_email_preset_label">Provider preset</string>
-    <string name="connections_email_app_password_link">Create an app-password for %1$s</string>
     <string name="connections_field_imap_server">IMAP server</string>
     <string name="connections_field_smtp_server">SMTP server</string>
     <string name="connections_field_smtp_server_help">Leave blank to use the IMAP server.</string>
@@ -512,35 +480,25 @@
     <string name="connections_section_terminal">Terminal</string>
     <string name="connections_section_authentication">Authentication</string>
     <string name="connections_section_embedded_vnc">Embedded VNC</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">Routing</string>
 
     <!-- MCP reverse-tunnel toggle (SSH section). -->
-    <string name="connections_toggle_mcp_tunnel">Reverse-expose Haven\'s MCP to this host</string>
-    <string name="connections_helper_mcp_tunnel">Reverse-tunnels Haven\'s own MCP server back to the remote host, so processes there (e.g. Claude Code running on the server) reach http://127.0.0.1:8730/mcp and (over loopback) skip pairing &amp; consent. Applied on connect. For always-on access with no session open, set this as the Always-on MCP connection in Settings → Agent endpoint.</string>
 
     <!-- Connection edit dialog: remaining field labels, toggles and helper text. -->
     <string name="connections_section_reconnect">Reconnect</string>
-    <string name="connections_section_mcp">AI agent (MCP)</string>
-    <string name="connections_local_shell_android_desc">Runs the native Android shell (/system/bin/sh). Access Android commands, file system, and root (if available).</string>
-    <string name="connections_local_shell_proot_desc">Runs an Alpine Linux shell locally via PRoot. Downloads a minimal rootfs (~4MB) on first use. No root or network connection needed.</string>
-    <string name="connections_local_distro_label">Open in OS</string>
-    <string name="connections_local_distro_active_default">Active distro (default)</string>
+
     <string name="connections_dropdown_select_provider">Select provider…</string>
-    <string name="connections_helper_rclone_signin">Sign in via your browser when you first connect.</string>
-    <string name="connections_helper_rclone_credentials">Enter the account details for this provider, then tap Configure to save and verify the remote.</string>
-    <string name="connections_rclone_configure">Configure &amp; verify</string>
-    <string name="connections_rclone_configured_ok">Remote configured and verified.</string>
-    <string name="connections_rclone_configure_first">Tap “Configure &amp; verify” to save this remote before you can Save the connection.</string>
+
     <string name="connections_dropdown_select_ssh">Select SSH connection</string>
     <string name="connections_helper_add_ssh_first">Add an SSH connection first</string>
     <string name="connections_ai_route_section">AI route carrier</string>
     <string name="connections_ai_route_via_ssh">Via SSH</string>
-    <string name="connections_ai_route_via_reticulum">Via Reticulum</string>
+
     <string name="connections_field_ai_route_carrier">Carrier connection</string>
     <string name="connections_dropdown_select_carrier">Select connection</string>
     <string name="connections_helper_ai_route">Route the endpoint through a carrier: SSH opens a local forward through the carrier session, Reticulum bridges over the mesh. The carrier must be connected for Reticulum routes.</string>
-    <string name="connections_helper_add_reticulum_first">Add a Reticulum connection first</string>
+
     <string name="connections_toggle_rdp_nla">Network Level Authentication (NLA)</string>
     <string name="connections_helper_mosh_required">Requires mosh-server on remote host</string>
     <string name="connections_helper_et_required">Requires etserver on remote host (port %1$s)</string>
@@ -569,8 +527,6 @@
     <string name="connections_rdp_depth_32">32-bit (Windows — black screen on xrdp)</string>
 
     <!-- #210 i18n sweep: agent-activity header chip. -->
-    <string name="connections_agent_active">Agent active</string>
-    <string name="connections_agent_activity">Agent activity</string>
 
     <!-- #210 i18n sweep: port-forward dialog visual flow and form. -->
     <string name="connections_pf_type_local">LOCAL</string>
@@ -604,7 +560,6 @@
     <string name="connections_hosts_discovered">%1$d hosts discovered</string>
 
     <!-- #210 i18n sweep: rclone cloud-storage generic fallback label. -->
-    <string name="connections_rclone_provider_cloud">Cloud</string>
 
     <!-- #210 i18n sweep: connection list "via jump host / proxy" suffix. -->
     <string name="connections_list_via">via %1$s</string>
@@ -632,11 +587,7 @@
     <!-- #210 i18n sweep: VM-setup copy toasts and code-block copy action. -->
     <string name="connections_vm_copied_short">Copied</string>
     <string name="connections_vm_terminal_not_found">Terminal app not found</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_mcp_active">Agent is operating on this connection — tap to disable MCP for it</string>
-    <string name="connections_mcp_disabled">MCP disabled for this connection — tap to enable</string>
-    <string name="connections_toggle_mcp_enabled">Allow agent to control this connection</string>
-    <string name="connections_helper_mcp_enabled">Inbound: when off, AI-agent (MCP) tools can\'t read or drive this connection. It still works normally for you.</string>
+
     <string name="connections_deeplink_confirm_title">Connect?</string>
     <string name="connections_deeplink_confirm_message">A link wants to connect to %1$s.</string>
     <string name="connections_deeplink_confirm_session">A link wants to connect to %1$s and attach session “%2$s”.</string>
@@ -658,4 +609,5 @@
     <string name="connections_helper_persist_rediscovered_host">Update the profile when a local machine presents the same SSH host key at a new IPv4 address. Turn off to connect at the rediscovered address for that session only and keep your configured host (e.g. a WireGuard IP).</string>
     <string name="connections_field_saved_password">Saved password (SSH / sudo)</string>
     <string name="connections_helper_saved_password">Optional. Encrypted in the Android Keystore and used for SSH password login and biometric-gated sudo fill in the terminal.</string>
+    <string name="connections_removed_route">Removed VPN route — select a new route</string>
 </resources>

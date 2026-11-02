@@ -18,7 +18,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     buildFeatures {
         compose = true
     }
@@ -37,7 +36,6 @@ dependencies {
     implementation(project(":core:knock"))
     implementation(project(":core:spa"))
     implementation(project(":feature:tunnel"))
-    implementation(project(":core:reticulum"))
     implementation(project(":core:mosh"))
     implementation(project(":core:et"))
     implementation(project(":core:btserial"))
@@ -45,11 +43,7 @@ dependencies {
     implementation(project(":core:usbserial"))
     implementation(project(":core:data"))
     implementation(project(":core:smb"))
-    implementation(project(":core:rclone"))
-    implementation(project(":core:mail"))
-    implementation(project(":core:openai"))
     implementation(project(":core:fido"))
-    implementation(project(":core:local"))
     implementation(project(":core:usb"))
     implementation(project(":core:stepca"))
 

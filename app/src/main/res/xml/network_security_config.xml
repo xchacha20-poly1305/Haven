@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Haven connects to user-configured endpoints (thin-client model):
-         plain-HTTP hosts are an explicit choice the user makes when they
-         enter the URL, the way an SSH profile is an explicit choice. TLS
-         still applies when the server speaks it; this only lifts the
-         platform default ban on http:// so LAN AI endpoints
-         (llama-server, Ollama, …) are reachable directly. Loopback
-         (127.0.0.1) remains the backbone: Haven's own HTTP servers
-         (rclone serve, HLS, the MCP transport) and SSH `-L` rules that
-         return a workstation server to the device all resolve there. -->
+    <!-- User-configured HTTP KVM endpoints and loopback file previews/SSH forwards
+         may use cleartext HTTP. HTTPS connections still use TLS. -->
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

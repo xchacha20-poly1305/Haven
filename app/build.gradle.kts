@@ -51,17 +51,6 @@ android {
         }
     }
 
-    // The terminal flavour's Go library lives outside the module, next to the
-    // full one that :core:rclone contributes. Both are build outputs and both
-    // are gitignored; running rclone-android/tools/build-android.sh produces
-    // the pair. A terminal build made without it would package :core:rclone's
-    // full library instead — 20 MB larger, and correct, just not smaller.
-    sourceSets {
-        getByName("terminal") {
-            jniLibs.srcDir("${rootProject.projectDir}/rclone-android/jniLibs-terminal")
-        }
-    }
-
     signingConfigs {
         create("release") {
             val ksFile = rootProject.file("haven-release.jks")
@@ -109,7 +98,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -128,20 +116,10 @@ android {
         }
         jniLibs {
             useLegacyPackaging = true
-            // #510: the terminal flavour ships a libgojni.so built without
-            // rclone (see rclone-android/tools/build-android.sh) — ~8 MB
-            // against ~28 MB, keeping tailscale, WireGuard and Proton mail.
-            //
-            // gomobile always names its output libgojni.so, so the two cannot
-            // be told apart by name and both reach the merge: the app's own
-            // flavour source set, and :core:rclone's copy of the full one.
-            // pickFirsts resolves that in the app's favour. An exclude cannot
-            // do this job — the pattern would match both and leave the flavour
-            // with no Go library at all.
-            //
-            // The full flavour has no app-level copy, so it takes
-            // :core:rclone's unchanged.
-            pickFirsts += "**/libgojni.so"
+            excludes += setOf(
+                "**/libvmlinux.so", "**/libuml-stub.so",
+                "**/libuml-passt.so", "**/libuml-net.so",
+            )
         }
     }
 
@@ -179,45 +157,11 @@ androidComponents {
     // native payload. Excluded here rather than on the flavour because
     // ProductFlavor has no packaging block.
     //
-    // The modules stay on the compile classpath and are simply inert, which
-    // works because each entry point already degrades when its library is
-    // absent — and did so before this flavour existed:
-    //   WaylandBridge catches UnsatisfiedLinkError and reports available =
-    //     false; every call site checks it before any native call.
-    //   FfmpegExecutor.isAvailable() tests canExecute() on both binaries,
-    //     and the SFTP UI reads it as ffmpegAvailable.
-    // So this rides existing contracts rather than inventing failure modes.
-    // BuildConfig.DESKTOP hides the entry points so nothing offers a feature
-    // that cannot run.
     onVariants(selector().withFlavor("features" to "terminal")) { variant ->
         variant.packaging.jniLibs.excludes.addAll(
             // Remote desktop transports
             "**/librdp_transport.so",
             "**/libspice_transport.so",
-            // Native Wayland compositor + GPU renderer
-            "**/liblabwc_android.so",
-            "**/libvirgl_render_server.so",
-            "**/libvirgl_test_server.so",
-            "**/libxwayland_wrapper.so",
-            "**/libbenchmark_gles.so",
-            // Media conversion, preview and streaming. libc++_shared.so is
-            // NOT here — other native modules link against it too.
-            "**/libffmpeg.so",
-            "**/libffprobe.so",
-            "**/libavcodec.so",
-            "**/libavdevice.so",
-            "**/libavfilter.so",
-            "**/libavformat.so",
-            "**/libavutil.so",
-            "**/libswresample.so",
-            "**/libswscale.so",
-            // UML guest transport (kernel is 79 MB; NativeFeatures.uml gates
-            // the UI — see core/local/fetch-uml.sh). libuml-net.so is
-            // CMake-built in every variant, so it must be excluded too.
-            "**/libvmlinux.so",
-            "**/libuml-stub.so",
-            "**/libuml-passt.so",
-            "**/libuml-net.so",
         )
     }
 
@@ -245,12 +189,7 @@ dependencies {
     implementation(project(":core:ssh"))
     implementation(project(":core:security"))
     implementation(project(":core:data"))
-    implementation(project(":core:reticulum"))
 
-    // Native Kotlin Reticulum transport (rnsh-kt + reticulum-kt)
-    implementation("tech.torlando:rnsh-core:0.1.0-SNAPSHOT")
-    implementation("network.reticulum:rns-core:0.1.0-SNAPSHOT")
-    implementation("network.reticulum:rns-interfaces:0.1.0-SNAPSHOT")
     implementation(project(":core:mosh"))
     implementation(project(":core:et"))
     implementation(project(":core:btserial"))
@@ -258,18 +197,13 @@ dependencies {
     implementation(project(":core:usbserial"))
     implementation(project(":core:vnc"))
     implementation(project(":core:rdp"))
-    implementation(project(":core:prns"))
     implementation(project(":core:spice"))
     implementation(project(":core:glkvm"))
     implementation(project(":core:smb"))
-    implementation(project(":core:rclone"))
-    implementation(project(":core:ffmpeg"))
     implementation(project(":core:fido"))
     implementation(project(":core:usb"))
-    implementation(project(":core:local"))
-    implementation(project(":core:wayland"))
     implementation(project(":core:terminal-haven"))
-    // Direct termlib pull-in so the MCP agent transport can name termlib
+
     // public types (TerminalEmulator, ScrollController, SelectionController,
     // SelectionRange, AgentSnapshot) by class. core:terminal-haven uses
     // `implementation(libs.termlib)` so the dependency doesn't leak.
@@ -277,21 +211,14 @@ dependencies {
     implementation(project(":core:stepca"))
     implementation(project(":core:tunnel"))
     implementation(project(":core:knock"))
-    implementation(project(":core:mcp"))
     implementation(project(":core:spa"))
-    implementation(project(":core:scan"))
 
     implementation(project(":feature:connections"))
     implementation(project(":feature:terminal"))
     implementation(project(":feature:sftp"))
-    implementation(project(":feature:mail"))
-    implementation(project(":feature:chat"))
-    implementation(project(":core:mail"))
-    implementation(project(":core:openai"))
     implementation(project(":feature:keys"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:editor"))
-    implementation(project(":feature:imagetools"))
     implementation(project(":feature:vnc"))
     implementation(project(":feature:rdp"))
     // The app manifest declares CloudflareAccessLoginActivity, so app must
@@ -340,27 +267,4 @@ kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
-}
-
-// The UML guest's recovery rootfs (Alpine minirootfs + ddrescue/nbd/mtools,
-// docs/features/usb-recovery-live.md) is fetched at build time the same way
-// the transport binaries are in :core:local. It cannot be committed:
-// fdroidserver's source scan hard-errors on gzip files in the tree, which is
-// how every F-Droid build from versionCode 8431 on failed. Files produced
-// during the build are not scanned. Skippable with -PskipUml; a file already
-// in place is left alone, so offline builds work via UML_RELEASE_MIRROR=file://.
-val fetchUmlRootfs by tasks.registering(Exec::class) {
-    val script = file("fetch-uml-rootfs.sh")
-    inputs.file(script)
-    outputs.file(file("src/full/assets/uml/rootfs-aarch64.ext4.gz"))
-    onlyIf { !project.hasProperty("skipUml") }
-
-    workingDir = projectDir
-    commandLine("bash", script.absolutePath)
-    if (project.hasProperty("skipUml"))
-        environment("SKIP_UML", "1")
-}
-
-tasks.named("preBuild") {
-    dependsOn(fetchUmlRootfs)
 }

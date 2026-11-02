@@ -75,7 +75,7 @@ class RdpSession(
      * rejected inside the native handshake before credentials are sent; the
      * observed cert is pinned on first use. Null disables pinning.
      */
-    private val tlsCertVerifier: sh.haven.core.data.agent.TlsCertVerifier? = null,
+    private val tlsCertVerifier: sh.haven.core.data.security.TlsCertVerifier? = null,
     /**
      * Stable server identity for the cert pin, independent of the socket
      * target. For an SSH-tunnelled session [host] is 127.0.0.1, so the caller

@@ -5,18 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
-/**
- * #366 — send_terminal_input only tried SSH + local, so input to a mosh/ET/
- * Reticulum session failed "No local session" while snapshot reads resolved
- * the same id. Pins the registry dispatcher: input reaches whichever
- * transport owns the session, and the no-owner error names all transports.
- *
- * Uses fake [TransportSessionManager]s rather than the real managers. Since
- * #510 the registry knows only that interface — which is what lets `:core:ssh`
- * stop depending on every transport module — so the dispatcher is testable
- * without them. That the real transports are actually bound is a separate
- * question, pinned by `TransportBindingsTest` in `:app`.
- */
 class SessionManagerRegistryInputTest {
 
     /** A transport that never owns the id, answering like a real manager does. */
@@ -52,10 +40,8 @@ class SessionManagerRegistryInputTest {
 
     private val names = mapOf(
         Transport.SSH to "SSH",
-        Transport.LOCAL to "local",
         Transport.MOSH to "mosh",
         Transport.ET to "ET",
-        Transport.RETICULUM to "Reticulum",
         Transport.BTSERIAL to "Bluetooth-serial",
         Transport.BLESERIAL to "BLE-serial",
         Transport.USBSERIAL to "USB-serial",
@@ -64,7 +50,7 @@ class SessionManagerRegistryInputTest {
     private fun registry(vararg overrides: TransportSessionManager): SessionManagerRegistry {
         val overridden = overrides.map { it.transport }.toSet()
         val rest = names.filterKeys { it !in overridden }.map { (t, n) -> Disowning(t, n) }
-        return SessionManagerRegistry((rest + overrides).toSet(), keepAlives = emptySet())
+        return SessionManagerRegistry((rest + overrides).toSet())
     }
 
     @Test
@@ -117,33 +103,33 @@ class SessionManagerRegistryInputTest {
     }
 
     /**
-     * #555: `send_terminal_input` acked `delivered: true` into a local shell
+     * #555: `send_terminal_input` acked `delivered: true` into a et shell
      * that never saw the bytes, and the ack said nothing about where they
      * went. The registry knows — it returns the accepting transport's name so
-     * the ack can carry it, and a reproduction distinguishes "the local
+     * the ack can carry it, and a reproduction distinguishes "the et
      * manager took them and lost them" from "another transport claimed the id".
      */
     @Test
     fun `names the transport that accepted the write`() {
         val ssh = Disowning(Transport.SSH, "SSH")
-        val local = Owning(Transport.LOCAL, "local")
+        val et = Owning(Transport.ET, "et")
 
-        val accepted = registry(ssh, local).sendTerminalInput("s1", "ls\n")
+        val accepted = registry(ssh, et).sendTerminalInput("s1", "ls\n")
 
-        assertEquals("local", accepted)
-        assertEquals("s1" to "ls\n", local.received)
+        assertEquals("et", accepted)
+        assertEquals("s1" to "ls\n", et.received)
     }
 
     /** The first accepting transport wins, and is the one reported. */
     @Test
     fun `reports the first acceptor, not the last`() {
         val ssh = Owning(Transport.SSH, "SSH")
-        val local = Owning(Transport.LOCAL, "local")
+        val et = Owning(Transport.ET, "et")
 
-        val accepted = registry(local, ssh).sendTerminalInput("s1", "x")
+        val accepted = registry(et, ssh).sendTerminalInput("s1", "x")
 
         assertEquals("SSH", accepted)
-        assertEquals(null, local.received)
+        assertEquals(null, et.received)
     }
 
     /**

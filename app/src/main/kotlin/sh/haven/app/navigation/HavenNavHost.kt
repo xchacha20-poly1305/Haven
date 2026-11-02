@@ -1,5 +1,8 @@
 package sh.haven.app.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -41,7 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -51,7 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -68,7 +69,6 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
@@ -81,13 +81,9 @@ import sh.haven.core.data.repository.ConnectionRepository
 import androidx.activity.compose.LocalActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import sh.haven.app.desktop.DesktopViewModel
-import sh.haven.feature.connections.AGENT_ACTIVE_WINDOW_MS
 import sh.haven.feature.connections.ConnectionsScreen
 import sh.haven.feature.connections.ConnectionsViewModel
-import sh.haven.feature.connections.RobotEyesIcon
-import sh.haven.feature.chat.ChatScreen
 import sh.haven.feature.keys.KeysScreen
-import sh.haven.feature.mail.MailScreen
 import sh.haven.feature.settings.SettingsScreen
 import androidx.compose.ui.unit.dp
 import sh.haven.feature.sftp.SftpScreen
@@ -103,108 +99,28 @@ fun HavenNavHost(
     preferencesRepository: UserPreferencesRepository,
     connectionRepository: ConnectionRepository,
     sshKeyRepository: sh.haven.core.data.repository.SshKeyRepository,
-    agentUiCommandBus: sh.haven.core.data.agent.AgentUiCommandBus,
+    uiCommandBus: sh.haven.core.data.navigation.UiCommandBus,
     userMessageBus: sh.haven.core.data.message.UserMessageBus,
-    mailSessionManager: sh.haven.core.mail.MailSessionManager,
-    openAiSessionManager: sh.haven.core.openai.OpenAiSessionManager,
-    mcpStatusHolder: sh.haven.core.data.agent.McpStatusHolder,
+
 ) {
     // Desktop multi-session ViewModel — hoisted to nav scope so it survives tab switches
     val desktopViewModel: DesktopViewModel = hiltViewModel()
-    val desktopTabsForAgent by desktopViewModel.tabs.collectAsState()
-    val desktopAgentProfiles by desktopViewModel.agentActiveProfiles.collectAsState()
-    var agentNowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(desktopAgentProfiles.isNotEmpty()) {
-        if (desktopAgentProfiles.isEmpty()) return@LaunchedEffect
-        while (true) {
-            agentNowMs = System.currentTimeMillis()
-            kotlinx.coroutines.delay(1_000L)
-        }
-    }
-    val isDesktopAgentActive = desktopTabsForAgent.any { tab ->
-        val pid = tab.profileId ?: return@any false
-        val ts = desktopAgentProfiles[pid] ?: return@any false
-        (agentNowMs - ts) in 0L..AGENT_ACTIVE_WINDOW_MS
-    }
-
-    // Agent activity audit overlay — opened by the AgentActiveChip on the
-    // Connections top bar, dismissed via the screen's back arrow. Lifted
-    // here so the chip can deep-link directly instead of jumping to
-    // Settings as a fallback. Settings still has its own entry; both
-    // surfaces render the same screen.
-    var showAgentActivityOverlay by remember { mutableStateOf(false) }
-
-    // Notification "Agent log" action → open the audit overlay. Latched state
-    // on the holder (not a bus event) so a tap that cold-starts the app, or
-    // lands while the biometric lock delays composition, isn't dropped;
-    // consumed once shown so back-dismiss sticks (#239).
-    val openAgentLogRequested by mcpStatusHolder.openActivityLog.collectAsState()
-    LaunchedEffect(openAgentLogRequested) {
-        if (openAgentLogRequested) {
-            showAgentActivityOverlay = true
-            mcpStatusHolder.consumeOpenActivityLog()
-        }
-    }
-
-    // Native Wayland desktop — poll compositor state reactively
-    var waylandRunning by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            waylandRunning = sh.haven.core.wayland.WaylandBridge.isCompositorRunning()
-            kotlinx.coroutines.delay(500)
-        }
-    }
-
-    // Tab visibility (#navbar-visibility): each nav tab has a per-tab
-    // preference (AUTO / SHOW / HIDE). AUTO defers to the built-in usage rule
-    // computed below; SHOW/HIDE override it. The connections list backs the
-    // "has terminal profiles" usage predicate.
-    val connections by connectionRepository.observeAll()
-        .collectAsState(initial = emptyList())
-    val sshKeys by sshKeyRepository.observeAll()
-        .collectAsState(initial = emptyList())
-    val tabVisibility by preferencesRepository.tabVisibility
-        .collectAsState(initial = emptyMap())
-
-    // App-wide background opacity (reuses the terminal background-opacity
-    // setting). Below 1.0 the device wallpaper shows through every screen's
-    // background. Terminal panes blend via their own translucent fill, so
-    // they get Color.Transparent here instead (see terminalTransparent).
-    val appBackgroundOpacity by preferencesRepository.terminalBackgroundOpacity
-        .collectAsState(initial = 1f)
-
+    val connections by connectionRepository.observeAll().collectAsState(initial = emptyList())
+    val tabVisibility by preferencesRepository.tabVisibility.collectAsState(initial = emptyMap())
+    val appBackgroundOpacity by preferencesRepository.terminalBackgroundOpacity.collectAsState(initial = 1f)
     val hasTerminalProfiles = connections.any { it.isTerminal }
-    // The Mail tab tracks live sessions, not saved profiles: it appears only
-    // while an email connection is actually open (a CONNECTED session) and
-    // disappears on disconnect — mail is a transient view with no offline
-    // store yet, unlike the Terminal/Keys tabs which gate on profile existence.
-    val mailSessions by mailSessionManager.sessions.collectAsState()
-    val hasOpenEmailSession = mailSessions.values.any {
-        it.status == sh.haven.core.mail.MailSessionManager.SessionState.Status.CONNECTED
-    }
-
-    // Same live-session tracking for the Chat tab: appears while an OpenAI
-    // endpoint connection is open, hides on disconnect.
-    val openAiSessions by openAiSessionManager.sessions.collectAsState()
-    val hasOpenChatSession = openAiSessions.values.any {
-        it.status == sh.haven.core.openai.OpenAiSessionManager.SessionState.Status.CONNECTED
-    }
-
     val screenOrderPref by preferencesRepository.screenOrder
         .collectAsState(initial = emptyList())
     val screens = remember(
         screenOrderPref,
         hasTerminalProfiles,
-        hasOpenEmailSession,
-        hasOpenChatSession,
         tabVisibility,
     ) {
         visibleScreens(
             screenOrder = screenOrderPref,
             tabVisibility = tabVisibility,
             hasTerminalProfiles = hasTerminalProfiles,
-            hasOpenEmailSession = hasOpenEmailSession,
-            hasOpenChatSession = hasOpenChatSession,
+
         )
     }
     // Separate mutable list for nav bar visual order during drag (pager untouched)
@@ -300,7 +216,7 @@ fun HavenNavHost(
     // Desktop (VNC/RDP) navigation is collected HERE, at the always-composed
     // nav-host level, rather than inside ConnectionsScreen — so a desktop tab is
     // created the instant the connect emits, no matter which screen is on-screen.
-    // This is what makes the lost-connection Retry button and the MCP
+
     // connect_profile tool reliably open the desktop even when the Connections
     // screen isn't composed (it isn't, from the Desktop tab). (#121)
     val connectionsViewModel: ConnectionsViewModel = hiltViewModel()
@@ -367,70 +283,40 @@ fun HavenNavHost(
         }
     }
 
-    // Set when the "mail actions awaiting approval" notification tap routes
-    // through (MainActivity → AgentUiCommand.OpenMailRules): MailScreen opens
-    // its rules pane once composed, then consumes the flag. Declared here
-    // (before the command collector below) so the collector can set it.
-    var pendingOpenMailRules by rememberSaveable { mutableStateOf(false) }
-
-    // Agent UI commands — when an MCP tool posts a navigation verb, switch
     // the pager to the right tab so the user lands where the agent asked.
     // The matching feature ViewModel collects the same bus and adjusts its
     // internal state in parallel.
-    LaunchedEffect(agentUiCommandBus, screens) {
-        agentUiCommandBus.commands
+    LaunchedEffect(uiCommandBus, screens) {
+        uiCommandBus.commands
             // Cold-start: an SFTP-targeted command emitted before any collector
             // subscribed (Compose hadn't built yet) is held in the bus latch.
             // Peek it (don't consume — SftpViewModel consumes it via
             // takePendingSftpCommand) and switch to Files, which mounts the
             // SftpViewModel so it can drain the latch and run the action.
             .onSubscription {
-                if (agentUiCommandBus.peekPendingSftpCommand() != null) requestScreen(Screen.Sftp)
+                if (uiCommandBus.peekPendingSftpCommand() != null) requestScreen(Screen.Sftp)
             }
             .collect { command ->
             val screen = when (command) {
-                is sh.haven.core.data.agent.AgentUiCommand.NavigateToSftpPath -> Screen.Sftp
-                is sh.haven.core.data.agent.AgentUiCommand.OpenConvertDialog -> Screen.Sftp
-                is sh.haven.core.data.agent.AgentUiCommand.FocusTerminalSession -> Screen.Terminal
-                is sh.haven.core.data.agent.AgentUiCommand.OpenTerminalSession -> Screen.Terminal
-                is sh.haven.core.data.agent.AgentUiCommand.OpenRemoteDesktop -> Screen.Desktop
-                is sh.haven.core.data.agent.AgentUiCommand.OpenWaylandDesktop -> Screen.Desktop
-                is sh.haven.core.data.agent.AgentUiCommand.OpenUsbDrive -> Screen.Desktop
-                is sh.haven.core.data.agent.AgentUiCommand.RegenerateStepCaCert -> Screen.Keys
-                is sh.haven.core.data.agent.AgentUiCommand.OpenInEditor -> Screen.Sftp
-                is sh.haven.core.data.agent.AgentUiCommand.EncryptFile -> Screen.Sftp
-                is sh.haven.core.data.agent.AgentUiCommand.DecryptFile -> Screen.Sftp
-                is sh.haven.core.data.agent.AgentUiCommand.ConnectProfile ->
+                is sh.haven.core.data.navigation.UiCommand.NavigateToSftpPath -> Screen.Sftp
+                is sh.haven.core.data.navigation.UiCommand.FocusTerminalSession -> Screen.Terminal
+                is sh.haven.core.data.navigation.UiCommand.OpenTerminalSession -> Screen.Terminal
+                is sh.haven.core.data.navigation.UiCommand.OpenRemoteDesktop -> Screen.Desktop
+                is sh.haven.core.data.navigation.UiCommand.RegenerateStepCaCert -> Screen.Keys
+                is sh.haven.core.data.navigation.UiCommand.ConnectProfile ->
                     // Connect lands the user on the Connections tab so they
                     // can see the connecting → connected status flip.
                     Screen.Connections
-                is sh.haven.core.data.agent.AgentUiCommand.ConnectFromDeepLink ->
+                is sh.haven.core.data.navigation.UiCommand.ConnectFromDeepLink ->
                     // haven://connect matched a saved profile: show the
                     // Connections tab for the confirm sheet + status flip.
                     Screen.Connections
-                is sh.haven.core.data.agent.AgentUiCommand.PrefillNewConnection ->
+                is sh.haven.core.data.navigation.UiCommand.PrefillNewConnection ->
                     // haven://connect with no saved match: open the New
                     // Connection editor (on the Connections tab) pre-filled.
                     Screen.Connections
-                is sh.haven.core.data.agent.AgentUiCommand.AnswerAuthPrompt ->
-                    // Answering the password/passphrase fallback re-drives the
-                    // connect — same as ConnectProfile, show the Connections tab.
-                    Screen.Connections
-                is sh.haven.core.data.agent.AgentUiCommand.AnswerSessionSelection ->
-                    // Answering the session picker re-drives the attach — same
-                    // as ConnectProfile, show the Connections tab.
-                    Screen.Connections
-                is sh.haven.core.data.agent.AgentUiCommand.OpenBackupPasswordDialog ->
+                is sh.haven.core.data.navigation.UiCommand.OpenBackupPasswordDialog ->
                     Screen.Settings
-                is sh.haven.core.data.agent.AgentUiCommand.OpenMailRules -> {
-                    // Approval-queue notification tap: land on Mail with the
-                    // rules pane open. With no live email session the Mail tab
-                    // is hidden; the selection is remembered and both fire
-                    // once the user reconnects the account (approval needs the
-                    // session anyway).
-                    pendingOpenMailRules = true
-                    Screen.Mail
-                }
             }
             // Reactive: e.g. OpenRemoteDesktop waits for Desktop to appear
             // rather than silently no-op'ing when it's still hidden.
@@ -529,22 +415,15 @@ fun HavenNavHost(
     // Profile ID for opening a new session (new tab) on an existing connection
     var pendingNewSessionProfileId by rememberSaveable { mutableStateOf<String?>(null) }
     // Profile ID for opening a local-shell tab (Desktop → Manage shell button,
-    // #168). Routed through here rather than the AgentUiCommandBus because
+    // #168). Routed through here rather than the UiCommandBus because
     // TerminalViewModel only collects the bus while TerminalScreen is composed,
     // and the Desktop tab is outside the pager's composition window — the bus
     // event was dropped and no tab opened. HavenNavHost is always composed.
-    var pendingLocalShellProfileId by rememberSaveable { mutableStateOf<String?>(null) }
-    // Desktop id to join (DISPLAY/WAYLAND_DISPLAY) when the pending shell opens (#285).
-    var pendingLocalShellDeId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // SMB auto-connect params
     var pendingSmbProfileId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // Rclone auto-connect params
-    var pendingRcloneProfileId by rememberSaveable { mutableStateOf<String?>(null) }
-
     // Email (Mail) auto-open params
-    var pendingEmailProfileId by rememberSaveable { mutableStateOf<String?>(null) }
     // Profile id an OPENAI connect landed on; consumed by the Chat screen on first show.
     var pendingChatProfileId by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -552,13 +431,6 @@ fun HavenNavHost(
     // Always-composed HavenNavHost collects them, sets the pending profile,
     // and animates to the Terminal page; TerminalScreen creates the tab once
     // composed (see pendingLocalShellProfileId).
-    LaunchedEffect(desktopViewModel) {
-        desktopViewModel.openLocalShellRequests.collect { req ->
-            pendingLocalShellProfileId = req.profileId
-            pendingLocalShellDeId = req.desktopDeId
-            requestScreen(Screen.Terminal)
-        }
-    }
 
     // Disable pager swipe while terminal text selection is active
     var terminalSelectionActive by remember { mutableStateOf(false) }
@@ -677,44 +549,20 @@ fun HavenNavHost(
                             requestScreen(Screen.Sftp)
                         }
                     },
-                    onNavigateToRclone = { profileId ->
-                        pendingRcloneProfileId = profileId
-                        coroutineScope.launch {
-                            requestScreen(Screen.Sftp)
-                        }
-                    },
-                    onNavigateToEmail = { profileId ->
-                        pendingEmailProfileId = profileId
-                        coroutineScope.launch {
-                            requestScreen(Screen.Mail)
-                        }
-                    },
-                    onNavigateToChat = { profileId ->
-                        pendingChatProfileId = profileId
-                        coroutineScope.launch {
-                            requestScreen(Screen.Chat)
-                        }
-                    },
-                    onNavigateToWayland = {
-                        desktopViewModel.addWaylandTab()
-                        coroutineScope.launch {
-                            requestScreen(Screen.Desktop)
-                        }
-                    },
+
                     onNavigateToConnections = {
                         coroutineScope.launch {
                             requestScreen(Screen.Connections)
                         }
                     },
-                    onNavigateToAgentActivity = { showAgentActivityOverlay = true },
+
                     workspaceSection = { sh.haven.app.workspace.ui.WorkspaceSection() },
                 )
                 Screen.Terminal -> {
                     TerminalScreen(
                         navigateToProfileId = pendingTerminalProfileId,
                         newSessionProfileId = pendingNewSessionProfileId,
-                        openLocalShellProfileId = pendingLocalShellProfileId,
-                        openLocalShellDeId = pendingLocalShellDeId,
+
                         isActive = pagerState.settledPage == pageOf(Screen.Terminal),
                         fontSize = terminalFontSize,
                         horizontalPaddingDp = terminalHorizontalPadding,
@@ -818,20 +666,9 @@ fun HavenNavHost(
                             pendingNewSessionProfileId = null
                         }
                     }
-                    LaunchedEffect(pendingLocalShellProfileId) {
-                        if (pendingLocalShellProfileId != null) {
-                            kotlinx.coroutines.delay(6000)
-                            pendingLocalShellProfileId = null
-                            pendingLocalShellDeId = null
-                        }
-                    }
                 }
                 Screen.Desktop -> {
-                    // Auto-add Wayland tab when compositor is running
-                    LaunchedEffect(waylandRunning) {
-                        if (waylandRunning) desktopViewModel.addWaylandTab()
-                        else desktopViewModel.removeWaylandTab()
-                    }
+
                     DesktopScreen(
                         desktopViewModel = desktopViewModel,
                         toolbarLayout = toolbarLayout,
@@ -873,7 +710,7 @@ fun HavenNavHost(
                         fullscreen = desktopFullscreen,
                         onFullscreenChanged = { desktopFullscreen = it },
                         onConnectedChanged = { desktopConnected = it },
-                        onNavigateToAgentActivity = { showAgentActivityOverlay = true },
+
                     )
                 }
                 Screen.Sftp -> {
@@ -907,9 +744,9 @@ fun HavenNavHost(
                         )
                     SftpScreen(
                         pendingSmbProfileId = pendingSmbProfileId,
-                        pendingRcloneProfileId = pendingRcloneProfileId,
+
                         onEditorOpenChanged = { sftpEditorOpen = it },
-                        onImageToolOpenChanged = { sftpImageToolOpen = it },
+
                         sftpModifier = sftpModifier,
                         onAttachFinished = {
                             // Once the picker resolves (confirm or cancel)
@@ -920,53 +757,12 @@ fun HavenNavHost(
                                 requestScreen(Screen.Terminal)
                             }
                         },
-                        onChatAttachFinished = {
-                            // Once the chat pick resolves, land back on the
-                            // Chat page where the staged image is waiting.
-                            coroutineScope.launch {
-                                requestScreen(Screen.Chat)
-                            }
-                        },
-                        onOpenUsbDrive = { desktopViewModel.openUsbDrive() },
+
                         viewModel = sftpViewModel,
                     )
                     LaunchedEffect(pendingSmbProfileId) {
                         if (pendingSmbProfileId != null) {
                             pendingSmbProfileId = null
-                        }
-                    }
-                    LaunchedEffect(pendingRcloneProfileId) {
-                        if (pendingRcloneProfileId != null) {
-                            pendingRcloneProfileId = null
-                        }
-                    }
-                }
-                Screen.Mail -> {
-                    MailScreen(
-                        pendingProfileId = pendingEmailProfileId,
-                        pendingOpenRules = pendingOpenMailRules,
-                        onPendingRulesConsumed = { pendingOpenMailRules = false },
-                        mailModifier = Modifier.fillMaxSize(),
-                    )
-                    LaunchedEffect(pendingEmailProfileId) {
-                        if (pendingEmailProfileId != null) {
-                            pendingEmailProfileId = null
-                        }
-                    }
-                }
-                Screen.Chat -> {
-                    ChatScreen(
-                        pendingProfileId = pendingChatProfileId,
-                        onOpenFilesTab = {
-                            coroutineScope.launch {
-                                requestScreen(Screen.Sftp)
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    LaunchedEffect(pendingChatProfileId) {
-                        if (pendingChatProfileId != null) {
-                            pendingChatProfileId = null
                         }
                     }
                 }
@@ -1032,15 +828,9 @@ fun HavenNavHost(
                         val isDragged = index == navDragIndex
                         NavigationBarItem(
                             icon = {
-                                if (screen == Screen.Desktop && isDesktopAgentActive) {
-                                    RobotEyesIcon(
-                                        active = true,
-                                        baseTint = LocalContentColor.current,
-                                        contentDescription = stringResource(screen.labelRes),
-                                    )
-                                } else {
+
                                     Icon(screen.icon, contentDescription = stringResource(screen.labelRes))
-                                }
+
                             },
                             label = {
                                 // maxLines = 1 + ellipsis guards against any locale whose
@@ -1165,15 +955,9 @@ fun HavenNavHost(
                             if (pageIndex >= 0) {
                                 NavigationRailItem(
                                     icon = {
-                                        if (screen == Screen.Desktop && isDesktopAgentActive) {
-                                            RobotEyesIcon(
-                                                active = true,
-                                                baseTint = LocalContentColor.current,
-                                                contentDescription = stringResource(screen.labelRes),
-                                            )
-                                        } else {
+
                                             Icon(screen.icon, contentDescription = stringResource(screen.labelRes))
-                                        }
+
                                     },
                                     label = {
                                         Text(
@@ -1207,11 +991,7 @@ fun HavenNavHost(
     // Agent-activity audit overlay — rendered above the pager when the
     // chip on the Connections top bar (or any future deep-link) toggles
     // it on. Dismissed via the screen's back arrow.
-    if (showAgentActivityOverlay) {
-        sh.haven.feature.settings.AgentActivityScreen(
-            onBack = { showAgentActivityOverlay = false },
-        )
-    }
+
 }
 
 /**
@@ -1227,10 +1007,10 @@ internal fun visibleScreens(
     screenOrder: List<String>,
     tabVisibility: Map<String, TabVisibility>,
     hasTerminalProfiles: Boolean,
-    hasOpenEmailSession: Boolean,
+
     // Defaulted so the existing positional test constructions keep compiling;
     // the production caller passes the live chat-session check.
-    hasOpenChatSession: Boolean = false,
+
 ): List<Screen> {
     val ordered = if (screenOrder.isNotEmpty()) {
         val byRoute = screenOrder.mapNotNull { route ->
@@ -1261,12 +1041,6 @@ internal fun visibleScreens(
                     Screen.Sftp -> true
                     // Mail shows only while an email connection is open (a live
                     // CONNECTED session) and hides again on disconnect.
-                    Screen.Mail -> hasOpenEmailSession
-                    // Chat shows only while an OpenAI endpoint connection is
-                    // open, mirroring Mail's live-session rule.
-                    Screen.Chat -> hasOpenChatSession
-                    // Terminal hides until there's any SSH/Mosh/ET/Reticulum
-                    // profile (ConnectionProfile.isTerminal covers them all).
                     Screen.Terminal -> hasTerminalProfiles
                     // Keys/identity management is always shown — useful before
                     // any connection exists (#360).

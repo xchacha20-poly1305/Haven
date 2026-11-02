@@ -14,14 +14,6 @@ import java.io.InputStream
 
 private const val TAG = "LocalFileBackend"
 
-/**
- * [FileBackend] over the Android device filesystem. The synthetic root
- * `"/"` returns a curated list of storage volumes (Internal, Downloads,
- * removable storage, optional PRoot rootfs, app cache); other paths use
- * standard `java.io.File` listing. An unreadable path silently falls back
- * to the synthetic root rather than surfacing an error — same behaviour
- * the legacy `SftpViewModel.listLocalDirectory` had.
- */
 class LocalFileBackend(
     private val appContext: Context,
 ) : FileBackend {
@@ -146,25 +138,7 @@ class LocalFileBackend(
                 }
             }
         }
-        // PRoot rootfs — only surfaced when the rootfs has been
-        // installed. Lands the user in /root (the shell's home dir)
-        // rather than the rootfs top, since that's where ~/.profile,
-        // ~/README.md, ~/.ssh/, and ~/.config/haven/ live. The active
-        // distro id is normally `alpine-3.21/`; we also probe the
-        // legacy `alpine/` path so installs predating issue #162 that
-        // skipped the rename migration still show up here.
-        val rootfsRoot = File(appContext.filesDir, "proot/rootfs")
-        val prootHome = sequenceOf("alpine-3.21", "alpine")
-            .map { File(rootfsRoot, "$it/root") }
-            .firstOrNull { it.exists() && it.canRead() }
-        if (prootHome != null) {
-            roots.add(
-                SftpEntry(
-                    "PRoot (~/)", prootHome.absolutePath, true, 0,
-                    prootHome.lastModified() / 1000, "",
-                ),
-            )
-        }
+
         roots.add(SftpEntry("App Cache", appContext.cacheDir.absolutePath, true, 0, appContext.cacheDir.lastModified() / 1000, ""))
         return roots
     }

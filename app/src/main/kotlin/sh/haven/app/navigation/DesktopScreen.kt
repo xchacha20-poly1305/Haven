@@ -1,5 +1,8 @@
 package sh.haven.app.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -19,8 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
@@ -37,11 +38,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,15 +49,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import sh.haven.app.R
-import sh.haven.app.desktop.DesktopManagerScreen
 import sh.haven.app.desktop.DesktopTab
 import sh.haven.app.desktop.DesktopViewModel
 import sh.haven.core.data.preferences.NavBlockMode
 import sh.haven.core.data.preferences.ToolbarLayout
-import sh.haven.core.wayland.WaylandDesktopView
-import sh.haven.feature.connections.AGENT_ACTIVE_WINDOW_MS
-import sh.haven.feature.connections.AgentActiveChip
-import sh.haven.feature.connections.RobotEyesIcon
 import sh.haven.feature.rdp.RdpSessionContent
 import sh.haven.feature.vnc.VncSessionContent
 import sh.haven.feature.vnc.charToKeySym
@@ -74,10 +68,6 @@ private val TAB_COLORS = listOf(
     Color(0xFF8D6E63), // brown
 )
 
-/**
- * Multi-session desktop screen with VNC/RDP/Wayland tabs.
- * Mirrors the terminal's multi-tab pattern.
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DesktopScreen(
@@ -89,7 +79,7 @@ fun DesktopScreen(
     navBlockMode: NavBlockMode = NavBlockMode.ALIGNED,
     toolbarUniformGrid: Boolean = false,
     toolbarMinKeyWidth: Int = 0,
-    /** Same toolbar_key_scale pref the terminal toolbar reads; wires the wayland desktop toolbar to #641's key scale. */
+
     toolbarKeyScale: Float = 1f,
     editModeControlsPlacement: sh.haven.core.data.preferences.EditModeControlsPlacement =
         sh.haven.core.data.preferences.EditModeControlsPlacement.LEFT,
@@ -111,28 +101,14 @@ fun DesktopScreen(
     fullscreen: Boolean = false,
     onFullscreenChanged: (Boolean) -> Unit = {},
     onConnectedChanged: (Boolean) -> Unit = {},
-    onNavigateToAgentActivity: () -> Unit = {},
+
 ) {
     val tabs by desktopViewModel.tabs.collectAsState()
     val activeTabIndex by desktopViewModel.activeTabIndex.collectAsState()
     val activeTab by desktopViewModel.activeTab.collectAsState()
     val anyConnected by desktopViewModel.activeTabConnected.collectAsState()
-    val agentActiveProfiles by desktopViewModel.agentActiveProfiles.collectAsState()
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(agentActiveProfiles.isNotEmpty()) {
-        if (agentActiveProfiles.isEmpty()) return@LaunchedEffect
-        while (true) {
-            nowMs = System.currentTimeMillis()
-            delay(1_000L)
-        }
-    }
-    fun isProfileAgentActive(profileId: String?): Boolean {
-        val pid = profileId ?: return false
-        val ts = agentActiveProfiles[pid] ?: return false
-        return (nowMs - ts) in 0L..AGENT_ACTIVE_WINDOW_MS
-    }
-    val activeTabAgentActive = isProfileAgentActive(activeTab?.profileId)
 
     LaunchedEffect(anyConnected) { onConnectedChanged(anyConnected) }
 
@@ -191,18 +167,13 @@ fun DesktopScreen(
     // User override: a non-null userManageOverride takes precedence;
     // when null, default to Manage when no sessions are running so the
     // empty state lands on something actionable, otherwise Sessions.
-    var userManageOverride by remember { mutableStateOf<Boolean?>(null) }
-    val showManage = userManageOverride ?: tabs.isEmpty()
 
     // When the Sessions/monitor view is shown, connect a viewer to any
     // running desktop that doesn't have one — e.g. a desktop started via
-    // the MCP start_desktop tool (backend-only, no UI viewer). Without
+
     // this, the monitor view sits empty even though the compositor +
     // wayvnc are up. addVncSession dedupes, so an already-open viewer is
     // untouched.
-    LaunchedEffect(showManage) {
-        if (!showManage) desktopViewModel.connectRunningDesktopViewers()
-    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Compact action row at the very top — surfaces the Manage
@@ -220,7 +191,6 @@ fun DesktopScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
-                    AgentActiveChip(onClick = onNavigateToAgentActivity)
                     // #723: view-only toggle for the active VNC tab — drops
                     // mouse/keyboard/remote-clipboard input, frame keeps streaming.
                     val vncTab = activeTab as? DesktopTab.Vnc
@@ -236,21 +206,8 @@ fun DesktopScreen(
                             )
                         }
                     }
-                    IconButton(
-                        onClick = { userManageOverride = !showManage },
-                    ) {
-                        Icon(
-                            imageVector = if (showManage) Icons.Filled.DesktopWindows else Icons.Filled.Tune,
-                            contentDescription = if (showManage) stringResource(R.string.app_desktop_sessions_cd) else stringResource(R.string.app_desktop_manage_cd),
-                        )
-                    }
                 }
             }
-        }
-
-        if (showManage) {
-            DesktopManagerScreen(viewModel = desktopViewModel)
-            return@Column
         }
 
         if (tabs.isEmpty()) {
@@ -262,7 +219,7 @@ fun DesktopScreen(
                 DesktopTabBar(
                     tabs = tabs,
                     activeTabIndex = activeTabIndex,
-                    isTabAgentActive = { isProfileAgentActive(it.profileId) },
+
                     onSelectTab = { desktopViewModel.selectTab(it) },
                     onMoveTab = { idx, dir -> desktopViewModel.moveTab(idx, dir) },
                     onCloseTab = { desktopViewModel.closeTab(it) },
@@ -497,38 +454,10 @@ fun DesktopScreen(
                             isActive = isActive,
                         )
 
-                        is DesktopTab.Wayland -> WaylandDesktopView(
-                            modifier = Modifier.fillMaxSize(),
-                            toolbarLayout = toolbarLayout,
-                            navBlockMode = navBlockMode,
-                            uniformGrid = toolbarUniformGrid,
-                            keyScale = toolbarKeyScale,
-                            onFullscreenChanged = onFullscreenChanged,
-                        )
                     }
                     // When fullscreen hides the top action row, still surface a small
-                    // floating red-eyed robot badge while the agent is actively
+
                     // operating on this desktop tab so the user can watch live.
-                    if (fullscreen && activeTabAgentActive) {
-                        Surface(
-                            onClick = onNavigateToAgentActivity,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(8.dp),
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
-                            tonalElevation = 4.dp,
-                        ) {
-                            Box(modifier = Modifier.padding(6.dp)) {
-                                RobotEyesIcon(
-                                    active = true,
-                                    baseTint = MaterialTheme.colorScheme.onSurface,
-                                    contentDescription = stringResource(sh.haven.feature.connections.R.string.connections_agent_active),
-                                    size = 20.dp,
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -559,7 +488,7 @@ private fun DesktopEmptyState() {
 private fun DesktopTabBar(
     tabs: List<DesktopTab>,
     activeTabIndex: Int,
-    isTabAgentActive: (DesktopTab) -> Boolean = { false },
+
     onSelectTab: (Int) -> Unit,
     onMoveTab: (Int, Int) -> Unit,
     onCloseTab: (String) -> Unit,
@@ -617,15 +546,6 @@ private fun DesktopTabBar(
                             ),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (isTabAgentActive(tab)) {
-                                RobotEyesIcon(
-                                    active = true,
-                                    baseTint = LocalContentColor.current,
-                                    contentDescription = stringResource(sh.haven.feature.connections.R.string.connections_agent_active),
-                                    size = 16.dp,
-                                )
-                                Spacer(Modifier.width(6.dp))
-                            }
                             Text(
                                 stringResource(R.string.app_desktop_tab_label, tab.protocol, tab.label),
                                 maxLines = 1,

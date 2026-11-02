@@ -22,8 +22,8 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import sh.haven.core.data.agent.AgentUiCommand
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommand
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.data.db.entities.SshKey
 import sh.haven.core.data.db.entities.StepCaConfig
 import sh.haven.core.data.repository.ConnectionRepository
@@ -78,6 +78,7 @@ data class DiscoveredSkCredential(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class KeysViewModel @Inject constructor(
+    private val barcodeDecoder: sh.haven.core.scan.BarcodeDecoder,
     private val repository: SshKeyRepository,
     private val connectionRepository: ConnectionRepository,
     private val keystore: Keystore,
@@ -88,20 +89,20 @@ class KeysViewModel @Inject constructor(
     private val totpSecretRepository: sh.haven.core.data.repository.TotpSecretRepository,
     private val ageIdentityRepository: sh.haven.core.data.repository.AgeIdentityRepository,
     private val sshIdentityRepository: sh.haven.core.data.repository.SshIdentityRepository,
-    private val barcodeDecoder: sh.haven.core.scan.BarcodeDecoder,
+
     private val preferencesRepository: sh.haven.core.data.preferences.UserPreferencesRepository,
     // Strong-biometry gate for hardware key generation (m2): chip keys are
     // per-op BIOMETRIC_STRONG; no Class 3 biometric enrolled → no key.
     private val biometricAuthenticator: sh.haven.core.security.BiometricAuthenticator,
-    agentUiCommandBus: AgentUiCommandBus,
+    uiCommandBus: UiCommandBus,
 ) : ViewModel() {
 
     init {
         // Notification deep-link → MainActivity emits RegenerateStepCaCert
         // → we react. (#133 phase 2b)
         viewModelScope.launch {
-            agentUiCommandBus.commands.collect { command ->
-                if (command is AgentUiCommand.RegenerateStepCaCert) {
+            uiCommandBus.commands.collect { command ->
+                if (command is UiCommand.RegenerateStepCaCert) {
                     regenerateViaStepCa(command.keyId)
                 }
             }
@@ -484,7 +485,7 @@ class KeysViewModel @Inject constructor(
      *
      * Triggered by:
      *  - the "Regenerate" action on a key row's overflow menu
-     *  - a renewal-notification deep-link (via AgentUiCommandBus)
+     *  - a renewal-notification deep-link (via UiCommandBus)
      */
     fun regenerateViaStepCa(keyId: String) {
         viewModelScope.launch {

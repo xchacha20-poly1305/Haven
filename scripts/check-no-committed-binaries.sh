@@ -124,12 +124,9 @@ Binaries must not be committed — they are unauditable in review and go stale
 silently (#469). Build them from source instead:
 
     core/local/src/main/jniLibs/   build-proot/build.sh
-    core/ffmpeg/src/main/jniLibs/  build-ffmpeg/build.sh
     core/wayland/src/main/jniLibs/ wayland-android/build_liblabwc_android.sh
                                    wayland-android/build-native-helpers.sh
     rdp-kotlin/jniLibs/            cargo-ndk (rdp-kotlin:buildRdpNative)
-    core/prns/src/main/jniLibs/    cargo-ndk (:core:prns:buildPrnsNative)
-    rclone-android/build/          gomobile (buildRcloneNative)
 
 then add the output path to .gitignore. If a binary genuinely must be tracked,
 add it to ALLOWLIST in this script with a comment saying why.

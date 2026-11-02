@@ -14,8 +14,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import sh.haven.core.data.agent.AgentUiCommand
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommand
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.data.db.entities.ConnectionProfile
 import sh.haven.core.data.db.entities.WorkspaceItem
 import sh.haven.core.data.db.entities.WorkspaceProfile
@@ -105,23 +105,22 @@ class WorkspaceLauncherTest {
         val state = launcher.state.value
         assertTrue("expected Completed, got $state", state is WorkspaceLaunchState.Completed)
         assertTrue(
-            "all items succeed",
-            (state as WorkspaceLaunchState.Completed).items.all { it.status == ItemProgress.Status.Succeeded },
+            "remote items succeed",
+            (state as WorkspaceLaunchState.Completed).items.filter { it.itemId != "wayland-item" }.all { it.status == ItemProgress.Status.Succeeded },
         )
         // The terminal attached directly (no bus). Then: focus the terminal
-        // screen, then WAYLAND → FILE_BROWSER → DESKTOP.
-        assertEquals(4, emitted.size)
-        assertEquals("s-1", (emitted[0] as AgentUiCommand.FocusTerminalSession).sessionId)
-        assertTrue("second should be OpenWaylandDesktop",
-            emitted[1] is AgentUiCommand.OpenWaylandDesktop)
+
+        assertEquals(ItemProgress.Status.Failed, state.items.single { it.itemId == "wayland-item" }.status)
+        assertEquals(3, emitted.size)
+        assertEquals("s-1", (emitted[0] as UiCommand.FocusTerminalSession).sessionId)
         assertTrue("third should be NavigateToSftpPath",
-            emitted[2] is AgentUiCommand.NavigateToSftpPath)
+            emitted[1] is UiCommand.NavigateToSftpPath)
         assertTrue("fourth should be OpenRemoteDesktop",
-            emitted[3] is AgentUiCommand.OpenRemoteDesktop)
+            emitted[2] is UiCommand.OpenRemoteDesktop)
         // SFTP item carries the path through.
         assertEquals(
             "/srv",
-            (emitted[2] as AgentUiCommand.NavigateToSftpPath).path,
+            (emitted[1] as UiCommand.NavigateToSftpPath).path,
         )
     }
 
@@ -224,7 +223,7 @@ class WorkspaceLauncherTest {
             WorkspaceWithItems(ws, items)
         val connRepo = mockk<ConnectionRepository>()
         coEvery { connRepo.getById("vnc-1") } returns vncProfile
-        val bus = mockk<AgentUiCommandBus>()
+        val bus = mockk<UiCommandBus>()
         every { bus.emit(any()) } returns false  // persistent overflow
 
         val launcher = launcher(workspaceRepo, connRepo, bus, mockk(), mockk())
@@ -266,8 +265,8 @@ class WorkspaceLauncherTest {
         // One dial carrying term-a's session name, then the focus command —
         // term-b attached directly, no OpenTerminalSession hop.
         assertEquals(2, emitted.size)
-        assertEquals("cctv", (emitted[0] as AgentUiCommand.ConnectProfile).sessionName)
-        assertEquals("s-2", (emitted[1] as AgentUiCommand.FocusTerminalSession).sessionId)
+        assertEquals("cctv", (emitted[0] as UiCommand.ConnectProfile).sessionName)
+        assertEquals("s-2", (emitted[1] as UiCommand.FocusTerminalSession).sessionId)
         val state = launcher.state.value as WorkspaceLaunchState.Completed
         assertTrue("both items succeed", state.items.all { it.status == ItemProgress.Status.Succeeded })
     }
@@ -300,7 +299,7 @@ class WorkspaceLauncherTest {
         launcher(workspaceRepo, connRepo, bus, sessionManager("ssh-1"), attacher)
             .launch("ws-1")
 
-        assertEquals("cctv", (emitted[0] as AgentUiCommand.ConnectProfile).sessionName)
+        assertEquals("cctv", (emitted[0] as UiCommand.ConnectProfile).sessionName)
         coVerify { attacher.ensureAttached("ssh-1", "civic") }
         // Self-heal: the fallback-resolved names are written back onto the
         // items (same ids), so the next restore pins them explicitly.
@@ -404,7 +403,7 @@ class WorkspaceLauncherTest {
         val state = launcher.state.value as WorkspaceLaunchState.Completed
         assertTrue(state.items.all { it.status == ItemProgress.Status.Succeeded })
         assertEquals(1, emitted.size)
-        assertEquals("s-a", (emitted[0] as AgentUiCommand.FocusTerminalSession).sessionId)
+        assertEquals("s-a", (emitted[0] as UiCommand.FocusTerminalSession).sessionId)
     }
 
     @Test
@@ -503,7 +502,7 @@ class WorkspaceLauncherTest {
         launcher.launch("ws-1")
 
         assertEquals(1, emitted.size)
-        val dial = emitted[0] as AgentUiCommand.ConnectProfile
+        val dial = emitted[0] as UiCommand.ConnectProfile
         assertEquals(null, dial.sessionName)
         val state = launcher.state.value as WorkspaceLaunchState.Completed
         val byId = state.items.associateBy { it.itemId }
@@ -517,7 +516,7 @@ class WorkspaceLauncherTest {
     private fun launcher(
         workspaceRepo: WorkspaceRepository,
         connRepo: ConnectionRepository,
-        bus: AgentUiCommandBus,
+        bus: UiCommandBus,
         sessionManager: SshSessionManager,
         attacher: SshSessionAttacher,
     ) = WorkspaceLauncher(workspaceRepo, connRepo, bus, sessionManager, attacher)
@@ -531,11 +530,11 @@ class WorkspaceLauncherTest {
         coEvery { listRemoteSessions(any()) } returns null
     }
 
-    private fun recordingBus(): Pair<AgentUiCommandBus, MutableList<AgentUiCommand>> {
-        val bus = mockk<AgentUiCommandBus>()
-        val emitted = mutableListOf<AgentUiCommand>()
+    private fun recordingBus(): Pair<UiCommandBus, MutableList<UiCommand>> {
+        val bus = mockk<UiCommandBus>()
+        val emitted = mutableListOf<UiCommand>()
         every { bus.emit(any()) } answers {
-            emitted += firstArg<AgentUiCommand>()
+            emitted += firstArg<UiCommand>()
             true
         }
         return bus to emitted

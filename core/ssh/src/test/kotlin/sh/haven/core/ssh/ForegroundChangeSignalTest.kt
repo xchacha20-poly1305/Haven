@@ -28,18 +28,12 @@ class ForegroundChangeSignalTest {
         override fun disconnectAll() {}
     }
 
-    private class KeepAlive(
-        override val changes: Flow<Unit>,
-        override val isActive: Boolean = false,
-    ) : ForegroundKeepAlive
-
     @Test
     fun `an emission from any participant reaches the signal`() = runTest {
         val a = MutableSharedFlow<Unit>()
         val b = MutableSharedFlow<Unit>()
         val signal = foregroundChangeSignal(
             setOf(Participant(a), Participant(b)),
-            emptySet(),
         )
         var received = 0
         val job = launch { signal.collect { received++ } }
@@ -59,7 +53,6 @@ class ForegroundChangeSignalTest {
         val live = MutableSharedFlow<Unit>()
         val signal = foregroundChangeSignal(
             setOf(Participant(emptyFlow()), Participant(live)),
-            setOf(KeepAlive(emptyFlow())),
         )
         var received = 0
         val job = launch { signal.collect { received++ } }
@@ -72,21 +65,4 @@ class ForegroundChangeSignalTest {
         job.cancel()
     }
 
-    @Test
-    fun `keep-alive emissions reach the signal too`() = runTest {
-        val live = MutableSharedFlow<Unit>()
-        val signal = foregroundChangeSignal(
-            setOf(Participant(emptyFlow())),
-            setOf(KeepAlive(live)),
-        )
-        var received = 0
-        val job = launch { signal.collect { received++ } }
-        testScheduler.advanceUntilIdle()
-
-        live.emit(Unit)
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(1, received)
-        job.cancel()
-    }
 }

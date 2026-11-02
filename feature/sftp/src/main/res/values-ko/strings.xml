@@ -74,7 +74,7 @@
     <string name="sftp_mode_sync">미러링</string>
     <string name="sftp_mode_move">이동</string>
     <string name="sftp_mode_copy_desc">새 파일과 업데이트된 파일을 복사합니다. 삭제는 하지 않습니다.</string>
-    <string name="sftp_mode_sync_desc">대상을 원본과 동일하게 만듭니다. 추가 항목은 삭제합니다.</string>
+
     <string name="sftp_mode_move_desc">파일을 대상으로 이동합니다. 원본에서는 삭제합니다.</string>
     <string name="sftp_advanced_filters">고급 필터</string>
     <string name="sftp_include_patterns">포함 패턴(한 줄에 하나)</string>
@@ -87,24 +87,19 @@
     <string name="sftp_preview">미리보기</string>
     <string name="sftp_dry_run_results">시험 실행 결과</string>
     <string name="sftp_start_for_real">실제로 시작</string>
-    <string name="sftp_sync_cancelled">동기화 취소됨</string>
 
     <!-- FileListItem -->
     <string name="sftp_directory">디렉터리</string>
     <string name="sftp_directory_icon">디렉터리</string>
     <string name="sftp_file_icon">파일</string>
     <string name="sftp_download">다운로드</string>
-    <string name="sftp_convert">변환</string>
+
     <string name="sftp_stream">스트리밍</string>
     <string name="sftp_play_in_browser">브라우저에서 재생</string>
     <string name="sftp_stream_to_network">네트워크로 스트리밍</string>
     <string name="sftp_streaming">%s에서 스트리밍 중</string>
     <string name="sftp_stream_stop">중지</string>
-    <string name="sftp_convert_title">미디어 변환</string>
-    <string name="sftp_convert_format">출력 형식</string>
-    <string name="sftp_converting">%s 변환 중</string>
-    <string name="sftp_convert_done">%s에 저장됨</string>
-    <string name="sftp_downloading_for_convert">변환을 위해 다운로드 중…</string>
+
     <string name="sftp_cut">잘라내기</string>
     <string name="sftp_copy_path">경로 복사</string>
 
@@ -143,48 +138,8 @@
     <string name="sftp_media">미디어…</string>
     <string name="sftp_stream_folder">폴더 재생 목록 스트리밍</string>
     <string name="sftp_output_filename">출력 파일 이름</string>
-    <string name="sftp_convert_sub">필터로 비디오 또는 오디오 다시 인코딩</string>
-
-    <string name="sftp_media_info">미디어 정보</string>
-    <string name="sftp_media_info_sub">코덱, 길이, 스트림</string>
-    <string name="sftp_media_info_probing">분석 중…</string>
-    <string name="sftp_media_info_failed">ffprobe 실패: %s</string>
-    <string name="sftp_media_info_container">컨테이너</string>
-    <string name="sftp_media_info_duration">길이</string>
-    <string name="sftp_media_info_bitrate">비트레이트</string>
-    <string name="sftp_media_info_size">크기</string>
-    <string name="sftp_media_info_video_streams">비디오</string>
-    <string name="sftp_media_info_audio_streams">오디오</string>
-    <string name="sftp_media_info_subtitle_streams">자막</string>
-    <string name="sftp_media_info_video">비디오</string>
-    <string name="sftp_media_info_audio">오디오</string>
-    <string name="sftp_media_info_subtitle">자막</string>
-    <string name="sftp_media_info_chapters">챕터: %d</string>
-    <string name="sftp_media_info_copy">JSON 복사</string>
 
     <string name="sftp_trim">자르기(무손실)</string>
-    <string name="sftp_trim_sub">다시 인코딩하지 않고 클립 자르기</string>
-    <string name="sftp_trim_title">클립 자르기</string>
-    <string name="sftp_trim_explain">시작과 끝은 H:MM:SS 형식입니다. 스트림 복사, 재인코딩 없음.</string>
-    <string name="sftp_trim_start">시작</string>
-    <string name="sftp_trim_end">끝</string>
-    <string name="sftp_trim_action">자르기</string>
-
-    <string name="sftp_extract_audio">오디오 추출</string>
-    <string name="sftp_extract_audio_sub">사운드트랙을 MP3/AAC/Opus/FLAC로 저장</string>
-    <string name="sftp_extract_audio_title">오디오 추출</string>
-    <string name="sftp_extract_audio_format">형식</string>
-    <string name="sftp_extract_audio_bitrate">비트레이트: %d kbps</string>
-    <string name="sftp_extract_audio_action">추출</string>
-
-    <string name="sftp_contact_sheet">콘택트 시트</string>
-    <string name="sftp_contact_sheet_sub">파일 전체에서 샘플링한 썸네일 그리드</string>
-    <string name="sftp_contact_sheet_title">콘택트 시트</string>
-    <string name="sftp_contact_sheet_explain">클립 전체에서 프레임을 균등하게 샘플링해 타일 PNG로 만듭니다.</string>
-    <string name="sftp_contact_sheet_cols">열</string>
-    <string name="sftp_contact_sheet_rows">행</string>
-    <string name="sftp_contact_sheet_tile">타일 크기: %1$d × %2$d</string>
-    <string name="sftp_contact_sheet_action">시트 만들기</string>
 
     <!-- SortDropdown -->
     <string name="sftp_sort_name_asc">이름 A-Z</string>
@@ -228,8 +183,7 @@
     <string name="sftp_filter">파일 필터</string>
 
     <!-- DLNA -->
-    <string name="sftp_start_dlna">DLNA 서버 시작</string>
-    <string name="sftp_stop_dlna">DLNA 서버 중지</string>
+
     <string name="sftp_attach_use_folder">이 폴더 사용</string>
     <string name="sftp_compression_audio_bitrate">오디오 비트레이트</string>
     <string name="sftp_compression_quality">품질 (CRF %1$d)</string>
@@ -240,10 +194,7 @@
     <string name="sftp_conflict_overwrite">덮어쓰기</string>
     <string name="sftp_conflict_skip">건너뛰기</string>
     <string name="sftp_conflict_title">파일이 이미 있습니다</string>
-    <string name="sftp_convert_audio_encoder">오디오 인코더</string>
-    <string name="sftp_convert_container">컨테이너</string>
-    <string name="sftp_convert_save_to">저장 위치</string>
-    <string name="sftp_convert_video_encoder">비디오 인코더</string>
+
     <string name="sftp_filter_rotation">회전</string>
     <string name="sftp_filter_title">필터</string>
     <string name="sftp_fullscreen_preview">전체 화면 미리보기</string>
@@ -259,12 +210,7 @@
 
     <!-- #210 i18n sweep -->
     <string name="sftp_open_with">다른 앱으로 열기…</string>
-    <string name="sftp_saved_sync_label">저장된 구성</string>
-    <string name="sftp_saved_sync_pick">저장된 구성 선택</string>
-    <string name="sftp_saved_sync_save">저장</string>
-    <string name="sftp_saved_sync_save_as">다른 이름으로 저장…</string>
-    <string name="sftp_saved_sync_save_as_title">동기화 구성 저장</string>
-    <string name="sftp_saved_sync_name">이름</string>
+
     <string name="sftp_attach_choose_folder">%1$s의 폴더 선택</string>
     <string name="sftp_attach_pick_profile">사용할 연결된 프로필 선택</string>
     <string name="sftp_attach_local_no_upload">원격 프로필을 선택하세요 — 로컬은 업로드를 받을 수 없습니다</string>
@@ -273,16 +219,9 @@
     <string name="sftp_chat_attach_will_pick_from">선택 위치: %1$s</string>
     <string name="sftp_attach_sending">%1$s 전송 중…</string>
     <string name="sftp_storage_permission_title">저장소 접근 권한 필요</string>
-    <string name="sftp_storage_permission_body">탭하여 로컬 파일 접근 권한 부여 — 미디어 기능, 파일 탐색 및 전송에 이 권한이 필요합니다.</string>
+
     <string name="sftp_paste_unfinished">완료되지 않은 붙여넣기</string>
-    <string name="sftp_agent_chip">에이전트</string>
-    <string name="sftp_convert_dest_downloads">다운로드 (이 기기)</string>
-    <string name="sftp_convert_dest_same_folder_local">원본과 같은 폴더</string>
-    <string name="sftp_convert_dest_same_folder_cloud">클라우드로 (같은 폴더)</string>
-    <string name="sftp_convert_dest_same_folder_server">서버로 (같은 폴더)</string>
-    <string name="sftp_convert_download_first">먼저 다운로드</string>
-    <string name="sftp_convert_download_first_on">트랜스코딩 전에 전체 파일을 다운로드합니다</string>
-    <string name="sftp_convert_download_first_off">클라우드에서 스트리밍 (대용량 파일에 더 빠름)</string>
+
     <string name="sftp_preview_preparing_long">미리보기 준비 중…</string>
     <string name="sftp_preview_fetching_cloud">☁ 클라우드에서 가져오는 중…</string>
     <string name="sftp_preview_tap_to_refresh">미리보기를 탭하여 새로고침</string>
@@ -293,7 +232,7 @@
     <string name="sftp_downloaded_file">%1$s 다운로드됨</string>
     <string name="sftp_location_downloads">다운로드</string>
     <string name="sftp_file_too_large_for_editor">파일이 너무 커서 편집기에 열 수 없습니다 (%1$s). 제한은 20MB입니다.</string>
-    <string name="sftp_processing_perspective">원근 적용 중…</string>
+
     <string name="sftp_processing_crop">자르는 중…</string>
     <string name="sftp_processing_rotate">회전 중…</string>
     <string name="sftp_conflict_size_summary">기존: %1$s  ·  새 파일: %2$s</string>

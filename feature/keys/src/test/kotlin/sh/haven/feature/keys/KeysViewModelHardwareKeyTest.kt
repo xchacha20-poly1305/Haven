@@ -16,13 +16,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.data.db.entities.SshKey
 import sh.haven.core.data.preferences.UserPreferencesRepository
 import sh.haven.core.data.repository.ConnectionRepository
 import sh.haven.core.data.repository.SshKeyRepository
 import sh.haven.core.fido.FidoAuthenticator
-import sh.haven.core.scan.BarcodeDecoder
 import sh.haven.core.security.BiometricAuthenticator
 import sh.haven.core.security.Keystore
 import sh.haven.core.stepca.StepCaSignFlow
@@ -60,6 +59,7 @@ class KeysViewModelHardwareKeyTest {
             every { keysCollapsedSections } returns flowOf(null)
         }
         viewModel = KeysViewModel(
+            barcodeDecoder = mockk(relaxed = true),
             repository = repository,
             connectionRepository = mockk(relaxed = true),
             keystore = mockk(relaxed = true),
@@ -70,10 +70,10 @@ class KeysViewModelHardwareKeyTest {
             totpSecretRepository = mockk<TotpSecretRepository>(relaxed = true),
             ageIdentityRepository = mockk<AgeIdentityRepository>(relaxed = true),
             sshIdentityRepository = mockk<SshIdentityRepository>(relaxed = true),
-            barcodeDecoder = mockk<BarcodeDecoder>(relaxed = true),
+
             preferencesRepository = preferences,
             biometricAuthenticator = biometrics,
-            agentUiCommandBus = AgentUiCommandBus(),
+            uiCommandBus = UiCommandBus(),
         )
     }
 

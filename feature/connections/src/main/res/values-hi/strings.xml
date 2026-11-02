@@ -353,7 +353,6 @@
     <string name="connections_section_general">सामान्य</string>
     <string name="connections_section_local_shell">स्थानीय शेल</string>
     <string name="connections_section_guest">लिनक्स गेस्ट</string>
-    <string name="connections_guest_desc">इस डिवाइस पर असली लिनक्स कर्नेल चलाता है, अपनी रूट फ़ाइलसिस्टम और नेटवर्क के साथ. पहली बार उपयोग पर रूटफ़्स (~512 MB) अनपैक होता है. किसी होस्ट या लॉगिन की ज़रूरत नहीं.</string>
     <string name="connections_section_cloud_storage">क्लाउड स्टोरेज</string>
     <string name="connections_section_vnc">VNC सेटिंग्स</string>
     <string name="connections_section_rdp">RDP सेटिंग्स</string>
@@ -362,27 +361,21 @@
     <string name="connections_section_terminal">टर्मिनल</string>
     <string name="connections_section_authentication">प्रमाणीकरण</string>
     <string name="connections_section_embedded_vnc">एम्बेडेड VNC</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">रूटिंग</string>
-    <string name="connections_toggle_mcp_tunnel">Haven का MCP सर्वर एक्सपोज़ करें</string>
-    <string name="connections_helper_mcp_tunnel">इस कनेक्शन के हर सेशन को Haven का MCP उपलब्ध कराता है — वे http://127.0.0.1:8730/mcp तक पहुँचते हैं और (लूपबैक के ज़रिए) पेयरिंग और सहमति को छोड़ देते हैं। कनेक्ट होने पर लागू होता है। बिना सेशन खोले हमेशा पहुँच के लिए, इसे सेटिंग्स → एजेंट एंडपॉइंट में हमेशा-चालू MCP कनेक्शन के रूप में सेट करें।</string>
+
     <string name="connections_section_reconnect">पुनः कनेक्ट</string>
-    <string name="connections_local_shell_android_desc">मूल Android शेल (/system/bin/sh) चलाता है। Android कमांड, फ़ाइल सिस्टम और root (यदि उपलब्ध हो) तक पहुँच।</string>
-    <string name="connections_local_shell_proot_desc">PRoot के माध्यम से स्थानीय रूप से Alpine Linux शेल चलाता है। पहली बार उपयोग पर एक न्यूनतम rootfs (~4MB) डाउनलोड करता है। root या नेटवर्क कनेक्शन की आवश्यकता नहीं।</string>
     <string name="connections_dropdown_select_provider">प्रदाता चुनें…</string>
-    <string name="connections_helper_rclone_signin">पहली बार कनेक्ट करते समय अपने ब्राउज़र से साइन इन करें।</string>
-    <string name="connections_helper_rclone_credentials">इस प्रदाता के खाते का विवरण दर्ज करें, फिर रिमोट को सहेजने और सत्यापित करने के लिए कॉन्फ़िगर पर टैप करें।</string>
-    <string name="connections_rclone_configure">कॉन्फ़िगर करें और सत्यापित करें</string>
-    <string name="connections_rclone_configured_ok">रिमोट कॉन्फ़िगर और सत्यापित किया गया।</string>
+
     <string name="connections_dropdown_select_ssh">SSH कनेक्शन चुनें</string>
     <string name="connections_helper_add_ssh_first">पहले एक SSH कनेक्शन जोड़ें</string>
     <string name="connections_ai_route_section">AI रूट कैरियर</string>
     <string name="connections_ai_route_via_ssh">SSH के ज़रिए</string>
-    <string name="connections_ai_route_via_reticulum">Reticulum के ज़रिए</string>
+
     <string name="connections_field_ai_route_carrier">कैरियर कनेक्शन</string>
     <string name="connections_dropdown_select_carrier">कनेक्शन चुनें</string>
     <string name="connections_helper_ai_route">एंडपॉइंट को कैरियर के ज़रिए रूट करें: SSH कैरियर सेशन के ज़रिए लोकल फ़ॉरवर्ड खोलता है, Reticulum मेश पर सेतु बनाता है। Reticulum रूट के लिए कैरियर का कनेक्टेड होना ज़रूरी है।</string>
-    <string name="connections_helper_add_reticulum_first">पहले एक Reticulum कनेक्शन जोड़ें</string>
+
     <string name="connections_toggle_rdp_nla">नेटवर्क स्तर प्रमाणीकरण (NLA)</string>
     <string name="connections_helper_mosh_required">रिमोट होस्ट पर mosh-server आवश्यक है</string>
     <string name="connections_helper_et_required">रिमोट होस्ट पर etserver आवश्यक है (पोर्ट %1$s)</string>
@@ -436,8 +429,7 @@
     <string name="connections_spa_host_blank">होस्ट खाली है</string>
     <string name="connections_spa_success">%2$d ms में %1$d-byte SPA packet भेजा गया</string>
     <string name="connections_spa_failed">%1$d ms बाद विफल: %2$s</string>
-    <string name="connections_agent_active">Agent सक्रिय</string>
-    <string name="connections_agent_activity">Agent गतिविधि</string>
+
     <string name="connections_pf_type_local">LOCAL</string>
     <string name="connections_pf_type_remote">REMOTE</string>
     <string name="connections_pf_type_dynamic">DYNAMIC (SOCKS5)</string>
@@ -465,7 +457,7 @@
     <string name="connections_pf_dynamic_explanation">आपके डिवाइस के SOCKS5 क्लाइंट %1$s:%2$s से कनेक्ट होकर किसी भी गंतव्य का अनुरोध कर सकते हैं। प्रत्येक अनुरोध SSH सर्वर के माध्यम से एक नया direct-tcpip channel खोलता है।</string>
     <string name="connections_pf_dynamic_port_fallback">&lt;port&gt;</string>
     <string name="connections_hosts_discovered">%1$d होस्ट खोजे गए</string>
-    <string name="connections_rclone_provider_cloud">Cloud</string>
+
     <string name="connections_list_via">%1$s के माध्यम से</string>
     <string name="connections_auth_methods_title">प्रमाणीकरण विधियाँ</string>
     <string name="connections_auth_methods_description">एक ही कनेक्ट में क्रम से प्रयास किया जाता है — उन सर्वरों के लिए जो एक से अधिक माँगते हैं (जैसे key + password, या PAM/OTP chains)।</string>
@@ -484,35 +476,10 @@
     <string name="connections_auth_confirm_otp_desc">स्वचालित रूप से सबमिट करने के बजाय एक-टैप पुष्टि के लिए उत्पन्न कोड दिखाएँ।</string>
     <string name="connections_vm_copied_short">कॉपी हुआ</string>
     <string name="connections_vm_terminal_not_found">Terminal app नहीं मिला</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_local_distro_label">OS में खोलें</string>
-    <string name="connections_local_distro_active_default">सक्रिय डिस्ट्रो (डिफ़ॉल्ट)</string>
 
-    <string name="connections_section_openai">AI एंडपॉइंट</string>
-    <string name="connections_field_openai_host">सर्वर पता</string>
-    <string name="connections_field_openai_host_hint">IP, होस्टनाम, या पूर्ण http:// URL</string>
-    <string name="connections_field_openai_api_key">API कुंजी (वैकल्पिक)</string>
-    <string name="connections_field_openai_api_key_hint">Bearer टोकन के रूप में भेजा जाता है। बिना कुंजी वाले सर्वर के लिए खाली छोड़ें।</string>
-    <string name="connections_field_openai_path_prefix">पाथ प्रीफ़िक्स (वैकल्पिक)</string>
-    <string name="connections_field_openai_path_prefix_hint">/v1 से पहले जोड़ा जाता है — जैसे /api</string>    <string name="connections_field_openai_protocol">वायर प्रोटोकॉल</string>
-    <string name="connections_field_openai_protocol_hint">डिफ़ॉल्ट रूप से OpenAI-संगत; Ollama, Anthropic और Gemini पथ व प्रमाणीकरण बदलते हैं।</string>
-
-    <string name="connections_openai_url_preview">एंडपॉइंट URL: %1$s</string>
     <!-- Email account -->
     <string name="connections_section_email">ईमेल खाता</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">प्रदाता: ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">Proton का अनौपचारिक API उपयोग करता है। यह रिवर्स-इंजीनियर्ड है और Proton की शर्तों के विरुद्ध है — आपके खाते की दर सीमित हो सकती है या वह लॉक हो सकता है। अपने जोखिम पर आगे बढ़ें।</string>
-    <string name="connections_field_email_address">ईमेल पता</string>
-    <string name="connections_field_email_password">पासवर्ड</string>
-    <string name="connections_field_email_mailbox_password">मेलबॉक्स पासवर्ड (केवल दो-पासवर्ड मोड)</string>
-    <string name="connections_email_mailbox_password_hint">तब तक खाली छोड़ें जब तक आपके Proton खाते में अलग मेलबॉक्स पासवर्ड न हो।</string>
-    <string name="connections_email_2fa_hint">यदि आपके खाते में 2FA है, तो उसका TOTP secret SSH कुंजी / TOTP प्रबंधक में लिंक करें और वह स्वतः लागू हो जाएगा।</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">अपना पासवर्ड उपयोग करें, या ऐप-पासवर्ड यदि आपका प्रदाता उसकी माँग करता है (Fastmail, iCloud, Yahoo, Gmail/2FA)।</string>
-    <string name="connections_email_preset_label">प्रदाता प्रीसेट</string>
-    <string name="connections_email_app_password_link">%1$s के लिए ऐप-पासवर्ड बनाएँ</string>
     <string name="connections_field_imap_server">IMAP सर्वर</string>
     <string name="connections_field_smtp_server">SMTP सर्वर</string>
     <string name="connections_field_smtp_server_help">IMAP सर्वर उपयोग करने के लिए खाली छोड़ें।</string>
@@ -533,10 +500,6 @@
     <string name="connections_fido_wrong_body">इस कुंजी में वह क्रेडेंशियल नहीं है जो सर्वर ने माँगा। अनुरोधित कुंजी प्रस्तुत करें और उसे टच करें।</string>
     <string name="connections_auth_key_picker">कुंजी: %1$s ▾</string>
     <string name="connections_auth_key_only">✓ केवल यही कुंजी उपयोग करें</string>
-    <string name="connections_mcp_active">एजेंट इस कनेक्शन पर काम कर रहा है — इसके लिए MCP अक्षम करने हेतु टैप करें</string>
-    <string name="connections_mcp_disabled">इस कनेक्शन के लिए MCP अक्षम — सक्षम करने हेतु टैप करें</string>
-    <string name="connections_toggle_mcp_enabled">इस कनेक्शन पर MCP एजेंट की अनुमति दें</string>
-    <string name="connections_helper_mcp_enabled">बंद होने पर, इस कनेक्शन को लक्षित करने वाले AI एजेंट (MCP) टूल अस्वीकार कर दिए जाते हैं। कनेक्शन आपके लिए सामान्य रूप से काम करता रहता है।</string>
 
     <!-- Backfill 2026-07: strings added since the last i18n pass -->
     <string name="connections_android_shell_label">नेटिव Android शेल</string>
@@ -545,20 +508,9 @@
     <string name="connections_background_opacity_value">अपारदर्शिता: %1$d%%</string>
     <string name="connections_reveal_password_title">सहेजा गया पासवर्ड दिखाएँ</string>
     <string name="connections_reveal_password_subtitle">सहेजा गया पासवर्ड देखने के लिए पुष्टि करें कि यह आप ही हैं</string>
-    <string name="rclone_import_title">rclone रिमोट आयात करें</string>
-    <string name="rclone_import_intro">अपना Linux rclone.conf पेस्ट करें, या फ़ाइल चुनें। रिमोट (OAuth टोकन सहित) ज्यों के त्यों आयात होते हैं, ताकि आपको उन्हें दोबारा कॉन्फ़िगर न करना पड़े।</string>
-    <string name="rclone_import_pick_file">rclone.conf चुनें…</string>
-    <string name="rclone_import_paste_label">rclone.conf की सामग्री</string>
-    <string name="rclone_import_parse">रिमोट खोजें</string>
-    <string name="rclone_import_encrypted">वह फ़ाइल पासवर्ड-एन्क्रिप्टेड rclone कॉन्फ़िग है। डेस्कटॉप पर \"rclone config show\" चलाएँ और उसकी डिक्रिप्टेड आउटपुट पेस्ट करें।</string>
-    <string name="rclone_import_already_added">पहले से जोड़ा गया</string>
-    <string name="rclone_import_no_type">कोई प्रकार नहीं</string>
-    <string name="rclone_import_select_count">%1$d रिमोट आयात करें</string>
-    <string name="rclone_import_done">%1$d आयात हुए, %2$d छोड़े गए, %3$d विफल।</string>
-    <string name="rclone_import_menu">rclone कॉन्फ़िग आयात करें…</string>
+
     <string name="connections_section_spice">SPICE सेटिंग्स</string>
-    <string name="connections_section_mcp">AI एजेंट (MCP)</string>
-    <string name="connections_rclone_configure_first">कनेक्शन सहेजने से पहले इस रिमोट को सहेजने के लिए “कॉन्फ़िगर करें और सत्यापित करें” पर टैप करें।</string>
+
     <string name="connections_helper_spice_auth">SPICE एक ही वैकल्पिक टिकट/पासवर्ड उपयोग करता है। बिना टिकट वाले सर्वर के लिए खाली छोड़ें।</string>
     <string name="connections_auth_any_hardware_key">कोई भी हार्डवेयर कुंजी (FIDO)</string>
     <string name="connections_deeplink_confirm_title">कनेक्ट करें?</string>

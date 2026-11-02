@@ -1,5 +1,8 @@
 package sh.haven.feature.terminal
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import sh.haven.core.toolbar.KeyboardToolbar
 import android.app.Activity
 import android.content.ClipData
@@ -41,7 +44,6 @@ import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Info
@@ -65,7 +67,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material3.OutlinedTextField
@@ -75,9 +76,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -85,7 +84,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -93,7 +91,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
@@ -101,7 +98,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
@@ -314,8 +310,7 @@ private fun TabActionsMenu(
         val renameableName = viewModel.renameableSessionName(tab.sessionId)
         val canSaveConnection = viewModel.canSaveConnection(tab.sessionId)
         val canShowDetails = viewModel.canShowDetails(tab.sessionId)
-        if (renameableName != null || canSaveConnection || canShowDetails ||
-            viewModel.canOpenPlainShell(tab.sessionId)
+        if (renameableName != null || canSaveConnection || canShowDetails
         ) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
         }
@@ -351,22 +346,7 @@ private fun TabActionsMenu(
                 },
             )
         }
-        if (viewModel.canOpenPlainShell(tab.sessionId)) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.terminal_open_plain_shell)) },
-                leadingIcon = {
-                    Icon(
-                        Icons.Filled.Terminal,
-                        null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                onClick = {
-                    onDismiss()
-                    viewModel.addPlainShellTab(tab.sessionId)
-                },
-            )
-        }
+
         if (canSaveConnection) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.terminal_save_connection)) },
@@ -421,8 +401,7 @@ private fun TabActionsMenu(
 fun TerminalScreen(
     navigateToProfileId: String? = null,
     newSessionProfileId: String? = null,
-    openLocalShellProfileId: String? = null,
-    openLocalShellDeId: String? = null,
+
     isActive: Boolean = false,
     terminalModifier: Modifier = Modifier,
     fontSize: Int = UserPreferencesRepository.DEFAULT_FONT_SIZE,
@@ -585,7 +564,6 @@ fun TerminalScreen(
     val newTabMessage by viewModel.newTabMessage.collectAsState()
     val fidoTouchPrompt by viewModel.fidoTouchPrompt.collectAsState()
     var vncDialogInfo by remember { mutableStateOf<VncInfo?>(null) }
-    var localVncLoading by remember { mutableStateOf(false) }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     val context = LocalContext.current
@@ -657,7 +635,7 @@ fun TerminalScreen(
     // state are hoisted ABOVE the key(activeTab.sessionId) block below: the
     // dialog itself renders *inside* key() so its send closure can never
     // outlive its tab (a non-tap active-tab change — session death clamping
-    // the index, an MCP selectTabBySessionId — tears the dialog down instead
+
     // of silently re-binding typed text to the wrong session), while the
     // per-tab draft map up here means switching back to a tab restores what
     // was typed there. rememberSaveable (not remember) because drafts are
@@ -756,7 +734,6 @@ fun TerminalScreen(
     // lint-banned (LocalContextGetResourceValueCall).
     val linkOpenFailedMessage = stringResource(R.string.terminal_link_open_failed)
     val linkSchemeBlockedMessage = stringResource(R.string.terminal_link_scheme_blocked)
-    val localVncFailedMessage = stringResource(R.string.terminal_local_vnc_failed)
     fun createCameraOutputUri(mode: TerminalViewModel.ScanMode?): Uri {
         val cacheRoot = java.io.File(context.cacheDir, "scan").apply { mkdirs() }
         val prefix = if (mode != null) "scan" else "photo"
@@ -836,10 +813,6 @@ fun TerminalScreen(
                         launchCameraScan(TerminalViewModel.ScanMode.BARCODE)
                     sh.haven.feature.terminal.attach.AttachOption.SCAN_GALLERY ->
                         launchGalleryScan(TerminalViewModel.ScanMode.BARCODE)
-                    sh.haven.feature.terminal.attach.AttachOption.OCR_CAMERA ->
-                        launchCameraScan(TerminalViewModel.ScanMode.OCR)
-                    sh.haven.feature.terminal.attach.AttachOption.OCR_GALLERY ->
-                        launchGalleryScan(TerminalViewModel.ScanMode.OCR)
                 }
             },
         )
@@ -891,7 +864,7 @@ fun TerminalScreen(
     // keeps focus across pager pages otherwise, so when another screen later
     // shows the soft keyboard the IME re-binds to the terminal and the
     // user's keystrokes appear in the terminal instead of the visible
-    // screen (e.g. typing on a VNC/Wayland desktop tab landed in the
+
     // terminal).
     val focusManager = LocalFocusManager.current
 
@@ -1053,15 +1026,10 @@ fun TerminalScreen(
 
     // Open a local-shell tab for the Desktop → Manage shell button (#168).
     // Driven by a pending profile id from HavenNavHost rather than the
-    // AgentUiCommandBus: the bus is replay=0 and this ViewModel only collects
+    // UiCommandBus: the bus is replay=0 and this ViewModel only collects
     // it while this screen is composed, so a request fired from the Desktop
     // tab was dropped before TerminalScreen existed. Consuming a pending id
     // here runs once the screen is composed after the pager switch.
-    LaunchedEffect(openLocalShellProfileId) {
-        if (openLocalShellProfileId != null) {
-            viewModel.addLocalTabForProfile(openLocalShellProfileId, desktopDeId = openLocalShellDeId)
-        }
-    }
 
     // VNC settings dialog
     vncDialogInfo?.let { info ->
@@ -1434,7 +1402,7 @@ fun TerminalScreen(
                                 }.collectAsState(initial = null)
                                 val selected = activeTabIndex == index
                                 val tabColor = profileColors[tab.profileId]
-    
+
                                 Box(modifier = Modifier.weight(1f)) {
                                     Surface(
                                         modifier = Modifier
@@ -1633,7 +1601,7 @@ fun TerminalScreen(
                     // The active tab's compose controller (termlib local
                     // CJK/accent buffer). Held here so the Compose toolbar key
                     // can toggle it and reflect its state; also registered into
-                    // TerminalSessionRegistry for the MCP set_compose_mode verb.
+
                     // isComposeModeActive is Compose-state backed, so reads
                     // recompose the toolbar tint (incl. auto-exit on Enter).
                     var composeController by remember {
@@ -2055,17 +2023,13 @@ fun TerminalScreen(
                                 onPasteRequest = doPaste,
                                 onSelectionControllerAvailable = {
                                     selectionController = it
-                                    viewModel.terminalSessionRegistry.setSelectionController(activeTab.sessionId, it)
                                 },
                                 onScrollControllerAvailable = {
-                                    viewModel.terminalSessionRegistry.setScrollController(activeTab.sessionId, it)
                                 },
                                 onGestureInjectorReady = {
-                                    viewModel.terminalSessionRegistry.setGestureInjector(activeTab.sessionId, it)
                                 },
                                 onComposeControllerAvailable = {
                                     composeController = it
-                                    viewModel.terminalSessionRegistry.setComposeController(activeTab.sessionId, it)
                                 },
                                 onTerminalDoubleTap = {
                                     val window = (view.context as? Activity)?.window ?: return@HavenTerminal
@@ -2248,33 +2212,8 @@ fun TerminalScreen(
                                     vncDialogInfo = info
                                 }
                             }
-                        }} else if (activeTab.transportType == "LOCAL" && viewModel.isLocalDesktopInstalled) {{
-                            if (!localVncLoading) {
-                                localVncLoading = true
-                                coroutineScope.launch {
-                                    // try/finally so a failure (e.g. keystore decrypt,
-                                    // server start) can't leave the spinner stuck true and
-                                    // lock the button out forever. (#208 finding 17)
-                                    try {
-                                        viewModel.ensureLocalVncProfile()
-                                        viewModel.startLocalVncServer()
-                                        kotlinx.coroutines.delay(4000)
-                                        val pwd = viewModel.getLocalVncPassword()
-                                        onNavigateToVnc("localhost", 5901, null, pwd, false, null, "BPP_24_TRUE")
-                                    } catch (e: Exception) {
-                                        android.util.Log.e("TerminalScreen", "local VNC launch failed", e)
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            localVncFailedMessage,
-                                            android.widget.Toast.LENGTH_LONG,
-                                        ).show()
-                                    } finally {
-                                        localVncLoading = false
-                                    }
-                                }
-                            }
                         }} else null,
-                        vncLoading = localVncLoading,
+                        vncLoading = false,
                         selectionController = selectionController,
                         selectionActive = selectionActive,
                         hyperlinkUri = currentHyperlinkUri,
@@ -2356,7 +2295,7 @@ fun TerminalScreen(
 
                     // Floating text-input dialog — MUST stay inside the
                     // key(activeTab.sessionId) block: an active-tab change of
-                    // any kind (tap, session death clamping the index, MCP
+
                     // selectTabBySessionId) then tears it down and recreates
                     // it, so a send can never fire into a tab other than the
                     // one it was opened for. The draft itself lives in the

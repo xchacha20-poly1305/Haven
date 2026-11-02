@@ -9,10 +9,6 @@ import sh.haven.core.rdp.RdpSession
 import sh.haven.core.spice.SpiceSession
 import sh.haven.core.ui.CursorOverlay
 
-/**
- * A single tab on the Desktop screen, representing an active VNC, RDP,
- * or native Wayland session. Mirrors TerminalTab for terminal sessions.
- */
 sealed class DesktopTab {
     abstract val id: String
     abstract val label: String
@@ -22,12 +18,6 @@ sealed class DesktopTab {
     abstract val error: StateFlow<String?>
     open val profileId: String? = null
 
-    /**
-     * The protocol-neutral session driver, populated for tabs that
-     * carry a remote desktop connection. Null for tabs without one
-     * (e.g. native Wayland, which renders into a TextureView and
-     * has no agent-driveable input plane). #128.
-     */
     abstract val remoteDesktop: RemoteDesktopSession?
 
     /** Protocol indicator for the tab bar icon/label. */
@@ -36,7 +26,6 @@ sealed class DesktopTab {
         is Rdp -> "RDP"
         is Spice -> "SPICE"
         is Glkvm -> "GLKVM"
-        is Wayland -> "Wayland"
     }
 
     data class Vnc(
@@ -156,16 +145,4 @@ sealed class DesktopTab {
         val pointerPos: StateFlow<Pair<Int, Int>> get() = _pointerPos
     }
 
-    data class Wayland(
-        override val id: String = "wayland-native",
-        override val label: String = "Wayland",
-        override val colorTag: Int = 0,
-        val _connected: MutableStateFlow<Boolean> = MutableStateFlow(true),
-        val _error: MutableStateFlow<String?> = MutableStateFlow(null),
-    ) : DesktopTab() {
-        override val connected: StateFlow<Boolean> get() = _connected
-        override val frame: StateFlow<Bitmap?> = MutableStateFlow(null) // N/A — uses TextureView
-        override val error: StateFlow<String?> get() = _error
-        override val remoteDesktop: RemoteDesktopSession? = null
-    }
 }

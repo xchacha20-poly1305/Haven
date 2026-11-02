@@ -52,7 +52,7 @@ class UserPreferencesRepository @Inject constructor(
     // Extra trailing prompt characters (beyond $ # % > ❯) for command-on-attach
     // detection — supports custom prompts ending in e.g. » or 尺 (#280).
     private val terminalPromptCharsKey = stringPreferencesKey("terminal_prompt_chars")
-    // LANG value exported into the local proot/Android shell (#282).
+
     private val terminalLocaleKey = stringPreferencesKey("terminal_locale")
     private val themeKey = stringPreferencesKey("theme")
     private val sessionManagerKey = stringPreferencesKey("session_manager")
@@ -103,12 +103,12 @@ class UserPreferencesRepository @Inject constructor(
     // Session command for the Custom (X11) desktop (#361).
     private val customDesktopCommandKey = stringPreferencesKey("custom_desktop_command")
     // Which backend the Desktop screen's primary "Start" uses: "quick" (UML)
-    // or "full" (proot). Unset = never chosen (falls back to quick when the
+
     // UML payload is present, else full). Set the moment the user starts a
     // desktop or taps the switch link, so the choice is last-used, not a
-    // silent default flip for existing proot users.
+
     private val primaryDesktopBackendKey = stringPreferencesKey("primary_desktop_backend")
-    // Last-started UML kind ("x11"/"wayland") and proot DE id, so the primary
+
     // Start re-launches what the user actually used rather than a fixed one.
     private val lastUmlKindKey = stringPreferencesKey("last_uml_kind")
     private val lastProotDeKey = stringPreferencesKey("last_proot_de")
@@ -157,13 +157,13 @@ class UserPreferencesRepository @Inject constructor(
     private val desktopInputModeKey = stringPreferencesKey("desktop_input_mode")
     // Trackpad-mode speed multiplier (#696). 1f = the 1:1 finger→cursor ratio.
     private val desktopTouchpadSensitivityKey = floatPreferencesKey("desktop_touchpad_sensitivity")
-    // Experimental GPU stack for accelerated Wayland/cage desktops. Off (default)
+
     // = virgl/virpipe (GL 2.1, present works on every path). On = venus
     // (Vulkan→Mali) + zink (modern GL, ~3.2 core) with the wl_shm CPU-copy WSI
     // present path. Native Vulkan apps present; GL-via-zink present is slow. See
     // DesktopManager.gpuPassthroughEnv + project_virgl_cage_gpu_accel memory note.
     private val gpuUseVenusKey = booleanPreferencesKey("gpu_use_venus")
-    // Output-only audio bridge for proot apps (#257). On = a PulseAudio daemon
+
     // runs in the active distro and its monitor PCM is played through AudioTrack;
     // desktop launch scripts source /etc/profile.d/pulse.sh so apps get
     // PULSE_SERVER. Off (default) = no audio, no behaviour change.
@@ -178,16 +178,12 @@ class UserPreferencesRepository @Inject constructor(
     private val updateCheckLastNotifiedKey = stringPreferencesKey("update_check_last_notified_version")
     private val bandwidthAutoSuggestKey = booleanPreferencesKey("bandwidth_auto_suggest")
     private val lastMediaServerPortKey = intPreferencesKey("last_media_server_port")
-    private val mcpAgentEndpointEnabledKey = booleanPreferencesKey("mcp_agent_endpoint_enabled")
-    private val lastViewedAgentAuditTimestampKey = longPreferencesKey("last_viewed_agent_audit_timestamp")
-    private val requireAgentConsentForWritesKey = booleanPreferencesKey("require_agent_consent_for_writes")
-    // Per-tool capability gate: when off, the MCP `serve_file` tool fails
+
     // fast with a JSON-RPC error before any consent prompt fires. Default
-    // off — agent-driven raw-file reads are a separate, opt-in capability
+
     // on top of the endpoint toggle.
-    private val agentAllowFileReadKey = booleanPreferencesKey("agent_allow_file_read")
     // Per-tool capability gate for `queue_terminal_input` (and its
-    // deprecated alias `queue_self_message`): when off, the MCP tool
+
     // fails fast with a JSON-RPC error before any consent prompt.
     // Power-user feature — lets the agent inject text + ENTER into
     // any connected SSH session's terminal when a configurable
@@ -196,56 +192,40 @@ class UserPreferencesRepository @Inject constructor(
     // `agent_allow_queue_self_message` so existing installs that
     // already enabled this don't lose their setting across the
     // queue_self_message → queue_terminal_input rename.
-    private val agentAllowTerminalInputQueueKey = booleanPreferencesKey("agent_allow_queue_self_message")
-    // MCP client allowlist — clientInfo.name values the user has approved
+
     // via the pairing prompt on first connect. Empty by default; the
-    // McpServer rejects any initialize from a name not in this set.
-    private val mcpAllowedClientsKey = stringSetPreferencesKey("mcp_allowed_clients")
+
     // SHA-256 hashes of the per-client pairing tokens minted at pairing
-    // approval (#mcp-backbone Stage 3). Entry format "<hex-hash>:<name>"
+
     // (the hash is fixed-length hex, so the first ':' is unambiguous).
     // Possession of the token — not the self-asserted clientInfo.name — is
     // what authenticates a client from then on.
-    private val mcpClientTokenHashesKey = stringSetPreferencesKey("mcp_client_token_hashes")
-    // MCP clients the user has opted into auto-approval for — per-call
+
     // consent prompts are skipped for any name in this set. A persistent,
     // Settings-managed counterpart to the session-only "Allow all from X
     // until restart" checkbox. Empty by default; must always be a subset
-    // of mcpAllowedClients (only a paired client can be auto-approved).
-    private val mcpBypassConsentClientsKey = stringSetPreferencesKey("mcp_bypass_consent_clients")
-    // Profile id of the SSH connection the MCP server tunnels its
+
     // loopback listener back to (a dedicated, headless `-R` reverse
     // forward). Null = no dedicated tunnel; the endpoint is then only
     // reachable on-device or via a manual `adb forward`. See
-    // McpTunnelManager.
-    private val mcpTunnelEndpointProfileIdKey = stringPreferencesKey("mcp_tunnel_endpoint_profile_id")
-    // adb-over-TCP loopback port currently exposed through the MCP reverse
+
     // tunnel (expose_adb), or absent if adb is not exposed. Persisted so the
     // adb -R forward is re-armed on a full tunnel rebuild, not just an
-    // in-memory reconnect. See McpTunnelManager.exposeAdbPort.
-    private val mcpAdbExposedPortKey = intPreferencesKey("mcp_adb_exposed_port")
-    // When on, the MCP server also binds a listener on whichever WireGuard
+
     // tunnel is currently up (stable netstack address, reachable by WG peers
     // across roams — no reverse forward). Off by default: a WG-reachable
-    // listener is a wider surface than the loopback bind. See McpServer (#176).
-    private val mcpWireguardEnabledKey = booleanPreferencesKey("mcp_wireguard_enabled")
-    // Bind the MCP listener on the device's Wi-Fi/LAN address too, so a
+
     // same-network client reaches it directly (no WG, no reverse forward).
     // Off by default — a LAN-reachable listener is a wider surface than
-    // loopback, though still gated by client pairing. See McpServer.
-    private val mcpLanBindEnabledKey = booleanPreferencesKey("mcp_lan_bind_enabled")
-    // Auto-trust MCP clients arriving on the loopback binder (127.0.0.1):
+
     // skip pairing + per-action consent for local agents (adb forward /
     // on-device). On by default — loopback is already the trusted boundary
     // in the v1 threat model. LAN / WireGuard clients always keep the gate.
-    private val trustLoopbackMcpClientsKey = booleanPreferencesKey("trust_loopback_mcp_clients")
-    // Tunnel config id of the WireGuard tunnel to keep up as the MCP
-    // carrier. When set (and mcp_wireguard_enabled), the MCP server
+
     // actively (re)connects this tunnel rather than passively attaching to
     // whatever WG tunnel happens to be live — so the WG-exposed endpoint
     // survives app restart / re-foreground. Empty/unset preserves the old
     // attach-to-first-live behaviour.
-    private val mcpWireguardTunnelConfigIdKey = stringPreferencesKey("mcp_wireguard_tunnel_config_id")
 
     val biometricEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[biometricEnabledKey] ?: false
@@ -532,11 +512,6 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { prefs -> prefs[customDesktopCommandKey] = command.trim() }
     }
 
-    /**
-     * Which backend the Desktop screen's primary Start button drives —
-     * "quick" (the UML guest) or "full" (proot). Empty until the user has
-     * chosen; the UI then falls back by capability, not by assumption.
-     */
     val primaryDesktopBackend: Flow<String> = dataStore.data.map { prefs ->
         prefs[primaryDesktopBackendKey] ?: ""
     }
@@ -545,7 +520,6 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { prefs -> prefs[primaryDesktopBackendKey] = backend }
     }
 
-    /** The last-started UML desktop kind ("x11"/"wayland"); empty if none. */
     val lastUmlKind: Flow<String> = dataStore.data.map { prefs ->
         prefs[lastUmlKindKey] ?: ""
     }
@@ -554,7 +528,6 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { prefs -> prefs[lastUmlKindKey] = kind }
     }
 
-    /** The last-started proot desktop's DE id; empty if none. */
     val lastProotDe: Flow<String> = dataStore.data.map { prefs ->
         prefs[lastProotDeKey] ?: ""
     }
@@ -641,15 +614,6 @@ class UserPreferencesRepository @Inject constructor(
     private fun screenRoutesForcedVisibleByLegacy(): List<String> =
         listOf("terminal", "desktop", "keys", "sftp", "mail")
 
-    /**
-     * Master opt-in for exposing the phone's USB devices to the proot Linux
-     * guest (the haven-usb proxy + shim). Default OFF: the per-call consent
-     * prompt still gates each attach, but this gives the user a single
-     * deliberate switch for the whole capability — guest USB lets *any* guest
-     * app reach the brokered device, so it stays off until explicitly enabled.
-     * Does NOT affect the direct agent USB tools (list/permission/transfer),
-     * which are consent-gated on their own.
-     */
     val usbGuestExposureEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[usbGuestExposureEnabledKey] ?: false
     }
@@ -660,15 +624,6 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Master opt-in for exposing the phone's GPS to the proot Linux guest
-     * (the \0haven-gps NMEA bridge + `haven-gps` helper). Default OFF: the
-     * attach consent sheet still gates each attach, but this gives the user
-     * a single deliberate switch for the whole capability — a guest-exposed
-     * GPS lets *any* guest process read the phone's position, so it stays
-     * off until explicitly enabled. Does NOT affect the direct agent GPS
-     * tools (status/fix/log), which are consent-gated on their own.
-     */
     val gpsGuestExposureEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[gpsGuestExposureEnabledKey] ?: false
     }
@@ -706,7 +661,6 @@ class UserPreferencesRepository @Inject constructor(
             prefs[remoteClipboardToLocalKey] = enabled
         }
     }
-
 
     /** Capture SSH protocol details (key exchange, auth, ciphers). Off by default. */
     val verboseLoggingEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -1154,7 +1108,6 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /** Shell command to run in the Wayland desktop (default: /bin/sh -l). */
     val waylandShellCommand: Flow<String> = dataStore.data.map { prefs ->
         prefs[waylandShellCommandKey] ?: "/bin/sh -l"
     }
@@ -1188,264 +1141,13 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     /**
-     * Whether the MCP agent endpoint server is enabled. Defaults to **false** —
-     * the agent transport gives programmatic access to state an AI agent
-     * or any local process can read, and must be an explicit opt-in.
-     */
-    val mcpAgentEndpointEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[mcpAgentEndpointEnabledKey] ?: false
-    }
-
-    suspend fun setMcpAgentEndpointEnabled(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[mcpAgentEndpointEnabledKey] = enabled
-        }
-    }
-
-    /**
-     * Id of the SSH [sh.haven.core.data.db.entities.ConnectionProfile]
-     * that the MCP server uses for its dedicated reverse tunnel. Null
-     * (the default) means no dedicated tunnel is brought up when the MCP
-     * endpoint is enabled. See McpTunnelManager.
-     */
-    val mcpTunnelEndpointProfileId: Flow<String?> = dataStore.data.map { prefs ->
-        prefs[mcpTunnelEndpointProfileIdKey]
-    }
-
-    suspend fun setMcpTunnelEndpointProfileId(profileId: String?) {
-        dataStore.edit { prefs ->
-            if (profileId == null) {
-                prefs.remove(mcpTunnelEndpointProfileIdKey)
-            } else {
-                prefs[mcpTunnelEndpointProfileIdKey] = profileId
-            }
-        }
-    }
-
-    /**
-     * Loopback adb-over-TCP port exposed through the MCP reverse tunnel, or
-     * null when adb is not exposed. Set by the `expose_adb` MCP tool; read by
-     * [McpTunnelManager] to re-arm the `-R` forward across tunnel rebuilds.
-     */
-    val mcpAdbExposedPort: Flow<Int?> = dataStore.data.map { prefs ->
-        prefs.intSafe(mcpAdbExposedPortKey)
-    }
-
-    suspend fun setMcpAdbExposedPort(port: Int?) {
-        dataStore.edit { prefs ->
-            if (port == null) {
-                prefs.remove(mcpAdbExposedPortKey)
-            } else {
-                prefs[mcpAdbExposedPortKey] = port
-            }
-        }
-    }
-
-    /**
-     * Whether the MCP server also exposes itself on the active WireGuard
-     * tunnel's interface address. Default **true** — when a WireGuard tunnel
-     * is up it is the preferred MCP transport (stable across roams, no SSH
-     * `-R` re-bind collisions), so the SSH reverse tunnel stands down to a
-     * fallback. Harmless with no WG tunnel up (the binder idles). Reach stays
-     * gated by client pairing; widening to every WG peer is the trade for the
-     * roaming-proof path.
-     */
-    val mcpWireguardEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[mcpWireguardEnabledKey] ?: true
-    }
-
-    suspend fun setMcpWireguardEnabled(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[mcpWireguardEnabledKey] = enabled
-        }
-    }
-
-    /**
-     * Whether the MCP listener also binds the device's Wi-Fi/LAN address
-     * (in addition to loopback), so a same-LAN client reaches it directly.
-     * Off by default. Reach stays gated by client pairing.
-     */
-    val mcpLanBindEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[mcpLanBindEnabledKey] ?: false
-    }
-
-    suspend fun setMcpLanBindEnabled(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[mcpLanBindEnabledKey] = enabled
-        }
-    }
-
-    /**
-     * Whether loopback (127.0.0.1) MCP clients auto-trust: skip both the
-     * pairing prompt and per-action consent. OFF by default (#mcp-backbone
-     * Stage 2): on stock Android any co-resident app with the INTERNET
-     * permission can dial another app's loopback listener, so loopback
-     * reachability alone is not proof of being this device's user. An
-     * explicit opt-in for users whose on-device agents need frictionless
-     * access. LAN / WireGuard / reverse-tunneled clients are unaffected and
-     * always run the full gate. (#214)
-     */
-    val trustLoopbackMcpClients: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[trustLoopbackMcpClientsKey] ?: false
-    }
-
-    suspend fun setTrustLoopbackMcpClients(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[trustLoopbackMcpClientsKey] = enabled
-        }
-    }
-
-    /**
-     * Tunnel config id of the WireGuard tunnel to keep up as the MCP
-     * carrier, or null when unset (attach to whatever WG tunnel is live).
-     */
-    val mcpWireguardTunnelConfigId: Flow<String?> = dataStore.data.map { prefs ->
-        prefs[mcpWireguardTunnelConfigIdKey]?.ifBlank { null }
-    }
-
-    suspend fun setMcpWireguardTunnelConfigId(configId: String?) {
-        dataStore.edit { prefs ->
-            val v = configId?.ifBlank { null }
-            if (v == null) prefs.remove(mcpWireguardTunnelConfigIdKey)
-            else prefs[mcpWireguardTunnelConfigIdKey] = v
-        }
-    }
-
-    /**
      * Wall-clock timestamp of the most recent visit to the agent
      * activity log. The Settings badge compares this against the
      * latest event in [sh.haven.core.data.db.AgentAuditEventDao] to
      * decide whether to show an "unseen" dot.
      */
-    val lastViewedAgentAuditTimestamp: Flow<Long> = dataStore.data.map { prefs ->
-        prefs.longSafe(lastViewedAgentAuditTimestampKey) ?: 0L
-    }
-
-    suspend fun setLastViewedAgentAuditTimestamp(timestamp: Long) {
-        dataStore.edit { prefs ->
-            prefs[lastViewedAgentAuditTimestampKey] = timestamp
-        }
-    }
-
-    /**
-     * Whether destructive agent actions (writes, deletes, uploads,
-     * disconnects) must be confirmed by the user. Default **true** —
-     * the §85 rule from VISION.md says the user always keeps the
-     * wheel, and that means an explicit per-action gate by default.
-     * No mutating MCP tools exist yet; the toggle is in place so the
-     * first one that does inherits the right default.
-     */
-    val requireAgentConsentForWrites: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[requireAgentConsentForWritesKey] ?: true
-    }
-
-    suspend fun setRequireAgentConsentForWrites(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[requireAgentConsentForWritesKey] = enabled
-        }
-    }
-
-    /**
-     * Whether the MCP `serve_file` tool is enabled. Off by default —
-     * the toggle is the second factor above per-call consent: even with
-     * the agent endpoint enabled, raw file reads stay disabled until
-     * the user explicitly opts in. The toggle gates the dispatcher
-     * before any consent prompt, so a disabled call fails immediately
-     * with a clear "enable in Settings" error rather than flashing a
-     * deny-then-error prompt.
-     */
-    val agentAllowFileRead: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[agentAllowFileReadKey] ?: false
-    }
-
-    suspend fun setAgentAllowFileRead(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[agentAllowFileReadKey] = enabled
-        }
-    }
-
-    /**
-     * Whether the MCP `queue_terminal_input` tool is enabled (also
-     * covers its deprecated alias `queue_self_message`). Off by
-     * default — gives the agent a way to type text + ENTER into any
-     * connected SSH session at the next matching prompt. Power-user;
-     * off until the user explicitly opts in.
-     */
-    val agentAllowTerminalInputQueue: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[agentAllowTerminalInputQueueKey] ?: false
-    }
-
-    suspend fun setAgentAllowTerminalInputQueue(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[agentAllowTerminalInputQueueKey] = enabled
-        }
-    }
-
-    /**
-     * MCP clients the user has paired via the first-connect prompt
-     * fired from [sh.haven.app.agent.McpServer.handleInitialize].
-     * Stored by `clientInfo.name` exactly as the client sent it.
-     *
-     * Empty default — a fresh Haven install rejects every MCP client
-     * until one is paired. The pairing decision is the security
-     * boundary; `clientInfo.name` is not cryptographically unforgeable,
-     * but local-app sandboxing on Android plus the explicit user-tap
-     * confirmation is the threat model this set addresses.
-     */
-    val mcpAllowedClients: Flow<Set<String>> = dataStore.data.map { prefs ->
-        prefs[mcpAllowedClientsKey] ?: emptySet()
-    }
-
-    suspend fun addMcpAllowedClient(name: String) {
-        if (name.isBlank()) return
-        dataStore.edit { prefs ->
-            prefs[mcpAllowedClientsKey] = (prefs[mcpAllowedClientsKey] ?: emptySet()) + name
-        }
-    }
-
-    suspend fun removeMcpAllowedClient(name: String) {
-        dataStore.edit { prefs ->
-            prefs[mcpAllowedClientsKey] = (prefs[mcpAllowedClientsKey] ?: emptySet()) - name
-            // Un-pairing revokes any standing auto-approval too — a client
-            // that has to re-pair must re-earn the bypass.
-            prefs[mcpBypassConsentClientsKey] = (prefs[mcpBypassConsentClientsKey] ?: emptySet()) - name
-            // ...and its pairing token: a removed client must re-pair, not
-            // walk back in with the old credential (#mcp-backbone Stage 3).
-            prefs[mcpClientTokenHashesKey] = (prefs[mcpClientTokenHashesKey] ?: emptySet())
-                .filterNot { it.substringAfter(':') == name }.toSet()
-        }
-    }
-
-    suspend fun clearMcpAllowedClients() {
-        dataStore.edit { prefs ->
-            prefs.remove(mcpAllowedClientsKey)
-            prefs.remove(mcpBypassConsentClientsKey)
-            prefs.remove(mcpClientTokenHashesKey)
-        }
-    }
-
-    /**
-     * SHA-256 hex hashes of the per-client pairing tokens, keyed by client
-     * name (#mcp-backbone Stage 3). Minted by the MCP server when the user
-     * approves a pairing; a client proves its identity on later requests by
-     * presenting the raw token (`Authorization: Bearer …`), which the server
-     * hashes and matches against this map. Only the hash is ever persisted.
-     */
-    val mcpClientTokenHashes: Flow<Map<String, String>> = dataStore.data.map { prefs ->
-        (prefs[mcpClientTokenHashesKey] ?: emptySet()).associate { entry ->
-            entry.substringAfter(':') to entry.substringBefore(':')
-        }
-    }
 
     /** Store (or rotate) the pairing-token hash for [name]. Blank name is ignored. */
-    suspend fun setMcpClientTokenHash(name: String, hash: String) {
-        if (name.isBlank()) return
-        dataStore.edit { prefs ->
-            val kept = (prefs[mcpClientTokenHashesKey] ?: emptySet())
-                .filterNot { it.substringAfter(':') == name }
-            prefs[mcpClientTokenHashesKey] = (kept + "$hash:$name").toSet()
-        }
-    }
 
     /**
      * Clients the user has opted into auto-approval for (Settings →
@@ -1455,29 +1157,6 @@ class UserPreferencesRepository @Inject constructor(
      * explicitly opts it in. The persistent sibling of the consent
      * sheet's session-only "Allow all from X until restart" checkbox.
      */
-    val mcpBypassConsentClients: Flow<Set<String>> = dataStore.data.map { prefs ->
-        prefs[mcpBypassConsentClientsKey] ?: emptySet()
-    }
-
-    /**
-     * Enable/disable persistent auto-approval for a paired client. A
-     * blank name is ignored. Enabling a name not in [mcpAllowedClients]
-     * is harmless — the dispatch path only consults this for clients
-     * that already passed the pairing gate.
-     */
-    suspend fun setMcpClientConsentBypass(name: String, enabled: Boolean) {
-        if (name.isBlank()) return
-        dataStore.edit { prefs ->
-            val current = prefs[mcpBypassConsentClientsKey] ?: emptySet()
-            prefs[mcpBypassConsentClientsKey] = if (enabled) current + name else current - name
-        }
-    }
-
-    suspend fun clearMcpBypassConsentClients() {
-        dataStore.edit { prefs ->
-            prefs.remove(mcpBypassConsentClientsKey)
-        }
-    }
 
     val terminalFontSize: Flow<Int> = dataStore.data.map { prefs ->
         prefs.intSafe(terminalFontSizeKey) ?: DEFAULT_FONT_SIZE
@@ -1584,14 +1263,6 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Optional idle auto-stop for the local PRoot Linux guest (#409). When the
-     * app has been backgrounded this many minutes, Haven stops the interactive
-     * guest (local terminal sessions + desktops) to reclaim resources — unless a
-     * guest service is running (an explicit "keep it up" choice). 0 = off
-     * (default). Opt-in: a long job in a backgrounded terminal would be stopped
-     * too, so it stays off unless the user wants idle reclamation.
-     */
     val prootIdleTimeoutMinutes: Flow<Int> = dataStore.data.map { prefs ->
         (prefs.intSafe(prootIdleTimeoutMinutesKey) ?: 0).coerceAtLeast(0)
     }
@@ -1671,13 +1342,6 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Locale exported as `LANG` into the local Linux (proot) shell and the
-     * Android fallback shell (#282). Default `en_US.UTF-8`. `C.UTF-8` always
-     * works without locale-gen; other locales may need generating in the guest
-     * (`locale-gen`) before programs honour them. Blank falls back to the
-     * default.
-     */
     val terminalLocale: Flow<String> = dataStore.data.map { prefs ->
         prefs[terminalLocaleKey]?.takeIf { it.isNotBlank() } ?: DEFAULT_TERMINAL_LOCALE
     }
@@ -1857,7 +1521,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     // --- Saved app windows (single-app cage kiosks; see AppWindowDefList) ---
-    // Shared by the Desktop-settings UI (user-defined) and McpTools.present_app
+
     // (records the agent's launches so they're restartable). Both already
     // inject this repository, so a DataStore-JSON list keeps it in one place.
 

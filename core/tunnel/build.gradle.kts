@@ -30,10 +30,6 @@ dependencies {
     implementation(libs.jsch)
     implementation(project(":core:ssh"))
     implementation(project(":core:data"))
-    // The gomobile wgbridge package (wireguard-go + gVisor netstack) lives
-    // inside the rclone-transport jar — they share a single libgojni.so to
-    // avoid runtime-class collisions. See rclone-android/go/wgbridge/.
-    implementation("sh.haven:rclone-transport:0.1.0")
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(libs.hilt.android)
@@ -59,14 +55,4 @@ kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
-}
-
-// rclone-android is an included build, so it owns the native producer that
-// its cgo link needs. Keep this entry point for existing native build callers.
-val buildOpenvpn3Native by tasks.registering {
-    dependsOn(gradle.includedBuild("rclone-android").task(":buildOpenvpn3Native"))
-}
-
-tasks.named("preBuild") {
-    dependsOn(buildOpenvpn3Native)
 }

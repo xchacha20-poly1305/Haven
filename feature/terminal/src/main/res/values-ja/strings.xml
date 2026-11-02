@@ -68,7 +68,7 @@
     <string name="terminal_new_tab_host_key_changed">%s のホスト鍵が変更されました — セキュリティのため接続を拒否しました</string>
     <string name="terminal_new_tab_connection_failed">接続できませんでした: %s</string>
     <string name="terminal_new_tab_shell_failed">シェルを開けませんでした: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">複製できるアクティブな Reticulum セッションがありません</string>
+
     <string name="terminal_new_tab_connecting">接続中…</string>
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="terminal_no_contact">サーバー応答なし（%1$d 秒）— 再試行中</string>
@@ -87,7 +87,6 @@
     <!-- i18n sweep #210 -->
     <string name="terminal_link_open_failed">このリンクを開けるアプリがありません</string>
     <string name="terminal_link_scheme_blocked">ブロックされたリンク（未対応のスキーム）</string>
-    <string name="terminal_local_vnc_failed">ローカルデスクトップを起動できませんでした</string>
     <string name="terminal_attach_title">添付</string>
     <string name="terminal_attach_send_file">ファイルを送信</string>
     <string name="terminal_attach_send_file_desc">リモートにアップロードしてパスを貼り付け</string>
@@ -97,10 +96,7 @@
     <string name="terminal_attach_scan_camera_desc">QR コードまたはバーコードを撮影して内容を貼り付け</string>
     <string name="terminal_attach_scan_gallery">コードをスキャン（フォト）</string>
     <string name="terminal_attach_scan_gallery_desc">QR コードまたはバーコードの写真を選択して内容を貼り付け</string>
-    <string name="terminal_attach_ocr_camera">テキストを認識（カメラ）</string>
-    <string name="terminal_attach_ocr_camera_desc">印刷テキストを撮影して検出内容を貼り付け</string>
-    <string name="terminal_attach_ocr_gallery">テキストを認識（フォト）</string>
-    <string name="terminal_attach_ocr_gallery_desc">印刷テキストの写真を選択して検出内容を貼り付け</string>
+
     <string name="terminal_scan_no_code">画像にコードが検出されませんでした</string>
     <string name="terminal_scan_no_text">画像にテキストが検出されませんでした</string>
     <string name="terminal_scan_failed">スキャン失敗: %s</string>

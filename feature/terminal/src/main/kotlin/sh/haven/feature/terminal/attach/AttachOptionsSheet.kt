@@ -38,8 +38,6 @@ enum class AttachOption {
     TAKE_PHOTO,
     SCAN_CAMERA,
     SCAN_GALLERY,
-    OCR_CAMERA,
-    OCR_GALLERY,
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,18 +80,6 @@ fun AttachOptionsSheet(
                 label = R.string.terminal_attach_scan_gallery,
                 description = R.string.terminal_attach_scan_gallery_desc,
                 onClick = { onSelect(AttachOption.SCAN_GALLERY) },
-            )
-            SheetRow(
-                icon = Icons.Filled.PhotoCamera,
-                label = R.string.terminal_attach_ocr_camera,
-                description = R.string.terminal_attach_ocr_camera_desc,
-                onClick = { onSelect(AttachOption.OCR_CAMERA) },
-            )
-            SheetRow(
-                icon = Icons.Filled.TextFields,
-                label = R.string.terminal_attach_ocr_gallery,
-                description = R.string.terminal_attach_ocr_gallery_desc,
-                onClick = { onSelect(AttachOption.OCR_GALLERY) },
             )
         }
     }

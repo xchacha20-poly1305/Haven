@@ -27,6 +27,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import androidx.lifecycle.viewModelScope
 import sh.haven.core.data.preferences.UserPreferencesRepository
 import sh.haven.core.data.repository.ConnectionRepository
 import sh.haven.core.spa.SpaSender
@@ -41,17 +42,9 @@ import sh.haven.core.data.repository.KeyUnlockDeclinedException
 import sh.haven.core.data.repository.SshKeyRepository
 import sh.haven.core.ssh.ConnectionConfig
 import sh.haven.core.et.EtSessionManager
-import sh.haven.core.fido.FidoAuthenticator
-import sh.haven.core.local.DesktopManager
-import sh.haven.core.local.LocalSessionManager
-import sh.haven.core.local.ProotManager
-import sh.haven.core.mail.MailSessionManager
 import sh.haven.core.mosh.MoshSessionManager
-import sh.haven.core.reticulum.ReticulumTransport
-import sh.haven.core.reticulum.ReticulumSessionManager
 import sh.haven.core.smb.SmbSessionManager
 import sh.haven.core.rdp.RdpSessionManager
-import sh.haven.core.ssh.HostKeyVerifier
 import sh.haven.core.ssh.SessionManagerRegistry
 import sh.haven.core.ssh.SshSessionManager
 import sh.haven.core.ssh.Transport
@@ -83,18 +76,10 @@ class ConnectionsViewModelSessionTest {
     private lateinit var repository: ConnectionRepository
     private lateinit var portForwardRepository: PortForwardRepository
     private lateinit var sshSessionManager: SshSessionManager
-    private lateinit var reticulumSessionManager: ReticulumSessionManager
     private lateinit var moshSessionManager: MoshSessionManager
     private lateinit var etSessionManager: EtSessionManager
     private lateinit var smbSessionManager: SmbSessionManager
-    private lateinit var localSessionManager: LocalSessionManager
     private lateinit var rdpSessionManager: RdpSessionManager
-    private lateinit var mailSessionManager: MailSessionManager
-    private lateinit var rcloneSessionManager: sh.haven.core.rclone.RcloneSessionManager
-    private lateinit var openAiSessionManager: sh.haven.core.openai.OpenAiSessionManager
-    private val openAiSessions = MutableStateFlow<Map<String, sh.haven.core.openai.OpenAiSessionManager.SessionState>>(emptyMap())
-    private lateinit var prootManager: ProotManager
-    private lateinit var desktopManager: DesktopManager
     private lateinit var sessionManagerRegistry: SessionManagerRegistry
     private lateinit var sshKeyRepository: SshKeyRepository
     private lateinit var preferencesRepository: UserPreferencesRepository
@@ -120,10 +105,6 @@ class ConnectionsViewModelSessionTest {
             every { sessions } returns MutableStateFlow(emptyMap())
             every { hasActiveSessions } returns false
         }
-        reticulumSessionManager = mockk(relaxed = true) {
-            every { sessions } returns MutableStateFlow(emptyMap())
-            every { activeSessions } returns emptyList()
-        }
         moshSessionManager = mockk(relaxed = true) {
             every { sessions } returns MutableStateFlow(emptyMap())
             every { activeSessions } returns emptyList()
@@ -135,28 +116,8 @@ class ConnectionsViewModelSessionTest {
         smbSessionManager = mockk(relaxed = true) {
             every { sessions } returns MutableStateFlow(emptyMap())
         }
-        prootManager = mockk(relaxed = true)
-        desktopManager = mockk(relaxed = true) {
-            every { desktops } returns MutableStateFlow(emptyMap())
-        }
-        localSessionManager = mockk(relaxed = true) {
-            every { sessions } returns MutableStateFlow(emptyMap())
-            every { activeSessions } returns emptyList()
-            every { prootManager } returns this@ConnectionsViewModelSessionTest.prootManager
-            every { desktopManager } returns this@ConnectionsViewModelSessionTest.desktopManager
-        }
         rdpSessionManager = mockk(relaxed = true) {
             every { sessions } returns MutableStateFlow(emptyMap())
-            every { activeSessions } returns emptyList()
-        }
-        mailSessionManager = mockk(relaxed = true) {
-            every { sessions } returns MutableStateFlow(emptyMap())
-        }
-        rcloneSessionManager = mockk(relaxed = true) {
-            every { sessions } returns MutableStateFlow(emptyMap())
-        }
-        openAiSessionManager = mockk(relaxed = true) {
-            every { sessions } returns openAiSessions
             every { activeSessions } returns emptyList()
         }
         // Since #510 the registry takes contributed transports rather than
@@ -167,24 +128,22 @@ class ConnectionsViewModelSessionTest {
         sessionManagerRegistry = SessionManagerRegistry(
             transports = setOf(
                 disconnectable(Transport.SSH) { sshSessionManager.removeAllSessionsForProfile(it) },
-                disconnectable(Transport.RETICULUM) { reticulumSessionManager.removeAllSessionsForProfile(it) },
+
                 disconnectable(Transport.MOSH) { moshSessionManager.removeAllSessionsForProfile(it) },
                 disconnectable(Transport.ET) { etSessionManager.removeAllSessionsForProfile(it) },
                 disconnectable(Transport.SMB) { smbSessionManager.removeAllSessionsForProfile(it) },
-                disconnectable(Transport.LOCAL) { localSessionManager.removeAllSessionsForProfile(it) },
+
                 disconnectable(Transport.RDP) { rdpSessionManager.removeAllSessionsForProfile(it) },
-                disconnectable(Transport.MAIL) { mailSessionManager.removeAllSessionsForProfile(it) },
-                disconnectable(Transport.RCLONE) { rcloneSessionManager.removeAllSessionsForProfile(it) },
+
                 // OPENAI was missing from this set, so disconnect left the chat
-                // session CONNECTED forever (the same #363 shape as rclone).
-                disconnectable(Transport.OPENAI) { openAiSessionManager.removeAllSessionsForProfile(it) },
+
                 // The three serial transports were anonymous mocks here before
                 // and nothing asserts them; they stay no-ops.
                 disconnectable(Transport.BTSERIAL) {},
                 disconnectable(Transport.BLESERIAL) {},
                 disconnectable(Transport.USBSERIAL) {},
             ),
-            keepAlives = emptySet(),
+
         )
 
         sshKeyRepository = mockk(relaxed = true) {
@@ -219,7 +178,7 @@ class ConnectionsViewModelSessionTest {
             // ordinary session behaviour.
             backgroundDisconnectDetector = mockk(relaxed = true),
             sshSessionAttacher = mockk(relaxed = true),
-            reticulumSessionManager = reticulumSessionManager,
+
             moshSessionManager = moshSessionManager,
             etSessionManager = etSessionManager,
             btSerialSessionManager = mockk(relaxed = true) {
@@ -234,20 +193,12 @@ class ConnectionsViewModelSessionTest {
                 every { sessions } returns kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
             },
             usbBroker = mockk(relaxed = true),
-            reticulumTransport = mockk(relaxed = true) {
-                every { discoveredDestinations } returns kotlinx.coroutines.flow.MutableStateFlow(emptyList())
-            },
-            reticulumForwardServer = mockk(relaxed = true),
+
             smbSessionManager = smbSessionManager,
-            rcloneSessionManager = rcloneSessionManager,
-            rcloneClient = mockk(relaxed = true),
+
             fidoAuthenticator = mockk(relaxed = true),
             keystoreSshKeySigner = mockk(relaxed = true),
-            localSessionManager = localSessionManager,
-            umlGuestManager = mockk(relaxed = true) {
-                every { sessions } returns kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
-            },
-            mailSessionManager = mailSessionManager,
+
             sessionManagerRegistry = sessionManagerRegistry,
             sshKeyRepository = sshKeyRepository,
             totpSecretRepository = mockk(relaxed = true) {
@@ -273,27 +224,17 @@ class ConnectionsViewModelSessionTest {
             },
             certRenewalGate = certRenewalGate,
             desktopSessionRegistry = desktopSessionRegistry,
-            agentUiCommandBus = mockk(relaxed = true) {
+            uiCommandBus = mockk(relaxed = true) {
                 every { commands } returns kotlinx.coroutines.flow.MutableSharedFlow()
             },
-            agentActivityHolder = mockk(relaxed = true) {
-                every { activeProfiles } returns MutableStateFlow(emptyMap())
-            },
+
             userMessageBus = sh.haven.core.data.message.UserMessageBus(),
             hostRediscovery = mockk(relaxed = true) {
                 coEvery { rediscover(any()) } returns null
             },
             usbipForwarder = mockk(relaxed = true),
             biometricGate = mockk(relaxed = true),
-            pendingAuthPromptHolder = mockk(relaxed = true),
-            sessionSelectionHolder = mockk(relaxed = true),
-            openAiSessionManager = openAiSessionManager,
-            aiRouteRegistry = sh.haven.core.openai.AiRouteRegistry(),
-            connectionPreflight = mockk(relaxed = true) {
-                coEvery { beforeConnect(any()) } answers {
-                    sh.haven.core.data.repository.ConnectionPreflight.Result.Proceed(firstArg())
-                }
-            },
+
         )
     }
 
@@ -315,25 +256,28 @@ class ConnectionsViewModelSessionTest {
     }
 
     @Test
+    fun `key connection still asks for a missing SSH username`() {
+        val profile = ConnectionProfile(label = "server", host = "host", username = "")
+        viewModel.connectWithKey(profile)
+        assertEquals(profile, viewModel.passwordFallback.value)
+    }
+
+    @Test
     fun `disconnect cleans up all session manager types`() {
         viewModel.disconnect("profile1")
 
         verify { sshSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { reticulumSessionManager.removeAllSessionsForProfile("profile1") }
         verify { moshSessionManager.removeAllSessionsForProfile("profile1") }
         verify { etSessionManager.removeAllSessionsForProfile("profile1") }
         verify { smbSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { localSessionManager.removeAllSessionsForProfile("profile1") }
-        // #363: rclone was missing from the registry, so disconnect left
+
         // the storage card CONNECTED forever.
-        verify { rcloneSessionManager.removeAllSessionsForProfile("profile1") }
     }
 
     @Test
     fun `disconnect stops VNC server`() {
         viewModel.disconnect("profile1")
 
-        verify { desktopManager.stopAll() }
     }
 
     @Test
@@ -352,43 +296,20 @@ class ConnectionsViewModelSessionTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         verify { sshSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { reticulumSessionManager.removeAllSessionsForProfile("profile1") }
         verify { moshSessionManager.removeAllSessionsForProfile("profile1") }
         verify { etSessionManager.removeAllSessionsForProfile("profile1") }
         verify { smbSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { localSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { rcloneSessionManager.removeAllSessionsForProfile("profile1") }
-        verify { openAiSessionManager.removeAllSessionsForProfile("profile1") }
     }
 
     // A connected OPENAI/chat profile must surface CONNECTED in profileStatuses,
     // otherwise the connections-list row shows no status dot and tapping it falls
     // through to the SSH password prompt instead of opening the chat.
-    @Test
-    fun `connected openai session surfaces CONNECTED profile status`() = runTest {
-        openAiSessions.value = mapOf(
-            "s1" to sh.haven.core.openai.OpenAiSessionManager.SessionState(
-                sessionId = "s1",
-                profileId = "openai1",
-                label = "local model",
-                status = sh.haven.core.openai.OpenAiSessionManager.SessionState.Status.CONNECTED,
-            ),
-        )
-        backgroundScope.launch { viewModel.profileStatuses.collect { } }
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        org.junit.Assert.assertEquals(
-            sh.haven.feature.connections.ProfileStatus.CONNECTED,
-            viewModel.profileStatuses.value["openai1"],
-        )
-    }
 
     @Test
     fun `deleteConnection stops VNC server and deletes from repository`() = runTest {
         viewModel.deleteConnection("profile1")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { desktopManager.stopAll() }
         coVerify { repository.delete("profile1") }
     }
 

@@ -17,8 +17,6 @@ Haven speaks serial as well as network transports, so a microcontroller or an em
 
 ## Serial-to-TCP bridge
 
-A live serial session — Bluetooth, BLE, or USB — can be exposed as a raw TCP port on the phone's loopback interface, so a physically-attached device joins the rest of Haven's routing fabric. Pair that with an SSH remote-forward or a [tunnel](connections.md) and the serial device is reachable *off* the phone: read a sensor, or drive a board, from anywhere your phone can reach. The terminal tab keeps working while it's bridged, and bytes pass raw in both directions. The bridge is driven through Haven's [agent/MCP interface](../mcp-tools.md) — `bridge_serial_to_tcp` opens it and returns the port, `list_serial_bridges` shows what's active, `stop_serial_bridge` tears it down.
-
 ## OSC escape sequences
 
 Remote programs can interact with Android through standard terminal escape sequences:

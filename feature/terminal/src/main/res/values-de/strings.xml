@@ -68,7 +68,7 @@
     <string name="terminal_new_tab_host_key_changed">Hostschlüssel für %s geändert — Verbindung aus Sicherheitsgründen abgelehnt</string>
     <string name="terminal_new_tab_connection_failed">Verbindung fehlgeschlagen: %s</string>
     <string name="terminal_new_tab_shell_failed">Shell konnte nicht geöffnet werden: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">Keine aktive Reticulum-Sitzung zum Klonen</string>
+
     <string name="terminal_new_tab_connecting">Connecting…</string>
     <!-- Backfilled translations (i18n drift fix) -->
     <string name="terminal_no_contact">Seit %1$ds keine Serverantwort — erneuter Versuch</string>
@@ -87,7 +87,6 @@
     <!-- i18n sweep #210 -->
     <string name="terminal_link_open_failed">Kein App kann diesen Link öffnen</string>
     <string name="terminal_link_scheme_blocked">Blockierter Link (nicht unterstütztes Schema)</string>
-    <string name="terminal_local_vnc_failed">Lokaler Desktop konnte nicht gestartet werden</string>
     <string name="terminal_attach_title">Anhängen</string>
     <string name="terminal_attach_send_file">Datei senden</string>
     <string name="terminal_attach_send_file_desc">Auf Remote hochladen und Pfad einfügen</string>
@@ -97,10 +96,7 @@
     <string name="terminal_attach_scan_camera_desc">QR- oder Barcode fotografieren und Inhalt einfügen</string>
     <string name="terminal_attach_scan_gallery">Code scannen (Fotos)</string>
     <string name="terminal_attach_scan_gallery_desc">Foto eines QR- oder Barcodes auswählen und Inhalt einfügen</string>
-    <string name="terminal_attach_ocr_camera">Text erkennen (Kamera)</string>
-    <string name="terminal_attach_ocr_camera_desc">Gedruckten Text fotografieren und Erkanntes einfügen</string>
-    <string name="terminal_attach_ocr_gallery">Text erkennen (Fotos)</string>
-    <string name="terminal_attach_ocr_gallery_desc">Foto mit gedrucktem Text auswählen und Erkanntes einfügen</string>
+
     <string name="terminal_scan_no_code">Kein Code im Bild erkannt</string>
     <string name="terminal_scan_no_text">Kein Text im Bild erkannt</string>
     <string name="terminal_scan_failed">Scan fehlgeschlagen: %s</string>

@@ -65,20 +65,7 @@ import sh.haven.core.mosh.MoshSessionManager
 import sh.haven.core.et.EtSessionManager
 import sh.haven.core.fido.FidoAuthenticator
 import sh.haven.core.fido.FidoTouchPrompt
-import sh.haven.core.local.LocalSessionManager
-import sh.haven.core.rclone.RcloneClient
-import sh.haven.core.rclone.RcloneSessionManager
-import sh.haven.core.mail.MailConnectParams
-import sh.haven.core.mail.MailEngine
-import sh.haven.core.mail.MailException
-import sh.haven.core.mail.MailSessionManager
-import sh.haven.core.openai.OpenAiConnectParams
-import sh.haven.core.openai.OpenAiSessionManager
 import sh.haven.core.security.Totp
-import sh.haven.core.reticulum.DiscoveredDestination
-import sh.haven.core.reticulum.ReticulumSessionManager
-import sh.haven.core.reticulum.ReticulumIdentityImport
-import sh.haven.core.reticulum.ReticulumTransport
 import sh.haven.core.knock.KnockResult
 import sh.haven.core.knock.KnockSequence
 import sh.haven.core.knock.PortKnocker
@@ -183,32 +170,10 @@ internal fun jumpConnectPassword(
     else -> savedSshPassword ?: ""
 }
 
-/**
- * How long a host-key accept/reject prompt waits for an on-screen tap before
- * giving up. Without a bound, a prompt raised while Connections isn't the
- * composed/visible screen (a background reconnect, an MCP-triggered
- * connect_profile) blocks the connect forever with no error and no further
- * log output — reproduced live via a USB-drive-VM profile hanging 5+ minutes.
- */
 private const val HOST_KEY_PROMPT_TIMEOUT_MS = 90_000L
 
-/**
- * Port the MCP server binds (first free in 8730..8739). The reverse-tunnel
- * rule maps this 1:1 so an MCP client on the SSH server reaches Haven at
- * `http://127.0.0.1:8730/mcp`.
- */
-private const val MCP_REVERSE_TUNNEL_PORT = 8730
 
-/** Unified connection status that maps both SSH and Reticulum states. */
 enum class ProfileStatus { CONNECTING, CONNECTED, RECONNECTING, DISCONNECTED, ERROR }
-
-/**
- * How a connection exposes Haven's MCP server to its sessions. INTERACTIVE = a
- * per-connection reverse-tunnel rule (rides the user's own sessions); HEADLESS
- * = the designated always-on endpoint (a dedicated self-healing tunnel).
- * Absence from the [ConnectionsViewModel.mcpExposure] map = not exposed.
- */
-enum class McpExposureKind { INTERACTIVE, HEADLESS }
 
 data class GroupLaunchState(
     val groupId: String,
@@ -223,33 +188,27 @@ data class GroupLaunchState(
 class ConnectionsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val repository: ConnectionRepository,
-    private val agentActivityHolder: sh.haven.core.data.agent.AgentActivityHolder,
+
     private val connectionGroupDao: sh.haven.core.data.db.ConnectionGroupDao,
     private val sshIdentityRepository: sh.haven.core.data.repository.SshIdentityRepository,
     private val portForwardRepository: PortForwardRepository,
     private val sshSessionManager: SshSessionManager,
     private val backgroundDisconnectDetector: sh.haven.core.ssh.BackgroundDisconnectDetector,
     private val sshSessionAttacher: sh.haven.core.ssh.SshSessionAttacher,
-    private val reticulumSessionManager: ReticulumSessionManager,
+
     private val moshSessionManager: MoshSessionManager,
     private val etSessionManager: EtSessionManager,
     private val btSerialSessionManager: sh.haven.core.btserial.BtSerialSessionManager,
     private val bleSerialSessionManager: sh.haven.core.bleserial.BleSerialSessionManager,
     private val usbSerialSessionManager: sh.haven.core.usbserial.UsbSerialSessionManager,
     private val usbBroker: sh.haven.core.usb.UsbBroker,
-    private val reticulumTransport: ReticulumTransport,
-    private val reticulumForwardServer: sh.haven.core.reticulum.ReticulumForwardServer,
+
     private val smbSessionManager: SmbSessionManager,
-    private val rcloneSessionManager: RcloneSessionManager,
-    private val rcloneClient: RcloneClient,
-    private val mailSessionManager: MailSessionManager,
-    private val openAiSessionManager: OpenAiSessionManager,
-    private val aiRouteRegistry: sh.haven.core.openai.AiRouteRegistry,
+
     private val fidoAuthenticator: FidoAuthenticator,
     /** Security-chip SSH keys sign through the Keystore + biometric ceremony. */
     private val keystoreSshKeySigner: KeystoreSshKeySigner,
-    private val localSessionManager: LocalSessionManager,
-    private val umlGuestManager: sh.haven.core.local.uml.UmlGuestManager,
+
     private val sessionManagerRegistry: SessionManagerRegistry,
     private val sshKeyRepository: SshKeyRepository,
     private val totpSecretRepository: sh.haven.core.data.repository.TotpSecretRepository,
@@ -261,15 +220,13 @@ class ConnectionsViewModel @Inject constructor(
     private val spaSender: sh.haven.core.spa.SpaSender,
     private val tunnelConfigRepository: sh.haven.core.data.repository.TunnelConfigRepository,
     private val certRenewalGate: CertRenewalGate,
-    private val agentUiCommandBus: sh.haven.core.data.agent.AgentUiCommandBus,
+    private val uiCommandBus: sh.haven.core.data.navigation.UiCommandBus,
     private val desktopSessionRegistry: sh.haven.core.data.desktop.DesktopSessionRegistry,
     private val userMessageBus: sh.haven.core.data.message.UserMessageBus,
     private val hostRediscovery: HostRediscovery,
     private val usbipForwarder: sh.haven.feature.connections.usb.UsbipConnectionForwarder,
     private val biometricGate: sh.haven.core.data.keystore.BiometricGate,
-    private val pendingAuthPromptHolder: sh.haven.core.data.agent.PendingAuthPromptHolder,
-    private val sessionSelectionHolder: sh.haven.core.data.agent.SessionSelectionHolder,
-    private val connectionPreflight: sh.haven.core.data.repository.ConnectionPreflight,
+
 ) : ViewModel() {
 
     /**
@@ -286,13 +243,6 @@ class ConnectionsViewModel @Inject constructor(
     /** Live USB/IP auto-forwards, keyed by sessionId (Slice 1). Torn down on disconnect. */
     private val usbForwardHandles =
         java.util.concurrent.ConcurrentHashMap<String, sh.haven.feature.connections.usb.UsbipConnectionForwarder.Handle>()
-
-    /**
-     * Installed distros `(id, label)` for the LOCAL profile editor's
-     * "open in" distro picker. Empty when no rootfs is installed.
-     */
-    fun installedLocalDistros(): List<Pair<String, String>> =
-        localSessionManager.installedDistros()
 
     /** Attached phone USB devices `(vidPid, label)` for the SSH USB-forward picker. */
     fun availableUsbDevices(): List<Pair<String, String>> =
@@ -422,35 +372,20 @@ class ConnectionsViewModel @Inject constructor(
                 }
             }
         }
-        // Agent-driven connect: MCP `connect_profile` tool posts here.
+
         // Look up the profile and dispatch through the unified connect()
         // entry so route-through, stored passwords, and key auth all
         // apply identically to a UI tap.
         viewModelScope.launch {
-            agentUiCommandBus.commands.collect { command ->
-                if (command is sh.haven.core.data.agent.AgentUiCommand.ConnectProfile) {
+            uiCommandBus.commands.collect { command ->
+                if (command is sh.haven.core.data.navigation.UiCommand.ConnectProfile) {
                     val profile = repository.getById(command.profileId)
                     if (profile != null) {
                         connect(profile, password = "", sessionName = command.sessionName)
                     } else {
                         Log.w(TAG, "ConnectProfile: profile ${command.profileId} not found")
                     }
-                } else if (command is sh.haven.core.data.agent.AgentUiCommand.AnswerAuthPrompt) {
-                    // MCP answer_auth_prompt: supply the secret to the live
-                    // password/passphrase fallback and re-drive the connect.
-                    answerPasswordFallback(
-                        command.password,
-                        username = command.username,
-                        rememberPassword = command.rememberPassword,
-                    )
-                } else if (command is sh.haven.core.data.agent.AgentUiCommand.AnswerSessionSelection) {
-                    // MCP answer_session_picker: choose a session (or null =
-                    // create new) on the live picker and re-drive the attach,
-                    // exactly as a human tap on the picker would.
-                    if (_sessionSelection.value != null) {
-                        onSessionSelected(command.sessionId, command.sessionName)
-                    }
-                } else if (command is sh.haven.core.data.agent.AgentUiCommand.ConnectFromDeepLink) {
+                } else if (command is sh.haven.core.data.navigation.UiCommand.ConnectFromDeepLink) {
                     // haven://connect matched a saved profile (#305). Show a
                     // confirm sheet first — a BROWSABLE link can be fired by a
                     // web page, and confirming blocks a drive-by connect that
@@ -461,7 +396,7 @@ class ConnectionsViewModel @Inject constructor(
                     } else {
                         Log.w(TAG, "ConnectFromDeepLink: profile ${command.profileId} not found")
                     }
-                } else if (command is sh.haven.core.data.agent.AgentUiCommand.PrefillNewConnection) {
+                } else if (command is sh.haven.core.data.navigation.UiCommand.PrefillNewConnection) {
                     // haven://connect with no saved match (#305): surface the
                     // New-Connection editor pre-filled for the user to review,
                     // add auth, and save.
@@ -476,11 +411,8 @@ class ConnectionsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 sshSessionManager.sessions,
-                reticulumSessionManager.sessions,
                 moshSessionManager.sessions,
                 etSessionManager.sessions,
-                localSessionManager.sessions,
-                umlGuestManager.sessions,
             ) { flows -> flows }
                 .debounce(500L)
                 .collect { updateServiceNotification() }
@@ -494,7 +426,7 @@ class ConnectionsViewModel @Inject constructor(
     // would otherwise misroute a host-less profile to the SSH path); they're
     // created, browsed and managed entirely from the Files tab.
     val connections: StateFlow<List<ConnectionProfile>> = repository.observeAll()
-        .map { profiles -> profiles.filterNot { it.isSaf } }
+        .map { profiles -> profiles.filterNot { it.isSaf || !it.isSupported } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val groups: StateFlow<List<sh.haven.core.data.db.entities.ConnectionGroup>> =
@@ -521,7 +453,7 @@ class ConnectionsViewModel @Inject constructor(
      * profile instead.
      */
     val tunnelConfigs: StateFlow<List<sh.haven.core.data.db.entities.TunnelConfig>> =
-        tunnelConfigRepository.observeStandalone()
+        tunnelConfigRepository.observeStandalone().map { configs -> configs.filter { it.type == "CLOUDFLARE_ACCESS" } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val globalSessionManagerLabel: StateFlow<String> = preferencesRepository.sessionManager
@@ -596,78 +528,22 @@ class ConnectionsViewModel @Inject constructor(
 
     val sessions: StateFlow<Map<String, SshSessionManager.SessionState>> = sshSessionManager.sessions
 
-    /**
-     * Which connections expose Haven's MCP to their sessions, and how:
-     * INTERACTIVE = a per-connection reverse-tunnel rule; HEADLESS = the
-     * designated always-on endpoint ([UserPreferencesRepository.mcpTunnelEndpointProfileId]).
-     * Absence = not exposed. Drives the connections-row MCP badge so it's clear
-     * which connection serves `:8730` to all of its sessions.
-     */
-    /** `profileId → last-agent-activity-millis`, for the per-connection MCP indicator glow. */
-    val agentActiveProfiles: StateFlow<Map<String, Long>> = agentActivityHolder.activeProfiles
-
-    /** Toggle whether the MCP agent may operate on [profileId]. */
-    fun toggleMcpEnabled(profileId: String, enabled: Boolean) {
-        viewModelScope.launch { repository.updateMcpEnabled(profileId, enabled) }
-    }
-
-    val mcpExposure: StateFlow<Map<String, McpExposureKind>> =
-        combine(
-            portForwardRepository.observeAll(),
-            preferencesRepository.mcpTunnelEndpointProfileId,
-        ) { rules, endpointId ->
-            val map = mutableMapOf<String, McpExposureKind>()
-            rules.filter { it.isMcpReverseTunnel() }
-                .forEach { map[it.profileId] = McpExposureKind.INTERACTIVE }
-            endpointId?.let { map[it] = McpExposureKind.HEADLESS }
-            map.toMap()
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-
-    /** Derive profile-level statuses for the connections list UI (merges SSH + Reticulum + Mosh + ET). */
     val profileStatuses: StateFlow<Map<String, ProfileStatus>> =
         combine(
-            combine(
-                sshSessionManager.sessions,
-                reticulumSessionManager.sessions,
-                moshSessionManager.sessions,
-                etSessionManager.sessions,
-            ) { ssh, rns, mosh, et -> arrayOf(ssh, rns, mosh, et) },
-            combine(
-                smbSessionManager.sessions,
-                localSessionManager.sessions,
-                rcloneSessionManager.sessions,
-                umlGuestManager.sessions,
-            ) { smb, local, rclone, guest -> arrayOf(smb, local, rclone, guest) },
+            sshSessionManager.sessions,
+            moshSessionManager.sessions,
+            etSessionManager.sessions,
+            smbSessionManager.sessions,
             desktopSessionRegistry.statuses,
-            openAiSessionManager.sessions,
-        ) { base, extra, deskMap, openaiMap0 ->
-            @Suppress("UNCHECKED_CAST")
-            val sshMap = base[0] as Map<String, SshSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val rnsMap = base[1] as Map<String, ReticulumSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val moshMap = base[2] as Map<String, MoshSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val etMap = base[3] as Map<String, EtSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val smbMap = extra[0] as Map<String, SmbSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val localMap = extra[1] as Map<String, LocalSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val rcloneMap = extra[2] as Map<String, RcloneSessionManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val guestMap = extra[3] as Map<String, sh.haven.core.local.uml.UmlGuestManager.SessionState>
-            @Suppress("UNCHECKED_CAST")
-            val openaiMap = openaiMap0 as Map<String, sh.haven.core.openai.OpenAiSessionManager.SessionState>
+        ) { sshMap, moshMap, etMap, smbMap, deskMap ->
             val result = mutableMapOf<String, ProfileStatus>()
 
             // Track which profiles have transport-specific sessions (Mosh/ET/RNS/Local).
             // Their status takes precedence over the SSH infrastructure session
             // (which stays CONNECTED for SFTP even after the transport disconnects).
-            val transportProfiles = mutableSetOf<String>()
 
             // SSH statuses (base — may be overridden by transport-specific status).
-            // Exclude headless background tunnel sessions (e.g. McpTunnelManager's
+
             // adb/guest-service forwarder) so they don't make the user profile card
             // show CONNECTED or route card taps into ensureShellForProfile on the
             // headless session.
@@ -682,21 +558,8 @@ class ConnectionsViewModel @Inject constructor(
                 }
             }
 
-            // Reticulum statuses
-            rnsMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                transportProfiles.add(profileId)
-                val statuses = states.map { it.status }
-                result[profileId] = when {
-                    ReticulumSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
-                    ReticulumSessionManager.SessionState.Status.CONNECTING in statuses -> ProfileStatus.CONNECTING
-                    ReticulumSessionManager.SessionState.Status.ERROR in statuses -> ProfileStatus.ERROR
-                    else -> ProfileStatus.DISCONNECTED
-                }
-            }
-
             // Mosh statuses (override SSH for this profile)
             moshMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                transportProfiles.add(profileId)
                 val statuses = states.map { it.status }
                 result[profileId] = when {
                     MoshSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
@@ -708,7 +571,6 @@ class ConnectionsViewModel @Inject constructor(
 
             // ET statuses (override SSH for this profile)
             etMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                transportProfiles.add(profileId)
                 val statuses = states.map { it.status }
                 result[profileId] = when {
                     EtSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
@@ -733,71 +595,6 @@ class ConnectionsViewModel @Inject constructor(
                 }
             }
 
-            // Local statuses (merge)
-            localMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                val statuses = states.map { it.status }
-                val localStatus = when {
-                    LocalSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
-                    LocalSessionManager.SessionState.Status.CONNECTING in statuses -> ProfileStatus.CONNECTING
-                    LocalSessionManager.SessionState.Status.ERROR in statuses -> ProfileStatus.ERROR
-                    else -> ProfileStatus.DISCONNECTED
-                }
-                val existing = result[profileId]
-                if (existing == null || localStatus.ordinal < existing.ordinal) {
-                    result[profileId] = localStatus
-                }
-            }
-
-            // Rclone statuses (merge)
-            rcloneMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                val statuses = states.map { it.status }
-                val rcloneStatus = when {
-                    RcloneSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
-                    RcloneSessionManager.SessionState.Status.CONNECTING in statuses -> ProfileStatus.CONNECTING
-                    RcloneSessionManager.SessionState.Status.ERROR in statuses -> ProfileStatus.ERROR
-                    else -> ProfileStatus.DISCONNECTED
-                }
-                val existing = result[profileId]
-                if (existing == null || rcloneStatus.ordinal < existing.ordinal) {
-                    result[profileId] = rcloneStatus
-                }
-            }
-
-            // Guest statuses (merge — a GUEST profile shares no infrastructure
-            // session, so like SMB/Local this only ever fills an empty slot)
-            guestMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                val statuses = states.map { it.status }
-                val guestStatus = when {
-                    sh.haven.core.local.uml.UmlGuestManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
-                    sh.haven.core.local.uml.UmlGuestManager.SessionState.Status.CONNECTING in statuses -> ProfileStatus.CONNECTING
-                    sh.haven.core.local.uml.UmlGuestManager.SessionState.Status.ERROR in statuses -> ProfileStatus.ERROR
-                    else -> ProfileStatus.DISCONNECTED
-                }
-                val existing = result[profileId]
-                if (existing == null || guestStatus.ordinal < existing.ordinal) {
-                    result[profileId] = guestStatus
-                }
-            }
-
-            // OpenAI/chat statuses (merge — an OPENAI profile has no transport
-            // session of its own, so like SMB/Local this only fills an empty
-            // slot). Without this an OPENAI profile never reaches CONNECTED, so
-            // its row shows no status dot and tapping it falls through to the
-            // SSH password prompt instead of opening the chat.
-            openaiMap.values.groupBy { it.profileId }.forEach { (profileId, states) ->
-                val statuses = states.map { it.status }
-                val openaiStatus = when {
-                    sh.haven.core.openai.OpenAiSessionManager.SessionState.Status.CONNECTED in statuses -> ProfileStatus.CONNECTED
-                    sh.haven.core.openai.OpenAiSessionManager.SessionState.Status.CONNECTING in statuses -> ProfileStatus.CONNECTING
-                    sh.haven.core.openai.OpenAiSessionManager.SessionState.Status.ERROR in statuses -> ProfileStatus.ERROR
-                    else -> ProfileStatus.DISCONNECTED
-                }
-                val existing = result[profileId]
-                if (existing == null || openaiStatus.ordinal < existing.ordinal) {
-                    result[profileId] = openaiStatus
-                }
-            }
-
             // Remote-desktop (VNC/RDP) tabs have no transport session of their
             // own — they live as Desktop tabs in DesktopViewModel — so their
             // connections-list row would otherwise show no status. Reflect the
@@ -817,7 +614,7 @@ class ConnectionsViewModel @Inject constructor(
                 }
             }
 
-            result.toMap()
+            result
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     /** The profileId currently being connected (for spinner in UI). */
@@ -869,27 +666,11 @@ class ConnectionsViewModel @Inject constructor(
     val passwordFallback: StateFlow<ConnectionProfile?> = _passwordFallback.asStateFlow()
 
     // Mirror the password/passphrase fallback dialog to a process-wide holder so
-    // the MCP agent can observe it (get_pending_auth_prompt) and answer it
+
     // (answer_auth_prompt) without a human tap. This init block is declared
     // AFTER _passwordFallback so the collector never captures the field before
     // it's initialised (Main.immediate runs init collectors synchronously).
     init {
-        viewModelScope.launch {
-            _passwordFallback.collect { profile ->
-                pendingAuthPromptHolder.set(
-                    profile?.let {
-                        val encrypted = it.keyId?.let { id ->
-                            sshKeyRepository.getById(id)?.isEncrypted
-                        } ?: false
-                        sh.haven.core.data.agent.PendingAuthPrompt(
-                            profileId = it.id,
-                            label = it.label,
-                            requiresPassphrase = encrypted,
-                        )
-                    }
-                )
-            }
-        }
     }
 
     /**
@@ -1087,28 +868,6 @@ class ConnectionsViewModel @Inject constructor(
     }
 
     /**
-     * Run TOFU host-key verification against [entry], prompting the user for
-     * accept/reject on first contact or key change. Throws if rejected, or if
-     * nobody answers within [HOST_KEY_PROMPT_TIMEOUT_MS] — a prompt raised
-     * while Connections isn't the visible screen (background reconnect,
-     * MCP-triggered connect_profile) would otherwise await a tap that can
-     * never come, hanging the connect forever with no error and no further
-     * log output (reproduced live).
-     *
-     * [autoAccept] skips the prompt (and its timeout) entirely, accepting the
-     * key immediately — only correct for profiles Haven itself originates
-     * *and* owns both ends of (USB-drive-VM loopback profiles): the guest's
-     * host key is generated fresh by Haven's own boot script every VM boot,
-     * over a loopback-only connection, so there is no third party to
-     * trust-on-first-use against, and a fresh key every boot would otherwise
-     * re-prompt on every single drive reopen. Every other profile keeps the
-     * normal interactive prompt — callers must not set this for anything else
-     * without deliberately deciding to trade away that check.
-     *
-     * Shared by every interactive connect path so that they behave the same
-     * way on fresh contact, key change, and (post-fix) auth-failure-after-KEX.
-     */
-    /**
      * Silent-path variant of the TOFU decision: a null [entry] can only come
      * from [SshClient.connect]'s fail-closed CA path (#133) — the host cert
      * verified against a trusted host CA during KEX — and is Trusted.
@@ -1204,7 +963,6 @@ class ConnectionsViewModel @Inject constructor(
     private val _navigateToVnc = MutableStateFlow<VncNavigation?>(null)
     val navigateToVnc: StateFlow<VncNavigation?> = _navigateToVnc.asStateFlow()
 
-    /** Emitted to navigate to the native Wayland desktop view. */
     private val _navigateToWayland = MutableStateFlow(false)
     val navigateToWayland: StateFlow<Boolean> = _navigateToWayland.asStateFlow()
 
@@ -1243,12 +1001,6 @@ class ConnectionsViewModel @Inject constructor(
     private val _navigateToSmb = MutableStateFlow<String?>(null)
     val navigateToSmb: StateFlow<String?> = _navigateToSmb.asStateFlow()
 
-    private val _navigateToRclone = MutableStateFlow<String?>(null)
-    val navigateToRclone: StateFlow<String?> = _navigateToRclone.asStateFlow()
-
-    /** Emitted to navigate to the Mail tab for an EMAIL connection. */
-    private val _navigateToEmail = MutableStateFlow<String?>(null)
-    val navigateToEmail: StateFlow<String?> = _navigateToEmail.asStateFlow()
     private val _navigateToChat = MutableStateFlow<String?>(null)
     val navigateToChat: StateFlow<String?> = _navigateToChat.asStateFlow()
 
@@ -1304,9 +1056,9 @@ class ConnectionsViewModel @Inject constructor(
 
     /** Params for the New-Connection editor to open pre-filled (unmatched host). */
     private val _prefillNewConnection =
-        MutableStateFlow<sh.haven.core.data.agent.AgentUiCommand.PrefillNewConnection?>(null)
+        MutableStateFlow<sh.haven.core.data.navigation.UiCommand.PrefillNewConnection?>(null)
     val prefillNewConnection:
-        StateFlow<sh.haven.core.data.agent.AgentUiCommand.PrefillNewConnection?> =
+        StateFlow<sh.haven.core.data.navigation.UiCommand.PrefillNewConnection?> =
         _prefillNewConnection.asStateFlow()
 
     /** Clear the prefill request once the editor has consumed it. */
@@ -1314,28 +1066,11 @@ class ConnectionsViewModel @Inject constructor(
         _prefillNewConnection.value = null
     }
 
-    // Mirror the session-manager picker to a process-wide holder so the MCP
     // agent can observe it (get_pending_session_picker) and answer it
     // (answer_session_picker) without a human tap. Declared AFTER
     // _sessionSelection so the Main.immediate init collector never captures the
     // field before it's set (same gotcha as the _passwordFallback mirror).
     init {
-        viewModelScope.launch {
-            _sessionSelection.collect { sel ->
-                sessionSelectionHolder.set(
-                    sel?.let {
-                        sh.haven.core.data.agent.PendingSessionSelection(
-                            profileId = it.profileId,
-                            sessionId = it.sessionId,
-                            managerLabel = it.managerLabel,
-                            sessionNames = it.sessionNames,
-                            previousSessionNames = it.previousSessionNames,
-                            suggestedNewName = it.suggestedNewName,
-                        )
-                    }
-                )
-            }
-        }
         // #421: a mosh session that died unexpectedly (transport declared it dead
         // while online, or a fatal local error) is reconnected with the same
         // bootstrap the user's manual close-and-reconnect runs, which recovers
@@ -1463,21 +1198,11 @@ class ConnectionsViewModel @Inject constructor(
         _navigateToSpice.value = null
         _navigateToGlkvm.value = null
         _navigateToSmb.value = null
-        _navigateToRclone.value = null
-        _navigateToEmail.value = null
         _navigateToChat.value = null
         _navigateToConnections.value = false
         _newSessionProfileId.value = null
     }
 
-    /**
-     * Consume just the desktop (VNC/RDP) navigation events. Collected at the
-     * always-composed nav-host level so a desktop tab is created the instant the
-     * connect emits, independent of which screen is on-screen — fixes Retry /
-     * MCP connect_profile failing to open a tab when the Connections screen
-     * isn't composed (#121). Separate from [onNavigated] so it doesn't clobber a
-     * concurrent terminal/SMB navigation owned by the Connections screen.
-     */
     fun onDesktopNavigated() {
         _navigateToVnc.value = null
         _navigateToRdp.value = null
@@ -1490,143 +1215,9 @@ class ConnectionsViewModel @Inject constructor(
         _newSessionProfileId.value = profileId
     }
 
-    private val _discoveredDestinations = MutableStateFlow<List<DiscoveredDestination>>(emptyList())
-    val discoveredDestinations: StateFlow<List<DiscoveredDestination>> = _discoveredDestinations.asStateFlow()
-
-    private val _reticulumScanning = MutableStateFlow(false)
-    val reticulumScanning: StateFlow<Boolean> = _reticulumScanning.asStateFlow()
-
-    private val _reticulumIdentityHash = MutableStateFlow<String?>(null)
-
-    /**
-     * The identity hash this device presents to rnsh servers, or null if none
-     * has been created yet (#585).
-     *
-     * Read rather than derived, because it changes underneath the UI: an import
-     * replaces it, and the first connection of a fresh install creates it.
-     */
-    val reticulumIdentityHash: StateFlow<String?> = _reticulumIdentityHash.asStateFlow()
-
-    /** The Reticulum config dir — one place, since three call sites want it. */
-    private fun reticulumConfigDir(): File =
-        File(appContext.filesDir, "reticulum").apply { mkdirs() }
-
-    fun refreshReticulumIdentity() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _reticulumIdentityHash.value = runCatching {
-                reticulumTransport.clientIdentityHash(reticulumConfigDir().absolutePath)
-            }.getOrNull()
-        }
-    }
-
-    /**
-     * Adopt a Reticulum identity the user picked from storage (#585).
-     *
-     * The file is copied into the cache first because the transport works on
-     * files and a SAF pick is a stream, then deleted again — it is a private
-     * key, and leaving a second copy of it in the cache would be the kind of
-     * quiet mistake that is hard to notice later.
-     */
-    fun importReticulumIdentity(source: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val staged = File(appContext.cacheDir, "reticulum-identity-import")
-            try {
-                val copied = runCatching {
-                    appContext.contentResolver.openInputStream(source)?.use { input ->
-                        staged.outputStream().use { output -> input.copyTo(output) }
-                    } != null
-                }.getOrDefault(false)
-                if (!copied) {
-                    _error.value = appContext.getString(R.string.connections_identity_unreadable)
-                    return@launch
-                }
-
-                when (
-                    val result = reticulumTransport.importClientIdentity(
-                        reticulumConfigDir().absolutePath,
-                        staged,
-                    )
-                ) {
-                    is ReticulumIdentityImport.Installed -> {
-                        _reticulumIdentityHash.value = result.hexHash
-                        _warning.value = if (result.takesEffectAfterRestart) {
-                            appContext.getString(
-                                R.string.connections_identity_imported_restart,
-                                result.hexHash,
-                            )
-                        } else {
-                            appContext.getString(R.string.connections_identity_imported, result.hexHash)
-                        }
-                    }
-                    is ReticulumIdentityImport.NotAnIdentity ->
-                        _error.value = appContext.getString(R.string.connections_identity_not_an_identity)
-                    is ReticulumIdentityImport.InstallFailed ->
-                        _error.value = appContext.getString(
-                            R.string.connections_identity_install_failed,
-                            result.reason,
-                        )
-                }
-            } finally {
-                staged.delete()
-            }
-        }
-    }
-
-    /**
-     * Scan for rnsh nodes by initialising Reticulum with the given gateway
-     * and waiting for announces. Called from the edit dialog's Scan button.
-     */
-    fun scanReticulumDestinations(host: String, port: Int, networkName: String?, passphrase: String?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _reticulumScanning.value = true
-            try {
-                val configDir = File(appContext.filesDir, "reticulum")
-                    .apply { mkdirs() }.absolutePath
-                reticulumTransport.init(configDir, host, port, networkName, passphrase)
-                Log.d(TAG, "scanReticulum: transport initialised, waiting for gateway stabilisation...")
-
-                // Wait for the gateway's IFAC handshake and tunnel synthesis
-                // to complete before starting the announce collection window.
-                kotlinx.coroutines.delay(5000)
-
-                // Also request paths for any saved rnsh destinations — this
-                // triggers the gateway to forward cached announces/paths.
-                requestPathsForSavedConnections()
-
-                // Collect announces for 10 seconds (init + TCP connect + announce
-                // propagation can take several seconds)
-                val job = launch {
-                    reticulumTransport.discoveredDestinations.collect { list ->
-                        _discoveredDestinations.value = list
-                        if (list.isNotEmpty()) {
-                            Log.d(TAG, "scanReticulum: ${list.size} destination(s) discovered so far")
-                        }
-                    }
-                }
-                kotlinx.coroutines.delay(10_000)
-                job.cancel()
-
-                // Final snapshot
-                _discoveredDestinations.value = reticulumTransport.discoveredDestinations.value
-                Log.d(TAG, "Scan complete: ${_discoveredDestinations.value.size} destinations found")
-            } catch (e: Exception) {
-                Log.e(TAG, "scanReticulumDestinations failed", e)
-            } finally {
-                _reticulumScanning.value = false
-            }
-        }
-    }
-
     private val networkDiscovery = NetworkDiscovery(appContext)
     val discoveredHosts: StateFlow<List<DiscoveredHost>> = networkDiscovery.hosts
     val discoveredSmbHosts: StateFlow<List<DiscoveredHost>> = networkDiscovery.smbHosts
-    val localVmStatus: StateFlow<LocalVmStatus> = networkDiscovery.localVm
-
-    val showLinuxVmCard: StateFlow<Boolean> = preferencesRepository.showLinuxVmCard
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    val showDesktopsCard: StateFlow<Boolean> = preferencesRepository.showDesktopsCard
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     init {
         // Feed the Tailscale-discovery preference (#654) into the probe: the
@@ -1645,7 +1236,6 @@ class ConnectionsViewModel @Inject constructor(
         stopPeriodicRefresh()
         periodicRefreshJob = viewModelScope.launch {
             while (true) {
-                refreshDiscoveredDestinations()
                 delay(30_000)
             }
         }
@@ -1658,14 +1248,7 @@ class ConnectionsViewModel @Inject constructor(
 
     fun startNetworkDiscovery() {
         networkDiscovery.start()
-        networkDiscovery.startVmPolling(viewModelScope)
         viewModelScope.launch { networkDiscovery.discoverTailscale() }
-    }
-
-    fun refreshLocalVm() {
-        viewModelScope.launch {
-            networkDiscovery.scanLocalVm()
-        }
     }
 
     private val _subnetScanning = MutableStateFlow(false)
@@ -1679,7 +1262,6 @@ class ConnectionsViewModel @Inject constructor(
             _subnetScanning.value = false
         }
     }
-
 
     // --- Scan the network behind a jump host (opt-in) ---
 
@@ -1783,35 +1365,8 @@ class ConnectionsViewModel @Inject constructor(
         networkDiscovery.stop() // also stops VM polling
     }
 
-    fun refreshDiscoveredDestinations() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (!reticulumTransport.isInitialised) {
-                    Log.d(TAG, "RNS not initialised, skipping destination refresh")
-                    return@launch
-                }
-
-                // Proactively request paths for saved Reticulum connections
-                requestPathsForSavedConnections()
-
-                // Read discovered destinations from the transport's StateFlow
-                val list = reticulumTransport.discoveredDestinations.value
-                Log.d(TAG, "Discovered ${list.size} destinations: ${list.map { it.hash.take(8) }}")
-                _discoveredDestinations.value = list
-            } catch (e: Exception) {
-                Log.e(TAG, "refreshDiscoveredDestinations failed", e)
-            }
-        }
-    }
-
     private suspend fun requestPathsForSavedConnections() {
         try {
-            val saved = connections.value.filter { it.isReticulum && !it.destinationHash.isNullOrBlank() }
-            for (profile in saved) {
-                val hash = profile.destinationHash ?: continue
-                val alreadyKnown = reticulumTransport.requestPath(hash)
-                Log.d(TAG, "requestPath(${hash.take(8)}...): known=$alreadyKnown")
-            }
         } catch (e: Exception) {
             Log.e(TAG, "requestPathsForSavedConnections failed", e)
         }
@@ -2191,10 +1746,6 @@ class ConnectionsViewModel @Inject constructor(
 
     private fun canAutoConnect(profile: ConnectionProfile, keys: List<SshKey>): Boolean = when {
         profile.isLocal -> true
-        profile.isReticulum -> true
-        profile.isRclone -> true
-        // Connect only on explicit tap: a BT link is slow/blocking and needs the
-        // adapter powered + the device in range (#406).
         profile.isBtSerial -> false
         // Connect only on explicit tap: BLE discovery + GATT connect is slow and
         // the device may be out of range.
@@ -2295,7 +1846,6 @@ class ConnectionsViewModel @Inject constructor(
             sessionManagerRegistry.disconnectProfile(id)
             sshSessionManager.teardownTunnelDependent(id)
             desktopSessionRegistry.closeHandle(id)?.invoke()
-            localSessionManager.desktopManager.stopAll()
             updateServiceNotification()
             repository.delete(id)
         }
@@ -2318,11 +1868,11 @@ class ConnectionsViewModel @Inject constructor(
     }
 
     fun connectWithKey(profile: ConnectionProfile) {
-        if (profile.username.isBlank() && (profile.isSsh || profile.isReticulum)) {
-            // Route through the prompt dialog so the user can supply a username first.
+        if (profile.isSupported && profile.username.isBlank() && profile.isSsh) {
             _passwordFallback.value = profile
             return
         }
+
         connect(profile, password = "", keyOnly = true)
     }
 
@@ -2349,13 +1899,6 @@ class ConnectionsViewModel @Inject constructor(
         _pendingDependentRememberPassword.value = null
     }
 
-    /**
-     * Answer the active password / key-passphrase fallback prompt with
-     * [password] (and optional [username] / [rememberPassword]) and re-drive
-     * the stalled connect — the same logic the dialog's onConnect runs. Used by
-     * both the UI dialog and the MCP `answer_auth_prompt` verb. No-op when no
-     * prompt is pending.
-     */
     fun answerPasswordFallback(
         password: String,
         username: String? = null,
@@ -2577,13 +2120,18 @@ class ConnectionsViewModel @Inject constructor(
         sessionName: String? = null,
         startupCommand: String? = null,
     ) {
+        if (!profile.isSupported) {
+            _error.value = "This connection type has been removed from this build."
+            return
+        }
         // Identity resolution (#360): for SSH-family profiles, substitute the
         // effective identity's username/password/key just before dialing, so
         // the whole downstream auth machinery sees ordinary inline
         // credentials. A no-op (returns the profile unchanged) when no
         // identity is assigned or resolvable, so existing per-host
         // credentials behave exactly as before. Needs a DAO read → suspend.
-        if (profile.isSsh || profile.isReticulum) {
+
+        if (profile.isSsh) {
             viewModelScope.launch {
                 val resolved = sshIdentityRepository.applyTo(profile)
                 // If the caller didn't already carry a typed password, adopt
@@ -2596,41 +2144,14 @@ class ConnectionsViewModel @Inject constructor(
                     jumpUsesKeyAuth = profileUsesKeyAuth(resolved),
                     savedSshPassword = resolved.sshPassword,
                 )
-                connectAfterIdentity(resolved, effectivePassword, keyOnly, rememberPassword, usernameOverride, sessionName, startupCommand)
-            }
-            return
-        }
-        connectAfterIdentity(profile, password, keyOnly, rememberPassword, usernameOverride, sessionName, startupCommand)
-    }
-
-    /** Post-identity dispatch: USB-drive preflight, then [connectInner]. */
-    private fun connectAfterIdentity(
-        profile: ConnectionProfile,
-        password: String,
-        keyOnly: Boolean,
-        rememberPassword: Boolean?,
-        usernameOverride: String?,
-        sessionName: String?,
-        startupCommand: String? = null,
-    ) {
-        // USB-drive bookmarks (#287): the "USB: …" connection's VM stops on
-        // eject/sleep/app-restart, leaving the profile pointing at a dead
-        // loopback port. connectionPreflight re-opens it (and refreshes the
-        // profile's port/key) before dialing — a no-op for every other
-        // profile, so this only adds a coroutine hop for USB-drive bookmarks.
-        if (profile.usbDriveSerial != null) {
-            viewModelScope.launch {
-                when (val result = connectionPreflight.beforeConnect(profile)) {
-                    is sh.haven.core.data.repository.ConnectionPreflight.Result.Block ->
-                        _error.value = result.message
-                    is sh.haven.core.data.repository.ConnectionPreflight.Result.Proceed ->
-                        connectInner(result.profile, password, keyOnly, rememberPassword, usernameOverride, sessionName, startupCommand)
-                }
+                connectInner(resolved, effectivePassword, keyOnly, rememberPassword, usernameOverride, sessionName, startupCommand)
             }
             return
         }
         connectInner(profile, password, keyOnly, rememberPassword, usernameOverride, sessionName, startupCommand)
     }
+
+    /** Post-identity dispatch: USB-drive preflight, then [connectInner]. */
 
     private fun connectInner(
         profile: ConnectionProfile,
@@ -2641,17 +2162,10 @@ class ConnectionsViewModel @Inject constructor(
         sessionName: String? = null,
         startupCommand: String? = null,
     ) {
-        if (profile.isLocal) {
-            connectLocal(profile)
-            return
-        }
-        if (profile.isGuest) {
-            connectGuest(profile)
-            return
-        }
+
         if (profile.isSaf) {
             // SAF "local folder" locations (#415) have no connection to open — they're
-            // browsed straight from the Files tab. No-op so a connect-by-id path (MCP
+
             // connect_profile, a deep link) can't misroute this host-less profile to SSH.
             return
         }
@@ -2687,22 +2201,7 @@ class ConnectionsViewModel @Inject constructor(
             connectSmb(profile, password)
             return
         }
-        if (profile.isRclone) {
-            connectRclone(profile)
-            return
-        }
-        if (profile.isEmail) {
-            connectEmail(profile)
-            return
-        }
-        if (profile.isOpenai) {
-            connectOpenAI(profile)
-            return
-        }
-        if (profile.isReticulum) {
-            connectReticulum(profile)
-            return
-        }
+
         // SSH-family: if the saved profile has no username, the user must supply one
         // at connect time via the prompt dialog. Resolve here, then thread the runtime
         // value through to the connect routines as a per-call override — the persisted
@@ -3018,840 +2517,6 @@ class ConnectionsViewModel @Inject constructor(
     }
 
     /**
-     * Cancel an in-flight OAuth flow for [profile]. Best-effort: marks
-     * the underlying rclone session ERROR so the UI clears the spinner;
-     * the gomobile worker thread keeps running in the background until
-     * app restart (rclone-android has no cancellation primitive).
-     */
-    fun cancelPendingOAuth(profile: ConnectionProfile) {
-        rcloneSessionManager.getSessionsForProfile(profile.id).forEach {
-            rcloneSessionManager.cancelPendingOAuth(it.sessionId)
-        }
-    }
-
-    /**
-     * Force a fresh OAuth flow on an rclone profile by dropping the
-     * stored remote in rclone's config, then running the normal connect
-     * path (which sees no remote and starts OAuth via
-     * [RcloneSessionManager.connectSession]). Use this when stored
-     * tokens have gone stale and silent refresh is failing — saves the
-     * user from delete-and-re-add the entire Haven profile (#108).
-     *
-     * Disconnects any live session first so the existing connection's
-     * state doesn't survive the re-auth and confuse the next connect.
-     */
-    fun reauthRcloneProfile(profile: ConnectionProfile) {
-        val remoteName = profile.rcloneRemoteName ?: return
-        viewModelScope.launch {
-            // Tear down any live rclone session for this profile before
-            // we drop the underlying config. Otherwise the stale
-            // session sits in CONNECTED with credentials that no
-            // longer exist.
-            rcloneSessionManager.removeAllSessionsForProfile(profile.id)
-            val deleted = withContext(Dispatchers.IO) {
-                try {
-                    rcloneClient.deleteRemote(remoteName)
-                    true
-                } catch (e: Exception) {
-                    Log.w(TAG, "deleteRemote('$remoteName') failed before re-auth: ${e.message}")
-                    false
-                }
-            }
-            if (!deleted) {
-                // The stored remote survived, so the connect path below
-                // would find it, see it still answers with the OLD token,
-                // and mark it connected without ever starting a fresh
-                // sign-in — re-authenticate silently doing nothing (#697).
-                // Fail loudly instead.
-                _error.value = "Couldn't drop the stored '$remoteName' credentials — re-authentication aborted. Try again, or delete and re-add the connection if it repeats."
-                return@launch
-            }
-            connectRclone(profile)
-        }
-    }
-
-    private fun connectRclone(profile: ConnectionProfile) {
-        val remoteName = profile.rcloneRemoteName ?: return
-        val provider = profile.rcloneProvider ?: ""
-        viewModelScope.launch {
-            repository.markConnected(profile.id)
-            try {
-                _connectingProfileId.value = profile.id
-                // Route rclone's HTTP traffic through the per-profile
-                // tunnel's SOCKS5 listener if one is configured (#149).
-                // Set BEFORE the first RPC for this remote — rclone
-                // caches HTTP clients per-fs, so a later swap wouldn't
-                // take effect.
-                val socksAddr = tunnelResolver.socksEndpoint(profile)
-                rcloneClient.setProxy(socksAddr?.let { "socks5://${it.hostString}:${it.port}" })
-                val sessionId = rcloneSessionManager.registerSession(profile.id, profile.label)
-                withContext(Dispatchers.IO) {
-                    rcloneSessionManager.connectSession(sessionId, remoteName, provider)
-                }
-                // If connected immediately (no OAuth needed), navigate to Files
-                if (rcloneSessionManager.isProfileConnected(profile.id)) {
-                    _navigateToRclone.value = profile.id
-                }
-                // Otherwise OAuth is in progress — the session will become
-                // CONNECTED when the user completes the browser flow.
-                // Watch for both terminal states: CONNECTED → navigate;
-                // ERROR → surface the rclone error message as a toast so
-                // the user isn't stuck on a silent spinner if OAuth fails
-                // (browser dismissed, no browser app installed, bad
-                // client_id, network blip during token exchange, etc).
-                else {
-                    launch {
-                        rcloneSessionManager.sessions.collect { sessions ->
-                            val ours = sessions.values.firstOrNull { it.profileId == profile.id }
-                                ?: return@collect
-                            when (ours.status) {
-                                RcloneSessionManager.SessionState.Status.CONNECTED -> {
-                                    _navigateToRclone.value = profile.id
-                                    return@collect
-                                }
-                                RcloneSessionManager.SessionState.Status.ERROR -> {
-                                    _error.value = ours.errorMessage
-                                        ?: "rclone connection failed — see Settings → Connection log"
-                                    _connectingProfileId.value = null
-                                    return@collect
-                                }
-                                else -> Unit
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to connect rclone remote", e)
-                _error.value = "rclone: ${e.message}"
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    /**
-     * Connect a Proton EMAIL profile. Mirrors [connectRclone] but adds the
-     * pre-connect SPA/knock layer (which [connectRclone] lacks): SRP login +
-     * keyring unlock happen in the Go mailbridge, routed through the per-profile
-     * tunnel's SOCKS5 endpoint. Stored mailbox password + a linked TOTP secret
-     * satisfy two-password / 2FA accounts without a live prompt in v1; if the
-     * bridge still demands a missing factor, surface an actionable error.
-     */
-    private fun connectEmail(profile: ConnectionProfile) {
-        viewModelScope.launch {
-            _connectingProfileId.value = profile.id
-            val verbose = SshVerboseLogger()
-            val startedAt = System.currentTimeMillis()
-            try {
-                repository.markConnected(profile.id)
-
-                // Pre-connect SPA/knock (R1) — guards the user's tunnel ingress
-                // (profile.host) before any tunnel/transport resolves, for every
-                // email provider. The receipt lands in this profile's log.
-                buildKnockHook(profile, verbose)?.invoke()
-
-                val username = (profile.emailUsername ?: profile.username).trim()
-                val password = profile.emailPassword.orEmpty()
-                if (username.isBlank() || password.isBlank()) {
-                    throw IllegalStateException("Email username and password are required.")
-                }
-
-                // Provider selects the engine + transport: Proton rides the
-                // tunnel's SOCKS5 listener (FFI consumer); IMAP rides a JVM
-                // SocketFactory. Both fail closed when a tunnel is configured but
-                // yields no transport (R7) rather than leaking onto the clearnet.
-                val isImap = profile.emailProvider?.equals("imap", ignoreCase = true) == true
-                val engine = if (isImap) MailEngine.IMAP else MailEngine.PROTON
-                val params = if (isImap) {
-                    buildImapParams(profile, username, password)
-                } else {
-                    buildProtonParams(profile, username, password)
-                }
-
-                val sessionId = mailSessionManager.registerSession(profile.id, profile.label, engine)
-
-                try {
-                    mailSessionManager.connectSession(sessionId, params)
-                } catch (e: MailException.MailboxPasswordRequired) {
-                    throw IllegalStateException(
-                        "This Proton account uses a separate mailbox password — add it in Edit → Email.",
-                    )
-                } catch (e: MailException.TwoFaRequired) {
-                    throw IllegalStateException(
-                        "This Proton account has 2FA enabled — link its TOTP secret in Edit → Email.",
-                    )
-                }
-
-                _navigateToEmail.value = profile.id
-                connectionLogRepository.logEvent(
-                    profileId = profile.id,
-                    status = ConnectionLog.Status.CONNECTED,
-                    durationMs = System.currentTimeMillis() - startedAt,
-                    details = if (isImap) "IMAP mail connected" else "Proton mail connected",
-                    verboseLog = verbose.drain(),
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to connect email profile", e)
-                _error.value = "Email: ${e.message}"
-                connectionLogRepository.logEvent(
-                    profileId = profile.id,
-                    status = ConnectionLog.Status.FAILED,
-                    durationMs = System.currentTimeMillis() - startedAt,
-                    details = e.message,
-                    verboseLog = verbose.drain(),
-                )
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    /**
-     * Connect an OPENAI profile: tunnel resolve (fail closed, R7) → register
-     * session → `GET /v1/models` verify (populates the model list) → navigate
-     * to the chat screen. No credential prompt: the API key lives on the
-     * profile, and a keyless endpoint (llama-server) is legitimate.
-     */
-    private fun connectOpenAI(profile: ConnectionProfile) {
-        viewModelScope.launch {
-            _connectingProfileId.value = profile.id
-            val startedAt = System.currentTimeMillis()
-            try {
-                repository.markConnected(profile.id)
-                // AI route carrier first: the SSH forward / mesh bridge must
-                // be listening before the endpoint is probed through it. An
-                // unrouted profile gets [AiRouteSetup.Direct] and falls
-                // straight through to the per-profile tunnel resolution.
-                val route = setupAiRoute(profile)
-                if (route is AiRouteSetup.PasswordPrompt) {
-                    // Password prompt raised for the carrier's jump host; the
-                    // user's answer replays connect via the tunnel-dependent
-                    // path. Nothing failed — leave the dialog standing.
-                    _connectingProfileId.value = null
-                    return@launch
-                }
-                val params = buildOpenAiParams(profile, route as AiRouteSetup)
-                val sessionId = openAiSessionManager.registerSession(profile.id, profile.label)
-                openAiSessionManager.connectSession(sessionId, params)
-                _navigateToChat.value = profile.id
-                connectionLogRepository.logEvent(
-                    profileId = profile.id,
-                    status = ConnectionLog.Status.CONNECTED,
-                    durationMs = System.currentTimeMillis() - startedAt,
-                    details = "OpenAI endpoint connected (${openAiSessionManager.modelsForProfile(profile.id).size} models" +
-                        ((route as? AiRouteSetup.Routed)?.let { ", routed via ${it.routeType} carrier" } ?: "") + ")",
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to connect OpenAI endpoint", e)
-                // Route setup failures are surfaced by their own path (the
-                // password prompt, or a specific carrier message) — don't
-                // paper over them with the generic endpoint error.
-                if (e !is AiRouteSilentFailure) {
-                    _error.value = "AI endpoint: ${e.message}"
-                }
-                connectionLogRepository.logEvent(
-                    profileId = profile.id,
-                    status = ConnectionLog.Status.FAILED,
-                    durationMs = System.currentTimeMillis() - startedAt,
-                    details = e.message,
-                )
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    /** One live AI route carrier per routed OPENAI profile (in-memory). */
-    private sealed interface AiRouteSetup {
-        /** Unrouted profile — dial per-profile tunnel or direct as usual. */
-        data object Direct : AiRouteSetup
-        /** Carrier's jump host raised the password prompt; connect aborts and replays. */
-        data object PasswordPrompt : AiRouteSetup
-        /** Carrier established; the endpoint dials this loopback bind. */
-        data class Routed(val routeType: String, val factory: sh.haven.core.tunnel.LoopbackSocketFactory) : AiRouteSetup
-    }
-
-    /** Route setup failure whose message was already surfaced to the user. */
-    private class AiRouteSilentFailure(message: String) : Exception(message)
-
-    /**
-     * Establish the AI route carrier for a routed OPENAI profile. SSH
-     * mirrors [connectSmb]'s tunnel setup (jump-host auth incl. the
-     * password-prompt replay, LOCAL forward on a random port, tunnel lease);
-     * Reticulum mirrors [sh.haven.app.agent.McpTools]'s forward activation.
-     *
-     * Reticulum carriers must already be connected — a forward-only consumer
-     * can't keep the RNS stack alive without a session of its own, and
-     * silently dialling the carrier would spawn a visible terminal tab. So
-     * the route fails closed with an instruction rather than auto-dialling.
-     */
-    private suspend fun setupAiRoute(profile: ConnectionProfile): AiRouteSetup {
-        val routeType = profile.aiRouteType
-        val carrierId = profile.aiRouteProfileId
-        if (!sh.haven.core.openai.AiRoute.isRouted(routeType, carrierId)) {
-            if (routeType != null && !sh.haven.core.openai.AiRoute.isKnownRouteType(routeType)) {
-                throw IllegalStateException("Unknown AI route carrier type '$routeType' — refusing to connect.")
-            }
-            return AiRouteSetup.Direct
-        }
-        // A retry (password replay, or a second connect without a
-        // disconnect in between) must not mint a second forward — the old
-        // one would leak until the carrier goes away.
-        aiRouteRegistry.release(profile.id)
-        val carrier = repository.getById(carrierId ?: return AiRouteSetup.Direct)
-            ?: throw IllegalStateException("AI route carrier profile not found")
-        val (targetHost, targetPort) = sh.haven.core.openai.AiRoute
-            .endpointHostPort(profile.host, profile.port)
-        return when (routeType) {
-            "SSH" -> setupSshAiRoute(profile, carrier, targetHost, targetPort)
-            "RETICULUM" -> setupReticulumAiRoute(profile, carrier, targetHost, targetPort)
-            else -> AiRouteSetup.Direct // unreachable — isRouted checked above
-        }
-    }
-
-    private suspend fun setupSshAiRoute(
-        profile: ConnectionProfile,
-        carrier: ConnectionProfile,
-        targetHost: String,
-        targetPort: Int,
-    ): AiRouteSetup {
-        if (!carrier.isSsh) {
-            throw IllegalStateException("AI route carrier '${carrier.label}' is not an SSH profile")
-        }
-        val needsPrompt = jumpHostNeedsPasswordPrompt(carrier.id)
-        if (needsPrompt != null) {
-            // Same tunnel-mode prompt the VNC/RDP/SMB rows use (#121a): the
-            // answer replays connect(dependent) through
-            // [connectTunnelDependentAfterAuth].
-            _pendingTunnelDependent.value = profile
-            _passwordFallback.value = needsPrompt
-            return AiRouteSetup.PasswordPrompt
-        }
-        val sshSessionId = try {
-            connectJumpHost(carrier.id, "", tunnelOwnerProfileId = profile.id).first
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to connect AI route carrier (SSH)", e)
-            handleTunnelJumpFailure(e, profile, carrier.id)
-            throw AiRouteSilentFailure("AI route carrier connect failed: ${e.message}")
-        }
-        val sshClient = sshSessionManager.sessions.value[sshSessionId]?.client
-            ?: throw IllegalStateException("AI route carrier session not found")
-        val tunnelPort = withContext(Dispatchers.IO) {
-            sshClient.setPortForwardingL("127.0.0.1", 0, targetHost, targetPort)
-        }
-        val lease = sshSessionManager.acquireTunnelLease(
-            sshSessionId,
-            profile.id,
-            tunnelPort,
-            onParentGone = {
-                // Carrier session gone (user disconnect, network death,
-                // jump cascade): every route the carrier carried is dead —
-                // release them and fail their sessions rather than leaving
-                // a green dot over a dead forward. Runs on the removeSession
-                // caller thread.
-                viewModelScope.launch { aiRouteRegistry.carrierGone(carrier.id) }
-            },
-        )
-        aiRouteRegistry.register(
-            sh.haven.core.openai.AiRouteRegistry.Handle(
-                ownerProfileId = profile.id,
-                carrierProfileId = carrier.id,
-                release = { lease.close() },
-                onUnreachable = {
-                    openAiSessionManager.failSessionsForProfile(
-                        profile.id,
-                        "AI route SSH carrier session ended — the routed endpoint is unreachable.",
-                    )
-                },
-            ),
-        )
-        Log.d(TAG, "AI route (SSH): 127.0.0.1:$tunnelPort -> ${LogRedact.host(targetHost, targetPort)} via ${LogRedact.of(carrier.label)}")
-        return AiRouteSetup.Routed("SSH", sh.haven.core.tunnel.LoopbackSocketFactory(tunnelPort))
-    }
-
-    private suspend fun setupReticulumAiRoute(
-        profile: ConnectionProfile,
-        carrier: ConnectionProfile,
-        targetHost: String,
-        targetPort: Int,
-    ): AiRouteSetup {
-        if (!carrier.isReticulum) {
-            throw IllegalStateException("AI route carrier '${carrier.label}' is not a Reticulum profile")
-        }
-        // Fail closed when the carrier isn't live: a forward registered
-        // against a carrier with zero sessions dies with the RNS stack
-        // teardown, and auto-dialling the carrier here would open a
-        // terminal tab the user never asked for.
-        val connected = reticulumSessionManager.getSessionsForProfile(carrier.id)
-            .firstOrNull { it.status == ReticulumSessionManager.SessionState.Status.CONNECTED }
-            ?: throw IllegalStateException(
-                "Reticulum carrier '${carrier.label}' is not connected — connect it first (the mesh stack cannot be started for a chat route alone).",
-            )
-        val bound = reticulumForwardServer.startLocalForward(
-            carrier.id, connected.destinationHash, "127.0.0.1", 0, targetHost, targetPort,
-        )
-        aiRouteRegistry.register(
-            sh.haven.core.openai.AiRouteRegistry.Handle(
-                ownerProfileId = profile.id,
-                carrierProfileId = carrier.id,
-                release = { reticulumForwardServer.stopForward(carrier.id, bound) },
-                onUnreachable = {
-                    openAiSessionManager.failSessionsForProfile(
-                        profile.id,
-                        "AI route Reticulum carrier session ended — the routed endpoint is unreachable.",
-                    )
-                },
-            ),
-        )
-        Log.d(TAG, "AI route (Reticulum): 127.0.0.1:$bound -> ${LogRedact.host(targetHost, targetPort)} via ${LogRedact.of(carrier.label)}")
-        return AiRouteSetup.Routed("RETICULUM", sh.haven.core.tunnel.LoopbackSocketFactory(bound))
-    }
-
-    /** Tear down the AI route carrier [profileId] owns, if any. Idempotent. */
-    private fun releaseAiRoute(profileId: String) = aiRouteRegistry.release(profileId)
-
-    /**
-     * AI route teardown from the disconnect path: release the routes
-     * [profileId] owns (it's the endpoint) and cascade the ones it carries
-     * (it's the carrier — the routed endpoints' sessions must not sit green
-     * over a dead forward).
-     */
-    private fun teardownAiRoutesFor(profileId: String) {
-        aiRouteRegistry.teardownFor(profileId)
-    }
-
-    /**
-     * AI-endpoint transport: route HTTP through the AI route carrier when
-     * one is configured (never also through the profile's own tunnel — the
-     * carrier IS the transport, and stacking both is a double-hop), else
-     * through the per-profile tunnel via a JVM [javax.net.SocketFactory].
-     * Fail closed (R7) when a configured route yields no factory.
-     */
-    private suspend fun buildOpenAiParams(
-        profile: ConnectionProfile,
-        route: AiRouteSetup,
-    ): OpenAiConnectParams {
-        val dial = if (route is AiRouteSetup.Routed) {
-            sh.haven.core.openai.AiRoute.dialFactory(
-                routed = true,
-                routeFactory = route.factory,
-                tunnelFactory = null,
-                tunnelConfigured = false,
-            )
-        } else {
-            val tunnelFactory = tunnelResolver.socketFactory(profile)
-            sh.haven.core.openai.AiRoute.dialFactory(
-                routed = false,
-                routeFactory = null,
-                tunnelFactory = tunnelFactory,
-                tunnelConfigured = profile.tunnelConfigId != null,
-            )
-        }
-        val factory = when (dial) {
-            is sh.haven.core.openai.AiRoute.Dial.Refused -> throw IllegalStateException(dial.reason)
-            is sh.haven.core.openai.AiRoute.Dial.Via -> dial.factory
-        }
-        return OpenAiConnectParams(
-            baseUrl = profile.openaiBaseUrl,
-            pathPrefix = profile.openaiPathPrefix?.trim()?.ifBlank { null },
-            apiKey = profile.openaiApiKey?.ifBlank { null },
-            protocol = sh.haven.core.openai.AiProtocol.fromStored(profile.aiProtocol),
-            socketFactory = factory,
-            tunnelConfigured = route !is AiRouteSetup.Routed && profile.tunnelConfigId != null,
-            routeType = (route as? AiRouteSetup.Routed)?.routeType,
-        )
-    }
-
-    /**
-     * Proton transport: route HTTPS through the per-profile tunnel's SOCKS5
-     * listener. MailBridge wants a bare `host:port` (it prepends `socks5://`
-     * itself) — NOT a URL. Fail closed (R7) when a tunnel is configured but
-     * yields no SOCKS endpoint (e.g. Cloudflare Access).
-     */
-    private suspend fun buildProtonParams(
-        profile: ConnectionProfile,
-        username: String,
-        password: String,
-    ): MailConnectParams.Proton {
-        val socks = tunnelResolver.socksEndpoint(profile)
-            ?.let { "${it.hostString}:${it.port}" }
-        if (profile.tunnelConfigId != null && socks == null) {
-            throw IllegalStateException(
-                "Tunnel configured but provides no SOCKS endpoint — refusing to connect Proton directly.",
-            )
-        }
-        return MailConnectParams.Proton(
-            username = username,
-            password = password,
-            mailboxPassword = profile.emailMailboxPassword?.ifBlank { null },
-            twoFA = resolveEmailTotp(profile),
-            socks = socks,
-        )
-    }
-
-    /**
-     * IMAP transport: route IMAP/SMTP through the per-profile tunnel via a JVM
-     * [javax.net.SocketFactory]. Fail closed (R7) when a tunnel is configured
-     * but yields no factory; a null factory with no tunnel is a normal direct
-     * connection.
-     */
-    private suspend fun buildImapParams(
-        profile: ConnectionProfile,
-        username: String,
-        password: String,
-    ): MailConnectParams.Imap {
-        val server = profile.emailServer?.trim().orEmpty()
-        if (server.isBlank()) throw IllegalStateException("IMAP server is required.")
-        val factory = tunnelResolver.socketFactory(profile)
-        if (profile.tunnelConfigId != null && factory == null) {
-            throw IllegalStateException(
-                "Tunnel configured but provides no socket factory — refusing to connect IMAP directly.",
-            )
-        }
-        return MailConnectParams.Imap(
-            username = username,
-            password = password,
-            server = server,
-            port = profile.emailPort,
-            smtpPort = profile.emailSmtpPort,
-            tls = profile.emailTls,
-            // SMTP host (smtp.gmail.com vs imap.gmail.com); null falls back to `server`.
-            smtpServer = profile.emailSmtpServer?.trim()?.ifBlank { null },
-            socketFactory = factory,
-        )
-    }
-
-    /**
-     * Generate the current TOTP code from a TOTP secret linked via the profile's
-     * [ConnectionProfile.emailAuthMethods] (`TOTP[:<secretId>]`), or null when no
-     * TOTP factor is configured. Proton uses standard TOTP (SHA1/6/30).
-     */
-    private suspend fun resolveEmailTotp(profile: ConnectionProfile): String? {
-        val spec = ConnectionProfile.AuthMethodSpec.parseList(profile.emailAuthMethods)
-            .filterIsInstance<ConnectionProfile.AuthMethodSpec.Totp>()
-            .firstOrNull() ?: return null
-        val secretId = spec.secretId
-            ?: totpSecretRepository.observeAll().first().firstOrNull()?.id
-            ?: return null
-        val secret = totpSecretRepository.getDecryptedSecret(secretId) ?: return null
-        return runCatching { Totp.generate(secret) }.getOrNull()
-    }
-
-    val desktopSetupState: StateFlow<sh.haven.core.local.ProotManager.DesktopSetupState> =
-        localSessionManager.prootManager.desktopState
-
-    /** Desktop process states from DesktopManager. */
-    val desktopStates: StateFlow<Map<sh.haven.core.local.ProotManager.DesktopEnvironment, sh.haven.core.local.DesktopManager.DesktopInstance>> =
-        localSessionManager.desktopManager.desktops
-
-    /** All installed desktop environments. */
-    val installedDesktops: Set<sh.haven.core.local.ProotManager.DesktopEnvironment>
-        get() = localSessionManager.prootManager.installedDesktops
-
-    /** Currently-active distro id (e.g. "alpine-3.21", "debian-bookworm"). */
-    val activeDistroId: StateFlow<String> =
-        localSessionManager.prootManager.activeDistroIdFlow
-
-    /** Rootfs install progress for the active distro (NotInstalled/Downloading/Extracting/Ready/Error). */
-    val rootfsSetupState: StateFlow<sh.haven.core.local.ProotManager.SetupState> =
-        localSessionManager.prootManager.state
-
-    /** Distros installed on this device (filesystem-derived). */
-    val installedDistros: List<sh.haven.core.local.proot.Distro>
-        get() = localSessionManager.prootManager.installedDistros
-
-    /** Catalog distros that could be added (arch-compatible, not installed). */
-    val availableDistros: List<sh.haven.core.local.proot.Distro>
-        get() = localSessionManager.prootManager.availableDistros
-
-    /** Switch the active distro — affects which rootfs subsequent DE ops use. */
-    fun switchActiveDistro(distroId: String) {
-        localSessionManager.prootManager.setActiveDistroId(distroId)
-    }
-
-    /**
-     * Delete a distro's rootfs. Reclaims the disk space and is the
-     * recovery path when an install lands in a broken state. If the
-     * deleted distro was active, ProotManager switches to the first
-     * remaining installed one. Also stops any running DEs on the
-     * deleted distro since their rootfs is about to disappear.
-     */
-    fun deleteDistro(distroId: String) {
-        val pm = localSessionManager.prootManager
-        // Stop any DEs running on the doomed distro before pulling
-        // the rootfs out from under them.
-        if (pm.activeDistroId == distroId) {
-            localSessionManager.desktopManager.stopAll()
-        }
-        pm.deleteDistro(distroId)
-    }
-
-    /**
-     * Make [distro] the active distro and install its rootfs. The
-     * common path for "+ Add another distro" — selecting one already
-     * installed just switches to it via [switchActiveDistro]; this
-     * action both switches AND triggers the download/extract flow.
-     *
-     * If the rootfs install fails the active distro reverts to the
-     * previous selection so the user isn't left with an "active but
-     * missing" distro where Haven thinks no rootfs is installed.
-     */
-    fun addDistro(distro: sh.haven.core.local.proot.Distro) {
-        val pm = localSessionManager.prootManager
-        val previousActive = pm.activeDistroId
-        pm.setActiveDistroId(distro.id)
-        viewModelScope.launch {
-            try {
-                pm.installRootfs()
-                val state = pm.state.value
-                if (state is sh.haven.core.local.ProotManager.SetupState.Error) {
-                    Log.w(TAG, "addDistro: ${distro.id} install failed (${state.message}), reverting to $previousActive")
-                    pm.setActiveDistroId(previousActive)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "addDistro: ${distro.id} install threw", e)
-                pm.setActiveDistroId(previousActive)
-            }
-        }
-    }
-
-    /** Install a desktop environment (packages only, does not auto-start). */
-    fun setupDesktop(
-        vncPassword: String,
-        de: sh.haven.core.local.ProotManager.DesktopEnvironment = sh.haven.core.local.ProotManager.DesktopEnvironment.XFCE4,
-        addons: Set<sh.haven.core.local.ProotManager.DesktopAddon> = emptySet(),
-    ) {
-        viewModelScope.launch {
-            val prootManager = localSessionManager.prootManager
-            prootManager.setupDesktop(vncPassword, de)
-
-            // Install optional desktop add-ons (panel, file manager, etc.)
-            if (addons.isNotEmpty() && prootManager.desktopState.value is sh.haven.core.local.ProotManager.DesktopSetupState.Complete) {
-                prootManager.installAddons(addons)
-            }
-
-            Log.d(TAG, "Desktop setup result: ${prootManager.desktopState.value}")
-            // Don't reset state here — let the dialog observe Complete and auto-dismiss
-        }
-    }
-
-    /** Uninstall a desktop environment. */
-    fun uninstallDesktop(de: sh.haven.core.local.ProotManager.DesktopEnvironment) {
-        viewModelScope.launch {
-            try {
-                // Stop if running
-                localSessionManager.desktopManager.stopDesktop(de)
-                localSessionManager.prootManager.uninstallDesktop(de)
-                localSessionManager.prootManager.resetDesktopState()
-            } catch (e: Exception) {
-                Log.e(TAG, "uninstallDesktop failed for ${LogRedact.of(de.label)}", e)
-                _error.value = "Uninstall failed: ${e.message}"
-            }
-        }
-    }
-
-    /** Prompt for desktop VNC password when no stored password is available. */
-    data class DesktopVncPasswordPrompt(
-        val de: sh.haven.core.local.ProotManager.DesktopEnvironment,
-        val port: Int,
-    )
-    private val _desktopVncPasswordPrompt = MutableStateFlow<DesktopVncPasswordPrompt?>(null)
-    val desktopVncPasswordPrompt: StateFlow<DesktopVncPasswordPrompt?> = _desktopVncPasswordPrompt.asStateFlow()
-
-    fun onDesktopVncPasswordEntered(password: String) {
-        val prompt = _desktopVncPasswordPrompt.value ?: return
-        _desktopVncPasswordPrompt.value = null
-        // Save for next time
-        localSessionManager.prootManager.storedVncPassword = password
-        _navigateToVnc.value = VncNavigation("localhost", prompt.port, password)
-    }
-
-    fun dismissDesktopVncPasswordPrompt() {
-        _desktopVncPasswordPrompt.value = null
-    }
-
-    /** Start a desktop environment and navigate to viewer. */
-    fun startDesktop(de: sh.haven.core.local.ProotManager.DesktopEnvironment) {
-        viewModelScope.launch {
-            val desktopManager = localSessionManager.desktopManager
-            val shellCmd = preferencesRepository.waylandShellCommand.first()
-            Log.d(TAG, "startDesktop: ${LogRedact.of(de.label)} shell=$shellCmd")
-            withContext(Dispatchers.IO) {
-                desktopManager.startDesktop(de, shellCmd)
-            }
-            val state = desktopManager.desktops.value[de]
-            Log.d(TAG, "startDesktop: state after start = ${state?.state}")
-            if (de.isNative) {
-                delay(2000)
-                _navigateToWayland.value = true
-            } else {
-                val port = desktopManager.getVncPort(de) ?: 5901
-                Log.d(TAG, "startDesktop: VNC port=$port")
-                // Look up VNC password: stored from setup, then saved profiles
-                val pwd = localSessionManager.prootManager.storedVncPassword
-                    ?: connections.value
-                        .find { it.isVnc && it.host == "localhost" }
-                        ?.vncPassword
-                Log.d(TAG, "startDesktop: waiting for VNC server on port $port...")
-                // Wait up to 8s for VNC port to become available
-                val ready = withContext(Dispatchers.IO) {
-                    repeat(16) {
-                        try {
-                            java.net.Socket("127.0.0.1", port).close()
-                            return@withContext true
-                        } catch (_: Exception) {
-                            delay(500)
-                        }
-                    }
-                    false
-                }
-                if (ready) {
-                    if (pwd == null) {
-                        // No stored password — prompt the user (VNC may or may not need auth,
-                        // but it's better to ask than to fail silently)
-                        Log.d(TAG, "startDesktop: VNC needs auth but no password stored, prompting")
-                        _desktopVncPasswordPrompt.value = DesktopVncPasswordPrompt(de, port)
-                    } else {
-                        Log.d(TAG, "startDesktop: VNC server ready, navigating to localhost:$port")
-                        _navigateToVnc.value = VncNavigation("localhost", port, pwd)
-                    }
-                } else {
-                    Log.e(TAG, "startDesktop: VNC server not listening on port $port after 8s")
-                    _error.value = "Desktop failed to start — VNC server not responding"
-                    desktopManager.stopDesktop(de)
-                }
-            }
-        }
-    }
-
-    /** Stop a running desktop environment. */
-    fun stopDesktop(de: sh.haven.core.local.ProotManager.DesktopEnvironment) {
-        viewModelScope.launch(Dispatchers.IO) {
-            localSessionManager.desktopManager.stopDesktop(de)
-        }
-    }
-
-    fun resetDesktopSetupState() {
-        localSessionManager.prootManager.resetDesktopState()
-    }
-
-    fun setWaylandShellCommand(command: String) {
-        viewModelScope.launch {
-            preferencesRepository.setWaylandShellCommand(command)
-        }
-    }
-
-    /** True if any PRoot desktop environment is installed. */
-    val isDesktopInstalled: Boolean
-        get() = localSessionManager.prootManager.hasAnyDesktopInstalled
-
-    /** True if PRoot rootfs is installed and ready for desktop use. */
-    val isRootfsReady: Boolean
-        get() = localSessionManager.prootManager.isReady
-
-    private val _launchingDesktop = MutableStateFlow(false)
-    val launchingDesktop: StateFlow<Boolean> = _launchingDesktop.asStateFlow()
-
-    fun consumeNavigateToWayland() {
-        _navigateToWayland.value = false
-    }
-
-    // (connectLocalTerminal removed in 3c — local shells are added via
-    //  Connection + → LOCAL transport, same as every other backend.
-    //  Existing "Local Shell" profiles created by the old topbar button
-    //  remain in the list and continue to work.)
-
-    private fun connectLocal(profile: ConnectionProfile) {
-        viewModelScope.launch {
-            // Skip if already connected
-            val existing = localSessionManager.getSessionsForProfile(profile.id)
-            if (existing.any { it.status == LocalSessionManager.SessionState.Status.CONNECTED }) {
-                _navigateToTerminal.value = profile.id
-                return@launch
-            }
-
-            _connectingProfileId.value = profile.id
-            _error.value = null
-
-            // If proot binary is available but rootfs isn't installed, download it first
-            val prootManager = localSessionManager.prootManager
-            if (prootManager.prootBinary != null && !prootManager.isRootfsInstalled) {
-                Log.d(TAG, "PRoot available but rootfs not installed — downloading...")
-                prootManager.installRootfs()
-                if (prootManager.state.value is sh.haven.core.local.ProotManager.SetupState.Error) {
-                    val err = prootManager.state.value as sh.haven.core.local.ProotManager.SetupState.Error
-                    Log.w(TAG, "Rootfs install failed: ${err.message}, falling back to plain shell")
-                }
-            }
-
-            val sessionId = localSessionManager.registerSession(profile.id, profile.label, profile.useAndroidShell, profile.prootDistroId)
-            try {
-                localSessionManager.connectSession(sessionId)
-                repository.markConnected(profile.id)
-                connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.CONNECTED)
-                startForegroundServiceIfNeeded()
-                _navigateToTerminal.value = profile.id
-            } catch (e: Exception) {
-                Log.e(TAG, "connectLocal failed: ${e.message}", e)
-                connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.FAILED, details = e.message)
-                localSessionManager.updateStatus(sessionId, LocalSessionManager.SessionState.Status.ERROR)
-                localSessionManager.removeSession(sessionId)
-                _error.value = e.message ?: "Local terminal failed"
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    /**
-     * Connect a UML guest profile: stage the rootfs on first use, register the
-     * session, and navigate — the kernel itself boots when the terminal tab
-     * calls [sh.haven.core.local.uml.UmlGuestManager.createTerminalSession],
-     * mirroring how connectLocal's shell only execs on tab attach.
-     */
-    private fun connectGuest(profile: ConnectionProfile) {
-        viewModelScope.launch {
-            val existing = umlGuestManager.getSessionsForProfile(profile.id)
-            if (existing.any { it.status == sh.haven.core.local.uml.UmlGuestManager.SessionState.Status.CONNECTED }) {
-                _navigateToTerminal.value = profile.id
-                return@launch
-            }
-            _connectingProfileId.value = profile.id
-            _error.value = null
-            try {
-                if (!umlGuestManager.isAvailable()) {
-                    throw IllegalStateException(
-                        "This build does not include the Linux guest payload")
-                }
-                umlGuestManager.ensureRootfs()
-            } catch (e: Exception) {
-                Log.e(TAG, "connectGuest setup failed: ${e.message}", e)
-                connectionLogRepository.logEvent(
-                    profile.id, ConnectionLog.Status.FAILED, details = e.message)
-                _error.value = e.message ?: "Guest rootfs staging failed"
-                _connectingProfileId.value = null
-                return@launch
-            }
-            val sessionId = umlGuestManager.registerSession(profile.id, profile.label)
-            try {
-                umlGuestManager.connectSession(sessionId)
-                repository.markConnected(profile.id)
-                connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.CONNECTED)
-                startForegroundServiceIfNeeded()
-                _navigateToTerminal.value = profile.id
-            } catch (e: Exception) {
-                Log.e(TAG, "connectGuest failed: ${e.message}", e)
-                connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.FAILED, details = e.message)
-                umlGuestManager.updateStatus(sessionId, sh.haven.core.local.uml.UmlGuestManager.SessionState.Status.ERROR)
-                umlGuestManager.removeSession(sessionId)
-                _error.value = e.message ?: "Guest failed to start"
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    /**
      * Connect a Bluetooth-serial (SPP) profile (#406): open the RFCOMM link to the
      * paired device, then navigate to the terminal — TerminalViewModel's session
      * collector builds the tab once the session is CONNECTED. Mirrors [connectLocal].
@@ -3895,7 +2560,7 @@ class ConnectionsViewModel @Inject constructor(
                 btSerialSessionManager.removeSession(sessionId)
                 _error.value = reason
                 // App-global toast: the connect may have been driven from a screen
-                // other than Connections (MCP, workspace launch), where _error is
+
                 // never shown. UserMessageBus renders over any screen (#406).
                 userMessageBus.error("${profile.label}: $reason")
             } finally {
@@ -3998,13 +2663,6 @@ class ConnectionsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Connect a USB-serial profile (#408): resolve the plugged-in device by its
-     * vendorId:productId, request USB permission (system dialog) if needed, open
-     * the serial port at the profile's baud, then navigate to the terminal —
-     * TerminalViewModel's session collector builds the tab. Mirrors
-     * [connectBtSerial]; USB is the boundary proot can't cross, so it's native.
-     */
     private fun connectUsbSerial(profile: ConnectionProfile) {
         viewModelScope.launch {
             val existing = usbSerialSessionManager.getSessionsForProfile(profile.id)
@@ -4183,7 +2841,7 @@ class ConnectionsViewModel @Inject constructor(
             // profiles so direct connections keep independent-per-tab semantics.
             // awaitReusableClient (not getSshClientForProfile) also waits for an
             // in-flight connect to the same profile — closing the app-launch race
-            // where this restore runs before the MCP carrier reaches CONNECTED.
+
             val reuseClient = if (profile.tunnelConfigId != null) {
                 sshSessionManager.awaitReusableClient(profile.id)
             } else null
@@ -4428,7 +3086,6 @@ class ConnectionsViewModel @Inject constructor(
 
                 // Auto-deploy SSH key for VM connections after first password connect
                 if (password.isNotBlank()) {
-                    maybeAutoDeployKey(profile, password)
                 }
             } catch (e: Exception) {
                 val cancelledByBanner = sshAuthBannerCancelled
@@ -4527,51 +3184,6 @@ class ConnectionsViewModel @Inject constructor(
                         _error.value = msg.ifBlank { "Connection failed" }
                     }
                 }
-            } finally {
-                _connectingProfileId.value = null
-            }
-        }
-    }
-
-    private fun connectReticulum(profile: ConnectionProfile) {
-        val destinationHash = profile.destinationHash ?: return
-        viewModelScope.launch {
-            _connectingProfileId.value = profile.id
-            _error.value = null
-
-            val sessionId = reticulumSessionManager.registerSession(
-                profileId = profile.id,
-                label = profile.label,
-                destinationHash = destinationHash,
-            )
-
-            try {
-                val configDir = File(appContext.filesDir, "reticulum").apply { mkdirs() }.absolutePath
-
-                val dialer = tunnelResolver.socketDialer(profile)
-                withContext(Dispatchers.IO) {
-                    reticulumSessionManager.connectSession(
-                        sessionId = sessionId,
-                        configDir = configDir,
-                        host = profile.reticulumHost,
-                        port = profile.reticulumPort,
-                        ifacNetname = profile.reticulumNetworkName,
-                        ifacNetkey = profile.reticulumPassphrase,
-                        socketDialer = dialer,
-                    )
-                }
-
-                repository.markConnected(profile.id)
-                connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.CONNECTED)
-                startForegroundServiceIfNeeded()
-                _navigateToTerminal.value = profile.id
-            } catch (e: Exception) {
-                reticulumSessionManager.updateStatus(
-                    sessionId,
-                    ReticulumSessionManager.SessionState.Status.ERROR,
-                )
-                reticulumSessionManager.removeSession(sessionId)
-                _error.value = e.message ?: "Reticulum connection failed"
             } finally {
                 _connectingProfileId.value = null
             }
@@ -5523,43 +4135,6 @@ class ConnectionsViewModel @Inject constructor(
         // Skipped for connection-reuse sessions — the primary session already
         // holds these forwards on the shared SSH client, so re-binding them here
         // only produces "port already registered" failures.
-        if (!sshSessionManager.isClientShared(sessionId) &&
-            sshSessionManager.getSession(sessionId)?.activeForwards.isNullOrEmpty()
-        ) {
-            withContext(Dispatchers.IO) {
-                val mcpEndpointId = preferencesRepository.mcpTunnelEndpointProfileId.first()
-                val rules = portForwardRepository.getEnabledForProfile(profileId)
-                    // One :8730 owner per host: when this profile is the designated
-                    // always-on (headless) MCP endpoint, the dedicated McpTunnelManager
-                    // tunnel owns the -R 8730 — skip the per-connection rule so the two
-                    // don't collide on the remote sshd bind.
-                    .filterNot { mcpEndpointId == profileId && it.isMcpReverseTunnel() }
-                val profileForMedia = repository.getById(profileId)
-                val forwardX11 = sh.haven.core.ssh.sshForwardX11FromOptionsText(profileForMedia?.sshOptions)
-                val forwardPulse = sh.haven.core.ssh.sshForwardPulseAudioFromOptionsText(profileForMedia?.sshOptions)
-                val localX11Port = if (forwardX11) {
-                    localSessionManager.desktopManager.ensureLocalX11TcpPort()
-                } else {
-                    sh.haven.core.ssh.SSH_X11_DEFAULT_LOCAL_PORT
-                }
-                val explicitForwards = rules.map { it.toForwardInfo() }
-                val mediaForwards = sh.haven.core.ssh.buildMediaPortForwards(
-                    forwardX11 = forwardX11,
-                    localX11Port = localX11Port,
-                    forwardPulseAudio = forwardPulse,
-                    localPulsePort = sh.haven.core.local.AudioBridge.NATIVE_TCP_PORT,
-                ).filterNot { media ->
-                    explicitForwards.any { it.type == media.type && it.bindPort == media.bindPort }
-                }
-                val allForwards = explicitForwards + mediaForwards
-                if (allForwards.isNotEmpty()) {
-                    sshSessionManager.applyPortForwards(
-                        sessionId,
-                        allForwards,
-                    )
-                }
-            }
-        }
         // If disconnect(profileId) / removeSession(sessionId) raced while
         // openShellAndAwaitReady or applyPortForwards was running, abort now so
         // we don't log a false CONNECTED event, restart the foreground service,
@@ -5577,18 +4152,6 @@ class ConnectionsViewModel @Inject constructor(
             val profile = repository.getById(profileId) ?: return@launch
             if (!profile.isSsh) return@launch
             if (sshSessionManager.getSession(sessionId) == null) return@launch
-            if (sh.haven.core.ssh.sshForwardPulseAudioFromOptionsText(profile.sshOptions)) {
-                localSessionManager.audioBridge.start()
-                val audioStatus = localSessionManager.audioBridge.status.value
-                if (audioStatus.state == sh.haven.core.local.AudioBridge.State.ERROR) {
-                    userMessageBus.emit(
-                        sh.haven.core.data.message.UserMessage(
-                            "PulseAudio forwarding: ${audioStatus.error ?: "failed to start local audio bridge"}",
-                            sh.haven.core.data.message.UserMessage.Severity.INFO,
-                        ),
-                    )
-                }
-            }
             val vidPid = profile.usbForwardVidPid
             if (!vidPid.isNullOrBlank()) {
                 usbipForwarder.attach(sessionId, vidPid) { msg ->
@@ -6507,50 +5070,6 @@ class ConnectionsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Identifies the MCP reverse-tunnel rule: a `-R` forward mapping
-     * [MCP_REVERSE_TUNNEL_PORT] on the server back to the same port on
-     * the phone's loopback.
-     */
-    private fun PortForwardRule.isMcpReverseTunnel(): Boolean =
-        type == PortForwardRule.Type.REMOTE &&
-            bindPort == MCP_REVERSE_TUNNEL_PORT &&
-            targetPort == MCP_REVERSE_TUNNEL_PORT &&
-            targetHost == "127.0.0.1"
-
-    /** True if [profileId] carries the MCP reverse-tunnel port-forward rule. */
-    suspend fun hasMcpReverseTunnel(profileId: String): Boolean =
-        portForwardRepository.observeForProfile(profileId).first()
-            .any { it.isMcpReverseTunnel() }
-
-    /**
-     * Bring [profileId]'s MCP reverse-tunnel rule in line with [enabled]:
-     * create the `-R 8730:127.0.0.1:8730` rule when enabling and it's
-     * missing, delete it when disabling. Reuses [savePortForwardRule] /
-     * [deletePortForwardRule] so a connected session is updated live.
-     */
-    fun reconcileMcpReverseTunnel(profileId: String, enabled: Boolean) {
-        viewModelScope.launch {
-            val existing = portForwardRepository.observeForProfile(profileId).first()
-                .firstOrNull { it.isMcpReverseTunnel() }
-            when {
-                enabled && existing == null -> savePortForwardRule(
-                    PortForwardRule(
-                        profileId = profileId,
-                        type = PortForwardRule.Type.REMOTE,
-                        bindAddress = "127.0.0.1",
-                        bindPort = MCP_REVERSE_TUNNEL_PORT,
-                        targetHost = "127.0.0.1",
-                        targetPort = MCP_REVERSE_TUNNEL_PORT,
-                        enabled = true,
-                    ),
-                )
-                !enabled && existing != null ->
-                    deletePortForwardRule(existing.id, profileId)
-            }
-        }
-    }
-
     private fun PortForwardRule.toForwardInfo() = SshSessionManager.PortForwardInfo(
         ruleId = id,
         type = when (type) {
@@ -6594,7 +5113,6 @@ class ConnectionsViewModel @Inject constructor(
         // carrier — routed endpoints fail closed rather than sitting green
         // over a dead forward). Before the registry so the carrier's
         // transports can't vanish first and leave the forward orphaned.
-        teardownAiRoutesFor(profileId)
         sessionManagerRegistry.disconnectProfile(profileId)
         // Tear down this profile's tunnel-dependent resources: close its VNC/
         // RDP Desktop tab (via the lease's parent-gone callback) AND release
@@ -6621,14 +5139,13 @@ class ConnectionsViewModel @Inject constructor(
             }
         // Direct (non-tunnelled) VNC/RDP/SPICE tabs have no SSH tunnel lease
         // to cascade through — close them via the tab's registered close
-        // handle, matching McpTools.disconnectProfile (#437).
+
         desktopSessionRegistry.closeHandle(profileId)?.invoke()
         // Drop the WireGuard / Tailscale refcount this profile may have
         // acquired via TunnelResolver. No-op if the profile didn't go
         // through a tunnel; otherwise the underlying tunnel closes only
         // when its last dependent disconnects (#149).
         viewModelScope.launch { tunnelResolver.release(profileId) }
-        localSessionManager.desktopManager.stopAll()
         updateServiceNotification()
     }
 
@@ -6675,78 +5192,6 @@ class ConnectionsViewModel @Inject constructor(
         fidoAuthenticator = this@ConnectionsViewModel.fidoAuthenticator
         hardwareKeySigner = keystoreSshKeySigner
         openKeychainClients = OpenKeychainClientFactory.from(appContext)
-    }
-
-    /**
-     * Auto-deploy the first SSH key to a localhost/VM profile after a successful
-     * password-based connect. Only fires if keys exist and haven't been deployed yet.
-     */
-    private fun maybeAutoDeployKey(profile: ConnectionProfile, password: String) {
-        val isLocalVm = profile.host in listOf("localhost", "127.0.0.1") ||
-            profile.host == localVmStatus.value.directIp
-        if (!isLocalVm) return
-
-        viewModelScope.launch {
-            val keys = sshKeyRepository.observeAll().first()
-            if (keys.isEmpty()) return@launch
-
-            // Check if key is already deployed by trying key auth
-            // (security-chip keys can be in the pool resolveAuthMethod builds,
-            // so the signer must be wired before connect).
-            val testClient = newSshClient()
-            try {
-                val keyAuth = resolveAuthMethod(profile, "")
-                if (keyAuth is ConnectionConfig.AuthMethod.Password) return@launch // no keys to deploy
-                val config = ConnectionConfig(
-                    host = profile.host,
-                    port = profile.port,
-                    username = profile.username,
-                    authMethod = keyAuth,
-                )
-                withContext(Dispatchers.IO) {
-                    testClient.connect(config)
-                }
-                // Key auth succeeded — already deployed
-                testClient.disconnect()
-                return@launch
-            } catch (_: Exception) {
-                testClient.disconnect()
-            }
-
-            // Key auth failed — deploy the first key
-            val key = keys.first()
-            val deployClient = newSshClient()
-            try {
-                val config = ConnectionConfig(
-                    host = profile.host,
-                    port = profile.port,
-                    username = profile.username,
-                    authMethod = ConnectionConfig.AuthMethod.Password(password),
-                )
-                withContext(Dispatchers.IO) {
-                    deployClient.connect(config)
-                }
-                // Skip host key verification — we already verified during the connect
-
-                val pubKey = key.publicKeyOpenSsh.trim()
-                val command = "mkdir -p ~/.ssh && chmod 700 ~/.ssh && " +
-                    "grep -qF '${pubKey.substringAfterLast(' ')}' ~/.ssh/authorized_keys 2>/dev/null || " +
-                    "echo '${pubKey}' >> ~/.ssh/authorized_keys && " +
-                    "chmod 600 ~/.ssh/authorized_keys"
-
-                val result = withContext(Dispatchers.IO) {
-                    deployClient.execCommand(command)
-                }
-                if (result.exitStatus == 0) {
-                    _deploySuccess.value = true
-                    Log.d(TAG, "Auto-deployed SSH key to ${LogRedact.host(profile.host, profile.port)}")
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "Auto-deploy key failed (non-fatal): ${e.message}")
-            } finally {
-                deployClient.disconnect()
-            }
-        }
     }
 
     fun deployKey(profile: ConnectionProfile, keyId: String, password: String) {
@@ -6889,71 +5334,9 @@ class ConnectionsViewModel @Inject constructor(
      */
     private suspend fun connectSilent(profile: ConnectionProfile) {
         when {
-            profile.isLocal -> connectLocalSilent(profile)
-            profile.isReticulum -> connectReticulumSilent(profile)
             profile.isEternalTerminal -> connectEtSilent(profile)
             profile.isMosh -> connectMoshSilent(profile)
             else -> connectSshSilent(profile)
-        }
-    }
-
-    private suspend fun connectLocalSilent(profile: ConnectionProfile) {
-        val existing = localSessionManager.getSessionsForProfile(profile.id)
-        if (existing.any { it.status == LocalSessionManager.SessionState.Status.CONNECTED }) {
-            return
-        }
-
-        val prootManager = localSessionManager.prootManager
-        if (prootManager.prootBinary != null && !prootManager.isRootfsInstalled) {
-            prootManager.installRootfs()
-        }
-
-        val sessionId = localSessionManager.registerSession(profile.id, profile.label)
-        try {
-            localSessionManager.connectSession(sessionId)
-            repository.markConnected(profile.id)
-            connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.CONNECTED)
-            startForegroundServiceIfNeeded()
-        } catch (e: Exception) {
-            Log.e(TAG, "connectLocalSilent failed: ${e.message}", e)
-            connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.FAILED, details = e.message)
-            localSessionManager.updateStatus(sessionId, LocalSessionManager.SessionState.Status.ERROR)
-            localSessionManager.removeSession(sessionId)
-            throw e
-        }
-    }
-
-    private suspend fun connectReticulumSilent(profile: ConnectionProfile) {
-        val destinationHash = profile.destinationHash
-            ?: throw Exception("No destination hash for ${profile.label}")
-
-        val sessionId = reticulumSessionManager.registerSession(
-            profileId = profile.id,
-            label = profile.label,
-            destinationHash = destinationHash,
-        )
-
-        try {
-            val configDir = File(appContext.filesDir, "reticulum").apply { mkdirs() }.absolutePath
-            val dialer = tunnelResolver.socketDialer(profile)
-            withContext(Dispatchers.IO) {
-                reticulumSessionManager.connectSession(
-                    sessionId = sessionId,
-                    configDir = configDir,
-                    host = profile.reticulumHost,
-                    port = profile.reticulumPort,
-                    ifacNetname = profile.reticulumNetworkName,
-                    ifacNetkey = profile.reticulumPassphrase,
-                    socketDialer = dialer,
-                )
-            }
-            repository.markConnected(profile.id)
-            connectionLogRepository.logEvent(profile.id, ConnectionLog.Status.CONNECTED)
-            startForegroundServiceIfNeeded()
-        } catch (e: Exception) {
-            reticulumSessionManager.updateStatus(sessionId, ReticulumSessionManager.SessionState.Status.ERROR)
-            reticulumSessionManager.removeSession(sessionId)
-            throw e
         }
     }
 
@@ -7215,7 +5598,6 @@ internal fun moshLocaleWorkaroundHint(hasCustomCommand: Boolean, stderr: String)
     return "\n\nOr set this connection's mosh-server command to force a UTF-8 " +
         "locale: LC_ALL=C.UTF-8 mosh-server new -s -c 256"
 }
-
 
 /**
  * Whether a stored key's `privateKeyBytes` are private-key material Haven can

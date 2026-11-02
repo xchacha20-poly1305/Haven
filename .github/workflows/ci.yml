@@ -103,77 +103,6 @@ jobs:
         working-directory: rdp-kotlin/rust
         run: cargo test
 
-  # Prns C-ABI capsule tests on the host toolchain. Scoped to the detached
-  # abi/c workspace (its own committed Cargo.lock) — the full upstream
-  # workspace carries embedded targets this runner can't build.
-  prns-rust-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          submodules: false
-      - name: Checkout prns submodule
-        run: git submodule update --init prns
-      - name: Run Prns capsule tests
-        working-directory: prns/prns-host/abi/c
-        run: cargo test
-
-  # Host-built proot exercising the link2symlink emulation: refcounts,
-  # PROOT_L2S_DIR payload relocation (the Nix/libgit2 tarball-cache
-  # durability fix, discussion #536), and broken-chain fail-soft. Runs on
-  # the host kernel — ptrace works on GitHub runners; no Android needed.
-  proot-l2s-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          submodules: false
-      - name: Checkout proot submodule
-        run: git submodule update --init build-proot/proot-termux
-      - name: Install talloc, busybox, and lld
-        # gcc-multilib: the x86_64 build also compiles a 32-bit loader
-        # (HAS_LOADER_32BIT) and needs the i386 libc headers.
-        #
-        # Bounded like setup-toolchain's apt step: apt has no default
-        # network timeout, and this exact step sat stalled until the
-        # 15-minute job cap killed it TWICE on 2026-08-19 (runs
-        # 32233158153, 32236122541) — the second time WITH Acquire
-        # timeouts in place and zero output, so a hard timeout(1) wall
-        # per attempt is what actually bounds it.
-        run: |
-          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
-          apt_run() {
-            wall="$1"; shift
-            for attempt in 1 2 3; do
-              sudo timeout -k 30 "$wall" apt-get $APT_OPTS "$@" && return 0
-              echo "apt-get $1 failed or timed out (attempt $attempt)"
-              pgrep -a 'apt|dpkg' || true
-              # Fail over to the canonical archive when the azure mirror
-              # stalls (see setup-toolchain for the incident detail).
-              echo 'http://archive.ubuntu.com/ubuntu/	priority:1' | sudo tee /etc/apt/apt-mirrors.txt
-              sudo timeout -k 30 180 apt-get $APT_OPTS update -qq || true
-              sleep 5
-            done
-            echo "apt-get $1 failed after 3 attempts"
-            return 1
-          }
-          apt_run 180 update -qq
-          apt_run 600 install -y -qq libtalloc-dev busybox-static clang lld gcc-multilib
-      # clang+lld, not gcc+GNU-ld: the loader's hardcoded --rosegment is an
-      # LLD flag (the production NDK toolchain is clang+lld too) and older
-      # GNU ld rejects it.
-      - name: Build host proot
-        run: make -C build-proot/proot-termux/src proot CC="clang -fuse-ld=lld"
-      - name: Run link2symlink tests
-        run: |
-          cd build-proot/proot-termux/tests
-          for t in test-l2s-refcount.sh test-l2s-dir.sh test-l2s-broken-chain.sh test-l2s-guest-dir.sh; do
-            echo "=== $t"
-            env PROOT="$PWD/../src/proot" sh -e "$t"
-          done
-
   # Three independent Gradle entry-points run as parallel jobs instead of
   # sequentially in one. Each restores the shared toolchain + caches from
   # the composite action; the second run of each job type reuses the cache
@@ -217,9 +146,7 @@ jobs:
         run: >-
           ./gradlew testDebugUnitTest :app:testArm64FullDebugUnitTest
           -PexcludeSshlibContractTests=true
-          -PskipWaylandNatives=true
           -PskipFfmpegNatives=true
-          -PskipUml=true
           -Pkotlin.compiler.execution.strategy=in-process
       - name: Run sshlib contract tests (non-gating, connectbot/cbssh#245)
         # Reported, never silent: a failure here is visible in the job summary
@@ -234,7 +161,7 @@ jobs:
         # "failed three times in a row" rather than "flaked once". The signal
         # is now worth acting on instead of squinting at.
         continue-on-error: true
-        run: ./gradlew :core:ssh:testDebugUnitTest --tests 'sh.haven.core.ssh.sshlib.*' -PskipWaylandNatives=true -PskipFfmpegNatives=true -PskipUml=true
+        run: ./gradlew :core:ssh:testDebugUnitTest --tests 'sh.haven.core.ssh.sshlib.*' -PskipFfmpegNatives=true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -305,7 +232,7 @@ jobs:
         # inside clang++). A job killed by a timeout reports `cancelled`, which
         # reads as "superseded" — so the nightly lint gate stopped producing a
         # verdict and nothing said so.
-        run: ./gradlew lintDebug :app:lintArm64FullDebug -PskipWaylandNatives=true -PskipFfmpegNatives=true -PskipUml=true
+        run: ./gradlew lintDebug :app:lintArm64FullDebug -PskipFfmpegNatives=true
         # Bare lintDebug only matches the modules whose debug variant is not
         # flavor-split — the app module has ABI+features dimensions, so its
         # tasks are lintArm64FullDebug etc and lintDebug silently skips it.
@@ -336,22 +263,7 @@ jobs:
       # and Play Store fat distribution, not smoke-testing main. Cuts build
       # work roughly in half vs :app:assembleDebug (which expands to both).
       - name: Build arm64 debug APK
-        # -PtargetAbi drives core/wayland's buildWaylandNatives, which builds the
-        # five arm64-only wayland binaries from the submodule instead of shipping
-        # committed copies. This job is what proves they still compile (#493).
-        # -Pkotlin.compiler.execution.strategy=in-process prevents a separate 3 GB
-        # Kotlin daemon JVM from sitting alongside the 8 GB Gradle daemon while
-        # gomobile bind + cargo-ndk compile in parallel on 16 GB runners (same
-        # fix as release.yml).
-        run: ./gradlew :app:assembleArm64FullDebug -PtargetAbi=arm64 -PskipUml=true -Pkotlin.compiler.execution.strategy=in-process
-        # -PskipUml: the UML guest binaries are 79 MB release-asset fetches;
-        # the release workflow proves the fetch, CI doesn't need it per push.
-      # Runs here rather than in `checks` because it reads the built binaries,
-      # and nothing builds them there. #469 was a wayland library linked without
-      # gen-stubs.sh's weak stubs: 51 undefined symbols, dlopen refused it, and
-      # every cage/app-window feature died on-device with a green build. Source
-      # now, rather than a committed copy, does not make that unlinkable-output
-      # case impossible — only unobservable until someone runs it.
+        run: ./gradlew :app:assembleArm64FullDebug -PtargetAbi=arm64 -Pkotlin.compiler.execution.strategy=in-process
       - name: Assert native libs resolve their stubs (#469)
         run: ./scripts/check-native-libs.sh
       - name: Upload debug APK
@@ -383,7 +295,7 @@ jobs:
       - uses: ./.github/actions/init-submodules-with-retry
       - uses: ./.github/actions/setup-toolchain
       - name: Build ${{ matrix.abi }} debug APK
-        run: ./gradlew :app:assemble${{ matrix.variant }}FullDebug -PtargetAbi=${{ matrix.abi }} -PskipUml=true -Pkotlin.compiler.execution.strategy=in-process
+        run: ./gradlew :app:assemble${{ matrix.variant }}FullDebug -PtargetAbi=${{ matrix.abi }} -Pkotlin.compiler.execution.strategy=in-process
 
   # Debug builds don't run R8, so an R8 rename of a reflectively-loaded class
   # can ship a feature 100% broken in release while every debug check stays
@@ -417,6 +329,6 @@ jobs:
         # only unmerged .dat mapping partitions; the l8 task merges them into
         # the real mapping.txt the assertion reads. Verified locally: the
         # standalone minify produces no mapping.txt under AGP 9.4.1.
-        run: ./gradlew :app:minifyArm64FullReleaseWithR8 :app:l8DexDesugarLibArm64FullRelease -PskipWaylandNatives=true -PskipFfmpegNatives=true -PskipUml=true
+        run: ./gradlew :app:minifyArm64FullReleaseWithR8 :app:l8DexDesugarLibArm64FullRelease -PskipFfmpegNatives=true
       - name: Assert reflectively-loaded classes survived R8
         run: ./scripts/check-r8-kept-classes.sh

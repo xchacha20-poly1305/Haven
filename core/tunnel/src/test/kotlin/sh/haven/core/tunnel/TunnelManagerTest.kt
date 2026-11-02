@@ -27,6 +27,17 @@ import java.io.IOException
 class TunnelManagerTest {
 
     @Test
+    fun removedVpnConfigsFailBeforeOpeningAConnection() {
+        val factory = DefaultTunnelFactory(OkHttpClient())
+        for (type in TunnelConfigType.entries.filterNot { it == TunnelConfigType.CLOUDFLARE_ACCESS }) {
+            val error = assertThrows(IOException::class.java) {
+                factory.create(TunnelConfig(label = "legacy", type = type.name, configText = byteArrayOf()))
+            }
+            assertTrue(error.message.orEmpty().contains("VPN support has been removed"))
+        }
+    }
+
+    @Test
     fun acquireReturnsNullWhenConfigMissing() = runTest {
         val repo = mockk<TunnelConfigRepository>()
         coEvery { repo.getById("missing") } returns null
@@ -172,120 +183,7 @@ class TunnelManagerTest {
     }
 
     @Test
-    fun defaultFactoryRejectsNetbirdConfigWithoutSetupKey() {
-        // The parse guard in DefaultTunnelFactory runs before the native
-        // start, so a config saved without a usable setup key fails fast
-        // with an actionable message rather than a 60 s native failure.
-        // The guard fires before Context use, so a mock Context is enough.
-        val factory = DefaultTunnelFactory(mockk(), OkHttpClient(), TunnelAuthBroker(mockk()), mockk<SystemVpnAddressProbe>(relaxed = true))
-        val ex = assertThrows(IOException::class.java) {
-            factory.create(
-                TunnelConfig(
-                    id = "nb-broken",
-                    label = "nb",
-                    type = TunnelConfigType.NETBIRD.name,
-                    configText = "garbage".toByteArray(),
-                ),
-            )
-        }
-        assertTrue(ex.message!!.contains("setup key"))
-    }
-
-    @Test
-    fun anyconnectConfigReachesFactoryThroughManager() = runTest {
-        val repo = mockk<TunnelConfigRepository>()
-        coEvery { repo.getById("cfg-ac") } returns TunnelConfig(
-            id = "cfg-ac",
-            label = "corp vpn",
-            type = TunnelConfigType.ANYCONNECT.name,
-            configText = AnyConnectConfigBlob("vpn.example.com", "alice", "pw").encode(),
-        )
-        val factory = CountingFactory()
-        val manager = TunnelManager(repo, factory)
-
-        val tunnel = manager.acquire("cfg-ac", "p1")
-        assertSame(tunnel, manager.acquire("cfg-ac", "p2"))
-        assertEquals(1, factory.createCount)
-        assertEquals(TunnelConfigType.ANYCONNECT, factory.lastConfig?.typeEnum)
-    }
-
-    @Test
-    fun defaultFactoryRejectsAnyConnectConfigWithoutServer() {
-        // Parse guard runs before the native start (and before Context use).
-        val factory = DefaultTunnelFactory(mockk(), OkHttpClient(), TunnelAuthBroker(mockk()), mockk<SystemVpnAddressProbe>(relaxed = true))
-        val ex = assertThrows(IOException::class.java) {
-            factory.create(
-                TunnelConfig(
-                    id = "ac-broken",
-                    label = "ac",
-                    type = TunnelConfigType.ANYCONNECT.name,
-                    configText = """{"username":"alice"}""".toByteArray(),
-                ),
-            )
-        }
-        assertTrue(ex.message!!.contains("server or username"))
-    }
-
-    @Test
-    fun openvpnConfigReachesFactoryThroughManager() = runTest {
-        val repo = mockk<TunnelConfigRepository>()
-        coEvery { repo.getById("cfg-ovpn") } returns TunnelConfig(
-            id = "cfg-ovpn",
-            label = "office ovpn",
-            type = TunnelConfigType.OPENVPN.name,
-            configText = OpenVpnConfigBlob("client\ndev tun\nremote vpn.example.com 1194").encode(),
-        )
-        val factory = CountingFactory()
-        val manager = TunnelManager(repo, factory)
-
-        val tunnel = manager.acquire("cfg-ovpn", "p1")
-        assertSame(tunnel, manager.acquire("cfg-ovpn", "p2"))
-        assertEquals(1, factory.createCount)
-        assertEquals(TunnelConfigType.OPENVPN, factory.lastConfig?.typeEnum)
-        assertEquals(2, manager.dependentCount("cfg-ovpn"))
-    }
-
-    @Test
-    fun defaultFactoryRejectsOpenVpnConfigWithoutProfileText() {
-        val factory = DefaultTunnelFactory(mockk(), OkHttpClient(), TunnelAuthBroker(mockk()), mockk<SystemVpnAddressProbe>(relaxed = true))
-        val ex = assertThrows(IOException::class.java) {
-            factory.create(
-                TunnelConfig(
-                    id = "ovpn-broken",
-                    label = "ovpn",
-                    type = TunnelConfigType.OPENVPN.name,
-                    configText = """{"ovpnConfigText":"   "}""".toByteArray(),
-                ),
-            )
-        }
-        assertTrue(ex.message!!.contains("no profile text"))
-    }
-
-    @Test
-    fun deadTunnelIsEvictedAndRecreatedOnNextAcquire() = runTest {
-        val repo = mockk<TunnelConfigRepository>()
-        coEvery { repo.getById("cfg-ovpn") } returns TunnelConfig(
-            id = "cfg-ovpn",
-            label = "office ovpn",
-            type = TunnelConfigType.OPENVPN.name,
-            configText = OpenVpnConfigBlob("client\ndev tun\nremote vpn.example.com 1194").encode(),
-        )
-        val factory = CountingFactory()
-        val manager = TunnelManager(repo, factory)
-
-        val first = manager.acquire("cfg-ovpn", "p1") as FakeTunnel
-        first.isDead = true
-
-        val second = manager.acquire("cfg-ovpn", "p2") as FakeTunnel
-        assertTrue("dead cached tunnel must be closed when evicted", first.closed)
-        assertNotSame("dead cached tunnel must be replaced by a fresh instance", first, second)
-        assertEquals(2, factory.createCount)
-    }
-
-    @Test
     fun lingeringTunnelSurvivesLastReleaseAndIsReused() = runTest {
-        // "Stay connected": the AnyConnect-style tunnel outlives its last
-        // connection, and the next acquire gets the same (still signed-in) one.
         val repo = mockk<TunnelConfigRepository>()
         coEvery { repo.getById("cfg-A") } returns wgConfig("cfg-A")
         val factory = CountingFactory(linger = true)
@@ -335,7 +233,7 @@ class TunnelManagerTest {
     private fun wgConfig(id: String) = TunnelConfig(
         id = id,
         label = "test",
-        type = TunnelConfigType.WIREGUARD.name,
+        type = TunnelConfigType.CLOUDFLARE_ACCESS.name,
         configText = "[Interface]".toByteArray(),
     )
 

@@ -29,18 +29,14 @@ class TransportBindingsTest {
     private val nonDesktop: List<TransportSessionManager> = with(TransportSessionManagerModule) {
         listOf(
             ssh(manager()),
-            reticulum(manager()),
+
             mosh(manager()),
             et(manager()),
             btSerial(manager()),
             bleSerial(manager()),
             usbSerial(manager()),
-            local(manager()),
-            guest(manager()),
             smb(manager()),
-            mail(manager()),
-            rclone(manager()),
-            openai(manager()),
+
         )
     }
 
@@ -70,20 +66,14 @@ class TransportBindingsTest {
         )
     }
 
-    /**
-     * The transports that carry a PTY are the ones terminal input is offered
-     * to. RDP and SMB have no terminal, and rclone is a storage handle — if
-     * one of them grew an `inputName` it would start appearing in the
-     * "no transport owned this session" error the user reads.
-     */
     @Test
     fun `only PTY-like transports accept terminal input`() {
         val writable = (nonDesktop + desktop).filter { it.inputName != null }.map { it.transport }.toSet()
 
         assertEquals(
             setOf(
-                Transport.SSH, Transport.LOCAL, Transport.GUEST, Transport.MOSH, Transport.ET,
-                Transport.RETICULUM, Transport.BTSERIAL, Transport.BLESERIAL, Transport.USBSERIAL,
+                Transport.SSH, Transport.MOSH, Transport.ET,
+                Transport.BTSERIAL, Transport.BLESERIAL, Transport.USBSERIAL,
             ),
             writable,
         )

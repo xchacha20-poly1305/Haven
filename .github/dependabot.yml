@@ -23,18 +23,3 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-
-  # prns is an upstream-tracking submodule; its crate bumps arrive via
-  # upstream trunk, but the detached abi/c workspace lockfile is watched so
-  # advisories against its pinned graph surface here too.
-  - package-ecosystem: cargo
-    directory: /prns/prns-host/abi/c
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
-
-  - package-ecosystem: gomod
-    directory: /rclone-android/go
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5

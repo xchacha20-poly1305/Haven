@@ -1,4 +1,4 @@
-package sh.haven.core.data.agent
+package sh.haven.core.data.navigation
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -14,15 +14,15 @@ import org.junit.Test
  * a screen rotation. `extraBufferCapacity = 1` matters because it stops
  * a fast-following burst from dropping when one collector is slow.
  */
-class AgentUiCommandBusTest {
+class UiCommandBusTest {
 
     @Test
     fun `emit delivers to a subscribed collector`() = runTest(UnconfinedTestDispatcher()) {
-        val bus = AgentUiCommandBus()
-        val received = mutableListOf<AgentUiCommand>()
+        val bus = UiCommandBus()
+        val received = mutableListOf<UiCommand>()
         val job = launch { bus.commands.collect { received.add(it) } }
 
-        val cmd = AgentUiCommand.NavigateToSftpPath(profileId = "p1", path = "/tmp")
+        val cmd = UiCommand.NavigateToSftpPath(profileId = "p1", path = "/tmp")
         assertTrue(bus.emit(cmd))
 
         // UnconfinedTestDispatcher runs the launch up to its first
@@ -34,14 +34,14 @@ class AgentUiCommandBusTest {
 
     @Test
     fun `emit before any subscriber returns false (no replay)`() = runTest {
-        val bus = AgentUiCommandBus()
+        val bus = UiCommandBus()
         // No subscriber yet. With replay=0 + extraBuffer=1, tryEmit
         // returns true (buffered) — the first emit fits in the buffer
         // even with no subscriber. We test the *replay* invariant
         // separately below: a late subscriber must not see prior emits.
-        bus.emit(AgentUiCommand.NavigateToSftpPath("p1", "/a"))
+        bus.emit(UiCommand.NavigateToSftpPath("p1", "/a"))
 
-        val received = mutableListOf<AgentUiCommand>()
+        val received = mutableListOf<UiCommand>()
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
             bus.commands.collect { received.add(it) }
         }
@@ -58,13 +58,13 @@ class AgentUiCommandBusTest {
         // and SftpViewModel (path) both react to NavigateToSftpPath in
         // parallel. If only one collector saw each emit, the bus would
         // be load-balanced rather than fan-out.
-        val bus = AgentUiCommandBus()
-        val a = mutableListOf<AgentUiCommand>()
-        val b = mutableListOf<AgentUiCommand>()
+        val bus = UiCommandBus()
+        val a = mutableListOf<UiCommand>()
+        val b = mutableListOf<UiCommand>()
         val jobA = launch { bus.commands.collect { a.add(it) } }
         val jobB = launch { bus.commands.collect { b.add(it) } }
 
-        val cmd = AgentUiCommand.NavigateToSftpPath("p2", "/var")
+        val cmd = UiCommand.NavigateToSftpPath("p2", "/var")
         bus.emit(cmd)
 
         assertEquals(listOf(cmd), a)
@@ -78,67 +78,23 @@ class AgentUiCommandBusTest {
         // Pin the second variant — collectors filter by type, so a new
         // variant lighting up has to round-trip cleanly even when
         // existing collectors only handle the older one.
-        val bus = AgentUiCommandBus()
-        val received = mutableListOf<AgentUiCommand>()
+        val bus = UiCommandBus()
+        val received = mutableListOf<UiCommand>()
         val job = launch { bus.commands.collect { received.add(it) } }
 
-        val cmd = AgentUiCommand.FocusTerminalSession(sessionId = "sess-42")
+        val cmd = UiCommand.FocusTerminalSession(sessionId = "sess-42")
         assertTrue(bus.emit(cmd))
 
         assertEquals(listOf(cmd), received)
-        job.cancel()
-    }
-
-    @Test
-    fun `OpenConvertDialog round-trips with prefill args`() = runTest(UnconfinedTestDispatcher()) {
-        val bus = AgentUiCommandBus()
-        val received = mutableListOf<AgentUiCommand>()
-        val job = launch { bus.commands.collect { received.add(it) } }
-
-        val cmd = AgentUiCommand.OpenConvertDialog(
-            profileId = "p1",
-            sourcePath = "/var/media/clip.mkv",
-            container = "mp4",
-            videoEncoder = "libx264",
-            audioEncoder = "aac",
-        )
-        assertTrue(bus.emit(cmd))
-
-        assertEquals(listOf(cmd), received)
-        // Optional fields stay nullable so a missing arg from the agent
-        // doesn't force the dialog into a wrong default.
-        val nullArgs = AgentUiCommand.OpenConvertDialog(profileId = "p1", sourcePath = "/x.mp4")
-        assertTrue(bus.emit(nullArgs))
-        assertEquals(listOf(cmd, nullArgs), received)
         job.cancel()
     }
 
     // ── Cold-start latch (SFTP-targeted commands) ───────────────────────
 
     @Test
-    fun `SFTP command emitted before subscription is held in the latch`() {
-        // The cold-start race: an agent verb emits before SftpViewModel has
-        // mounted. replay=0 means a late subscriber misses it — but the latch
-        // retains it so the collector can drain it on subscription.
-        val bus = AgentUiCommandBus()
-        val cmd = AgentUiCommand.EncryptFile("p1", "/a/doc.bin", listOf("age1xyz"))
-        bus.emit(cmd)
-        assertEquals(cmd, bus.takePendingSftpCommand())
-    }
-
-    @Test
-    fun `takePendingSftpCommand is single-consume`() {
-        val bus = AgentUiCommandBus()
-        bus.emit(AgentUiCommand.DecryptFile("p1", "/a/doc.bin.age"))
-        assertTrue(bus.takePendingSftpCommand() != null)
-        // A second drain (e.g. a rotation remount) must not re-fire it.
-        assertEquals(null, bus.takePendingSftpCommand())
-    }
-
-    @Test
     fun `clearPendingSftp drops the latch so a remount does not re-fire`() {
-        val bus = AgentUiCommandBus()
-        val cmd = AgentUiCommand.NavigateToSftpPath("p1", "/a")
+        val bus = UiCommandBus()
+        val cmd = UiCommand.NavigateToSftpPath("p1", "/a")
         bus.emit(cmd)
         // Live collector handled it, then clears the latch.
         bus.clearPendingSftp(cmd)
@@ -147,36 +103,20 @@ class AgentUiCommandBusTest {
 
     @Test
     fun `latest SFTP command wins the latch`() {
-        val bus = AgentUiCommandBus()
-        bus.emit(AgentUiCommand.NavigateToSftpPath("p1", "/a"))
-        val second = AgentUiCommand.NavigateToSftpPath("p1", "/b")
+        val bus = UiCommandBus()
+        bus.emit(UiCommand.NavigateToSftpPath("p1", "/a"))
+        val second = UiCommand.NavigateToSftpPath("p1", "/b")
         bus.emit(second)
         assertEquals(second, bus.takePendingSftpCommand())
-    }
-
-    @Test
-    fun `peekPendingSftpCommand returns the latch without consuming it`() {
-        // HavenNavHost peeks to switch to Files; SftpViewModel then consumes.
-        // If peek consumed, the SftpViewModel would mount to an empty latch and
-        // the cold-start command would be lost again.
-        val bus = AgentUiCommandBus()
-        val cmd = AgentUiCommand.EncryptFile("p1", "/a/doc.bin", listOf("age1xyz"))
-        bus.emit(cmd)
-        assertEquals(cmd, bus.peekPendingSftpCommand())
-        // Peek again — still there.
-        assertEquals(cmd, bus.peekPendingSftpCommand())
-        // The consuming take still returns it after the peeks.
-        assertEquals(cmd, bus.takePendingSftpCommand())
-        assertEquals(null, bus.peekPendingSftpCommand())
     }
 
     @Test
     fun `non-SFTP commands are not latched`() {
         // Terminal/desktop/connect verbs have their own collectors; the latch
         // is scoped to SFTP commands so it can't steal another collector's.
-        val bus = AgentUiCommandBus()
-        bus.emit(AgentUiCommand.FocusTerminalSession("sess-1"))
-        bus.emit(AgentUiCommand.ConnectProfile("p1"))
+        val bus = UiCommandBus()
+        bus.emit(UiCommand.FocusTerminalSession("sess-1"))
+        bus.emit(UiCommand.ConnectProfile("p1"))
         assertEquals(null, bus.takePendingSftpCommand())
     }
 
@@ -186,8 +126,8 @@ class AgentUiCommandBusTest {
         // callers cannot reach the underlying MutableSharedFlow and
         // accidentally bypass the emit() method (which a future revision
         // might want to gate or instrument).
-        val bus = AgentUiCommandBus()
-        val ref: kotlinx.coroutines.flow.SharedFlow<AgentUiCommand> = bus.commands
+        val bus = UiCommandBus()
+        val ref: kotlinx.coroutines.flow.SharedFlow<UiCommand> = bus.commands
         assertTrue(ref === bus.commands)
     }
 }

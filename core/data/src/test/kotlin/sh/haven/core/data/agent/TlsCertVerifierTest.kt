@@ -1,4 +1,4 @@
-package sh.haven.core.data.agent
+package sh.haven.core.data.security
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking

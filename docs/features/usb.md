@@ -71,34 +71,6 @@ classes still need the remote path, and isochronous still has no Android API.
 `usb_bulk_transfer` let an AI agent enumerate the attached USB/OTG devices and run
 raw control/bulk transfers. Each device-open and transfer asks for consent.
 
-## To the local Linux guest
-
-With **Settings → "Expose USB devices to the Linux guest"** turned on (off by
-default), `usb_attach_to_guest` opens the device and binds a small userspace USB
-proxy on a socket the proot guest can reach. A bundled `haven-usb` shim then makes
-the device appear inside the guest as a **character** device — for a HID-class
-device, a normal `/dev/hidraw*` node (CDC-serial devices surface as a serial
-endpoint instead):
-
-- **native Linux apps** via `LD_PRELOAD` (the shim interposes
-  `open`/`ioctl`/`read`/`write`);
-- **Mono / .NET apps** (anything built on HidSharp) via a Mono **DllMap** config —
-  the shim fakes the `libudev` enumeration and a non-crashing hotplug monitor and
-  routes the HID I/O over the proxy. `usb_attach_to_guest` returns the
-  ready-to-use config to drop beside the app's `HidSharp.dll`.
-
-All USB I/O stays in the Android layer (`UsbDeviceConnection`), so the guest never
-needs a real device node or root. The shim is built for both glibc and musl, so it
-works the same on every distro Haven offers.
-
-> **Not block storage.** A USB drive (mass-storage class) can't appear as a disk
-> here, and `fdisk` isn't possible — see [Device-class support](#device-class-support)
-> for why. To use a drive's *files*, either let Android mount it (USB-OTG storage)
-> and read/write them under `/storage` (bound into every guest), or — for a
-> Linux-formatted drive (ext4/GPT) Android can't open — use
-> [Reading USB drives](usb-drives.md), which mounts it in a small on-device VM
-> that *does* have a kernel. Partitioning is still host-side.
-
 ## To a remote host over USB/IP
 
 Haven can also export a phone-attached USB device over the network with a

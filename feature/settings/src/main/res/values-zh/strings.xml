@@ -75,25 +75,18 @@
     <string name="settings_navigation_tabs_subtitle">重新排列导航标签，并选择显示哪些</string>
 
     <!-- Wayland section -->
-    <string name="settings_wayland_shell_title">Wayland 桌面 Shell</string>
-    <string name="settings_proot_idle_title">自动停止空闲的 Linux 客户机</string>
-    <string name="settings_proot_idle_off">关闭 —— Linux 客户机会一直运行，直到你手动停止</string>
-    <string name="settings_proot_idle_on">离开 Haven %1$d 分钟后停止客户机（正在运行的客户机服务会使其保持运行）</string>
-    <string name="settings_proot_idle_dialog_title">自动停止空闲的 Linux 客户机</string>
-    <string name="settings_proot_idle_dialog_body">当 Haven 在后台达到该时长后，停止 Linux 客户机的终端和桌面以释放内存。正在运行的客户机服务会使其保持运行。后台终端中的长时间任务也会被停止——除非你需要在空闲时回收资源，否则请保持关闭。</string>
-    <string name="settings_proot_idle_off_label">关闭</string>
     <string name="settings_shizuku_title">Shizuku 集成</string>
-    <string name="settings_shizuku_enabled">已启用 — 自动电池豁免、Wayland 套接字共享</string>
+    <string name="settings_shizuku_enabled">已启用 — 自动电池豁免</string>
     <string name="settings_shizuku_available">Shizuku 已安装——点击授予权限</string>
     <string name="settings_shizuku_not_running">Shizuku 已安装但未运行 — 点击打开并通过无线调试启动</string>
-    <string name="settings_shizuku_not_installed">安装 Shizuku 以获取电池豁免和 Wayland 访问</string>
+    <string name="settings_shizuku_not_installed">安装 Shizuku 以设置电池豁免</string>
 
     <!-- Backup section -->
     <string name="settings_backup_sync_title">同步到远程</string>
     <string name="settings_backup_sync_subtitle_set">%1$s : %2$s</string>
-    <string name="settings_backup_sync_subtitle_unset">将加密备份推送/拉取到 SFTP/SMB/rclone 连接</string>
+    <string name="settings_backup_sync_subtitle_unset">将加密备份推送/拉取到 SFTP/SMB 连接</string>
     <string name="settings_backup_sync_description">将加密备份推送或拉取到你已有的连接。文件在离开设备前用你的口令进行 AES-256-GCM 加密——远程端永远看不到明文配置。</string>
-    <string name="settings_backup_sync_no_remotes">还没有 SFTP、SMB 或 rclone 连接。请先添加一个，它才能保存你的备份。</string>
+    <string name="settings_backup_sync_no_remotes">还没有 SFTP 或 SMB 连接。请先添加一个，它才能保存你的备份。</string>
     <string name="settings_backup_sync_choose_remote">选择一个连接…</string>
     <string name="settings_backup_sync_remote_label">目标连接</string>
     <string name="settings_backup_sync_path_label">远程上的文件路径</string>
@@ -117,10 +110,6 @@
     <string name="settings_version_unknown">未知</string>
 
     <!-- Wayland shell dialog -->
-    <string name="settings_wayland_dialog_title">Wayland 桌面 Shell</string>
-    <string name="settings_wayland_dialog_description">在 Wayland 桌面 foot 终端内运行的 Shell 命令。使用 apk 安装其他 Shell（例如 apk add bash）。</string>
-    <string name="settings_wayland_shell_command_label">Shell 命令</string>
-
     <!-- Lock timeout dialog -->
     <string name="settings_lock_timeout_dialog_title">锁定超时</string>
 
@@ -149,7 +138,7 @@
     <!-- About dialog -->
     <string name="settings_about_dialog_title">关于 Haven</string>
     <string name="settings_about_app_name">Haven</string>
-    <string name="settings_about_description">Android 开源 SSH、VNC、RDP 和云存储客户端</string>
+    <string name="settings_about_description">Android 开源远程终端、桌面与文件传输客户端</string>
     <string name="settings_about_version">版本 %1$s（构建 %2$d）</string>
     <string name="settings_about_android">Android %1$s (API %2$d)</string>
     <string name="settings_about_libraries_title">开源库</string>
@@ -213,9 +202,7 @@
     <string name="common_github">GitHub</string>
     <string name="common_simple">简单</string>
     <string name="settings_language_title">语言</string>
-    <string name="settings_media_extensions_title">媒体文件扩展名</string>
-    <string name="settings_media_extensions_description">在文件浏览器中视为可流式媒体的文件扩展名（用空格分隔）。</string>
-    <string name="settings_media_extensions_label">扩展名</string>
+
     <string name="settings_show_desktops_title">显示桌面卡片</string>
     <string name="settings_show_desktops_subtitle">在连接屏幕上显示桌面环境管理器</string>
     <string name="settings_show_linux_vm_title">显示 Linux 虚拟机卡片</string>
@@ -319,46 +306,18 @@
     <string name="settings_usb_guest_subtitle">通过 haven-usb 垫片让已连接的 USB 设备被客机应用访问。每次连接仍需确认。</string>
     <string name="settings_gps_guest_title">将 GPS 暴露给 Linux 客机</string>
     <string name="settings_gps_guest_subtitle">将手机的 GPS 位置以 NMEA 设备（haven-gps）形式流式传入客机。开启后客机内任何进程都可读取位置。每次连接仍需确认。</string>
-    <string name="settings_proot_install_log_title">查看 PRoot 安装日志</string>
-    <string name="settings_proot_install_log_subtitle">Linux 发行版安装的各阶段事件（问题 #162）</string>
     <string name="settings_logcat_capture_title">Logcat 捕获</string>
     <string name="settings_logcat_capture_subtitle_on">正在录制到 /sdcard/Download/haven-logcat.txt</string>
     <string name="settings_logcat_capture_subtitle_off">捕获 logcat 用于远程调试</string>
     <string name="settings_logcat_saved_toast">Logcat 已保存</string>
     <string name="settings_logcat_started_toast">Logcat 捕获已开始</string>
     <string name="settings_logcat_start_failed_toast">启动捕获失败</string>
-    <string name="settings_agent_endpoint_title">代理端点（MCP）</string>
-    <string name="settings_agent_endpoint_subtitle_on">已启用——本地 MCP 服务器在回环地址上运行。写入工具需要确认。</string>
-    <string name="settings_agent_endpoint_subtitle_off">已禁用——开启后允许本地 AI 代理读取状态并（经确认）执行操作</string>
-    <string name="settings_agent_file_read_title">允许代理读取文件内容</string>
-    <string name="settings_agent_file_read_subtitle_on">已启用——`serve_file` 在每次调用确认后返回单次下载 URL</string>
-    <string name="settings_agent_file_read_subtitle_off">已禁用——`serve_file` 请求立即失败，无提示</string>
-    <string name="settings_agent_terminal_input_title">允许代理排队终端输入</string>
-    <string name="settings_agent_terminal_input_subtitle_on">已启用——`queue_terminal_input` 监视 SSH 会话输出，在下次提示符时键入排队文本（每次调用需确认）</string>
-    <string name="settings_agent_terminal_input_subtitle_off">已禁用——`queue_terminal_input` 请求立即失败，无提示</string>
+
     <string name="settings_reverse_tunnel_title">常驻 MCP 连接</string>
     <string name="settings_reverse_tunnel_subtitle_set">已通过隧道连接到"%1$s"——WiFi 切换和应用重启后仍有效</string>
     <string name="settings_reverse_tunnel_subtitle_unset">未设置——端点仅在设备本地可访问</string>
     <string name="settings_reverse_tunnel_none">无（仅设备本地）</string>
-    <string name="settings_mcp_wireguard_title">在 WireGuard 隧道上暴露</string>
-    <string name="settings_mcp_wireguard_subtitle_on">已启用——也可通过活动 WireGuard 隧道的 &lt;wg-ip&gt;:8730 访问</string>
-    <string name="settings_mcp_wireguard_subtitle_off">已禁用——开启后可通过活动 WireGuard 隧道访问端点</string>
-    <string name="settings_mcp_lan_title">在 Wi-Fi/LAN 上暴露</string>
-    <string name="settings_mcp_lan_subtitle_on">已启用——也可通过本地网络的 &lt;device-lan-ip&gt;:8730 访问</string>
-    <string name="settings_mcp_lan_subtitle_off">已禁用——开启后可从同一 Wi-Fi/LAN 上的设备直接访问</string>
-    <string name="settings_mcp_copy_url_title">复制代理端点 URL</string>
-    <string name="settings_mcp_url_copied_toast">端点已复制</string>
-    <string name="settings_mcp_copy_config_title">复制 MCP 客户端配置</string>
-    <string name="settings_mcp_copy_config_subtitle">可粘贴到任意 MCP 客户端的标准 JSON 片段</string>
-    <string name="settings_mcp_config_copied_toast">配置已复制</string>
-    <string name="settings_mcp_proot_title">也可在 PRoot 中使用</string>
-    <string name="settings_agent_activity_title">查看代理活动</string>
-    <string name="settings_agent_activity_subtitle">每次 MCP 调用均记录（参数已脱敏）</string>
-    <string name="settings_agent_confirm_destructive_title">确认代理破坏性操作</string>
-    <string name="settings_agent_confirm_destructive_subtitle">在任何写入、删除、上传或断开的代理调用前提示。只读调用不提示。</string>
-    <string name="settings_agent_forget_allows_title">忘记已记忆的允许</string>
-    <string name="settings_agent_forget_allows_subtitle">对之前获得单次会话批准的每个工具重新提示。</string>
-    <string name="settings_agent_allows_cleared_toast">已记忆的允许已清除</string>
+
     <string name="settings_font_from_url_body">粘贴指向 TTF 或 OTF 字体文件的直链。常见 Nerd Fonts 的原始 TTF 位于 GitHub：github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/&lt;Name&gt;/Regular/&lt;Name&gt;NerdFont-Regular.ttf — 复制该 URL 粘贴到此处。</string>
     <string name="settings_font_from_url_placeholder">https://…/font.ttf</string>
     <string name="settings_recommended_fonts_dialog_body">点击下载并应用流行的等宽编程字体。</string>
@@ -381,18 +340,7 @@
     <string name="settings_audit_log_share_chooser">分享日志</string>
     <string name="settings_audit_log_status_sync">同步</string>
     <string name="settings_audit_log_status_sync_failed">同步失败</string>
-    <string name="settings_agent_activity_screen_title">代理活动</string>
-    <string name="settings_agent_activity_cd_clear">清除历史</string>
-    <string name="settings_agent_activity_empty">暂无代理活动。\n\n当 MCP 客户端调用工具时，调用记录将显示在此处，参数已脱敏，结果已摘要。</string>
-    <string name="settings_agent_activity_clear_dialog_title">清除代理活动？</string>
-    <string name="settings_agent_activity_clear_dialog_text">所有已记录的 MCP 调用将从本设备删除。此操作无法撤销。</string>
-    <string name="settings_agent_activity_unknown_client">未知客户端</string>
-    <string name="settings_agent_activity_args_redacted">参数（已脱敏）</string>
-    <string name="settings_proot_install_log_screen_title">PRoot 安装日志</string>
-    <string name="settings_proot_install_log_cd_clear">清除日志</string>
-    <string name="settings_proot_install_log_empty">暂无安装事件记录。通过连接 → 桌面安装发行版以填充此日志。</string>
-    <string name="settings_proot_install_log_clear_dialog_title">清除安装日志？</string>
-    <string name="settings_proot_install_log_clear_dialog_text">所有已记录的安装事件将被移除。</string>
+
     <string name="settings_ime_flag_no_suggestions_title">隐藏建议栏</string>
     <string name="settings_ime_flag_no_suggestions_detail">TYPE_TEXT_FLAG_NO_SUGGESTIONS — 普遍支持</string>
     <string name="settings_ime_flag_visible_password_title">禁止自动纠正/自动大写/自动空格</string>
@@ -405,14 +353,7 @@
     <string name="settings_ime_flag_no_extract_ui_detail">IME_FLAG_NO_EXTRACT_UI — 阻止横屏时全屏输入法 UI 显示。</string>
     <string name="settings_ime_flag_no_learning_title">阻止输入法学习</string>
     <string name="settings_ime_flag_no_learning_detail">IME_FLAG_NO_PERSONALIZED_LEARNING — 隐私：输入法词库忽略输入文本。对 Gboard 效果足够强，同时也会隐藏麦克风。</string>
-    <string name="settings_mcp_tools_title">MCP 工具</string>
-    <string name="settings_mcp_tools_subtitle">关闭单个代理工具以减少代理看到的内容</string>
-    <string name="settings_mcp_tools_screen_title">MCP 工具</string>
-    <string name="settings_mcp_tools_empty">代理端点启动后会出现工具列表。</string>
-    <string name="settings_mcp_tools_intro">关闭的工具会完全从代理的工具列表中移除——小模型看到的干扰更少，每次调用消耗的令牌也更少。端点开关、配对和同意提示仍然有效。</string>
-    <string name="settings_mcp_tools_consent_every_call">每次调用都询问</string>
-    <string name="settings_mcp_tools_consent_once">每个会话询问一次</string>
-    <string name="settings_mcp_tools_consent_never">调用不询问</string>
+
     <string name="settings_paired_clients_title">已配对的 MCP 客户端</string>
     <string name="settings_paired_clients_subtitle">查看已配对的客户端，按客户端跳过提示，或取消配对</string>
     <string name="settings_paired_clients_screen_title">已配对的 MCP 客户端</string>
@@ -427,10 +368,6 @@
     <string name="settings_paired_clients_unpaired_toast">已取消配对 \'%1$s\'</string>
 
     <!-- MCP WireGuard / loopback trust -->
-    <string name="settings_mcp_wireguard_collision">另一个 VPN（%1$s）正在使用 %2$s——与此端点绑定的地址相同，因此被遮蔽，对端无法访问。请停止该 VPN，或改将 MCP 客户端指向回环（127.0.0.1）端点。</string>
-    <string name="settings_mcp_trust_loopback_title">信任本地客户端</string>
-    <string name="settings_mcp_trust_loopback_subtitle_on">已启用——本地客户端（127.0.0.1）无需配对或批准提示即可连接。Wi-Fi/LAN 和 WireGuard 客户端仍会提示。</string>
-    <string name="settings_mcp_trust_loopback_subtitle_off">已禁用——即使本地客户端也必须配对并逐次批准请求</string>
 
     <!-- Terminal reflow, GPU stack, standing policies (#250) -->
     <string name="settings_reflow_on_keyboard_title">为键盘调整终端大小</string>
@@ -460,7 +397,7 @@
     <string name="settings_terminal_opacity_title">背景不透明度</string>
     <string name="settings_terminal_opacity_value">%1$d%%</string>
     <string name="settings_terminal_opacity_hint" formatted="false">低于 100% 时，Haven 将变为半透明，在所有界面（终端、列表、设置）后面显示设备壁纸。按连接的覆盖设置仅作用于该终端。</string>
-    <string name="settings_section_mcp">AI 代理（MCP）</string>
+
     <string name="settings_tailscale_discovery_title">Tailscale 对等节点发现</string>
     <string name="settings_tailscale_discovery_subtitle">扫描时通过本地 API 查找您 Tailscale 网络中的主机。关闭后 Haven 不再读取对等节点列表；Tailscale 本身不受影响。</string>
     <string name="settings_audio_bridge_title">Proot 音频（实验性）</string>
@@ -496,9 +433,6 @@
     <string name="settings_native_crash_copy">复制报告</string>
     <string name="settings_native_crash_copied">已复制崩溃报告</string>
     <string name="settings_native_crash_dismiss">忽略</string>
-    <plurals name="settings_proot_idle_minutes">
-        <item quantity="other">%1$d 分钟</item>
-    </plurals>
     <string name="settings_hide_nav_bar_in_terminal_title">在终端中隐藏应用标签栏</string>
     <string name="settings_hide_nav_bar_in_terminal_subtitle">在终端屏幕上隐藏 Haven 的底部标签栏。Android 状态栏和导航栏保持可见。</string>
     <string name="settings_credential_keystore_broken_title">凭据存储不可用</string>
@@ -543,19 +477,7 @@ Haven 中已存储的每一个私钥都需要重新导入或生成。它们已�
     <string name="settings_ambiwidth_mode_auto_wide_desc">分析当前字体；回退至 2 列 (CJK)</string>
     <string name="settings_bell_notification_title">铃声通知</string>
     <string name="settings_bell_notification_subtitle">当终端程序在 Haven 后台响铃时，发送一条注明标签页名称的通知。查看终端时不会显示任何内容。</string>
-    <string name="settings_mcp_tools_category_off_count">已关闭 %1$d 项</string>
-    <string name="settings_mcp_tools_cat_terminal">终端</string>
-    <string name="settings_mcp_tools_cat_connections">连接</string>
-    <string name="settings_mcp_tools_cat_files">文件</string>
-    <string name="settings_mcp_tools_cat_desktop">桌面</string>
-    <string name="settings_mcp_tools_cat_guest">Linux 客户机</string>
-    <string name="settings_mcp_tools_cat_usb">USB 与串口</string>
-    <string name="settings_mcp_tools_cat_keys">密钥与凭据</string>
-    <string name="settings_mcp_tools_cat_mail">邮件</string>
-    <string name="settings_mcp_tools_cat_rclone">云存储</string>
-    <string name="settings_mcp_tools_cat_senses">传感器与位置</string>
-    <string name="settings_mcp_tools_cat_agent">代理与设备控制</string>
-    <string name="settings_mcp_tools_cat_other">其他</string>
+
     <string name="settings_sudo_prompt_detection_title">检测 sudo 密码提示</string>
-    <string name="settings_sudo_prompt_detection_subtitle">在出现 [sudo] 和 doas 提示时提供生物识别自动填充。密码在本机 Android Keystore 中加密保存，每次使用均需生物识别解锁，且绝不会暴露给 AI/MCP 工具。</string>
+    <string name="settings_sudo_prompt_detection_subtitle">在出现 [sudo] 和 doas 提示时提供生物识别自动填充。密码在本机 Android Keystore 中加密保存，每次使用均需生物识别解锁。</string>
 </resources>

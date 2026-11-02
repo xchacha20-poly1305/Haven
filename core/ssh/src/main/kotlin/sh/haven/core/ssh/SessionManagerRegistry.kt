@@ -18,7 +18,7 @@ import javax.inject.Singleton
 @Singleton
 class SessionManagerRegistry @Inject constructor(
     private val transports: Set<@JvmSuppressWildcards TransportSessionManager>,
-    private val keepAlives: Set<@JvmSuppressWildcards ForegroundKeepAlive>,
+
 ) {
     /**
      * Set iteration order is undefined, and two of the operations below are
@@ -79,7 +79,7 @@ class SessionManagerRegistry @Inject constructor(
      * FGS keep-alive.
      */
     fun hasActiveSessions(): Boolean =
-        transports.any { it.activeSessionCount > 0 } || keepAlives.any { it.isActive }
+        transports.any { it.activeSessionCount > 0 }
 
     /**
      * All sessions across all transports as a unified [Session] view.

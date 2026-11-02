@@ -1,5 +1,8 @@
 package sh.haven.feature.connections
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,7 +29,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -62,13 +64,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
@@ -76,11 +76,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
@@ -92,7 +90,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import sh.haven.core.data.NativeFeatures
 import sh.haven.core.data.db.entities.ConnectionProfile
 import sh.haven.core.data.preferences.UserPreferencesRepository
-import sh.haven.core.rclone.RCLONE_OAUTH_PROVIDERS
 import sh.haven.core.knock.KnockSequence
 import sh.haven.core.spa.SpaConfig
 import sh.haven.feature.tunnel.CloudflareAccessLoginContract
@@ -130,7 +127,7 @@ fun ConnectionEditDialog(
      * user is typing the value, so revealing it needs no auth.
      */
     onRevealSavedSecret: (suspend () -> Boolean)? = null,
-    discoveredDestinations: List<sh.haven.core.reticulum.DiscoveredDestination> = emptyList(),
+
     discoveredHosts: List<DiscoveredHost> = emptyList(),
     discoveredSmbHosts: List<DiscoveredHost> = emptyList(),
     sshProfiles: List<ConnectionProfile> = emptyList(),
@@ -140,7 +137,7 @@ fun ConnectionEditDialog(
     totpSecrets: List<sh.haven.core.data.db.entities.TotpSecret> = emptyList(),
     tunnelConfigs: List<sh.haven.core.data.db.entities.TunnelConfig> = emptyList(),
     /** Installed distros `(id, label)` for a LOCAL profile's "open in" picker. */
-    availableDistros: List<Pair<String, String>> = emptyList(),
+
     /** Attached phone USB devices `(vidPid, label)` for the SSH USB-forward picker. */
     usbDevices: List<Pair<String, String>> = emptyList(),
     /**
@@ -151,36 +148,20 @@ fun ConnectionEditDialog(
      * dropdown.
      */
     embeddedCloudflareTunnel: sh.haven.core.data.db.entities.TunnelConfig? = null,
-    /**
-     * Whether [existing] currently carries the MCP reverse-tunnel
-     * port-forward rule (`-R 8730:127.0.0.1:8730`). Drives the initial
-     * state of the SSH "Expose MCP server" toggle; the resolved value is
-     * handed back through [onSave]'s third argument.
-     */
-    mcpReverseTunnelEnabled: Boolean = false,
-    /**
-     * Opens the Tunnels screen. When the preselect is non-null, the
-     * destination should auto-open its Add dialog with that type
-     * pre-selected. Used by the Route-through dropdown's quick-add
-     * affordances; "Manage tunnels…" passes null. CLOUDFLARE_ACCESS is
-     * never passed any more — that route lives inline on the profile.
-     */
-    onManageTunnels: ((preselect: sh.haven.core.data.db.entities.TunnelConfigType?) -> Unit)? = null,
+
     globalSessionManagerLabel: String = "None",
     subnetScanning: Boolean = false,
     smbSubnetScanning: Boolean = false,
-    reticulumScanning: Boolean = false,
+
     /** This device's rnsh identity hash, or null if none exists yet (#585). */
-    reticulumIdentityHash: String? = null,
-    /** Open the picker for a Reticulum identity file the user supplies (#585). */
-    onImportReticulumIdentity: () -> Unit = {},
+
     onScanSubnet: () -> Unit = {},
     onScanSubnetSmb: () -> Unit = {},
     /** Scanning the network behind the selected jump host (#NNN). Opt-in. */
     jumpScanning: Boolean = false,
     jumpScanError: String? = null,
     onScanSubnetViaJump: (jumpProfileId: String) -> Unit = {},
-    onScanReticulum: (host: String, port: Int, networkName: String?, passphrase: String?) -> Unit = { _, _, _, _ -> },
+
     /** Optional callback wired by the screen to fire a test knock and
      *  return `(ok, message)`. When null the "Test knock" button is
      *  hidden — useful for previews / tests. */
@@ -189,24 +170,9 @@ fun ConnectionEditDialog(
      *  When null the "Test SPA" button is hidden. */
     onTestSpa: (suspend (host: String, config: SpaConfig) -> Pair<Boolean, String>)? = null,
     onDismiss: () -> Unit,
-    /**
-     * Save callback. The second argument carries inline Cloudflare Tunnel
-     * transport state (GH #154); non-null means "save the profile and
-     * upsert a hidden tunnel row owned by it", null means "save the
-     * profile and drop any embedded tunnel previously owned by it".
-     * Wired via [ConnectionsViewModel.saveProfileWithEmbeddedCloudflareTunnel].
-     * The third argument is the MCP reverse-tunnel toggle state, reconciled
-     * into a port-forward rule by the screen.
-     */
-    onSave: (ConnectionProfile, EmbeddedCloudflareTunnelInput?, Boolean) -> Unit,
-    /**
-     * "Connect without saving" (#751): when non-null, a new-connection dialog
-     * gains a second action that dials the form's profile as a one-off
-     * ([ConnectionProfile.ephemeral]) instead of writing it. The screen wires
-     * this only for the add/prefill call site — editing an existing profile
-     * keeps its Save semantics. The Cloudflare-tunnel and MCP-reverse-tunnel
-     * options are save-only and are not carried by a quick connect.
-     */
+
+    onSave: (ConnectionProfile, EmbeddedCloudflareTunnelInput?) -> Unit,
+
     onQuickConnect: ((ConnectionProfile) -> Unit)? = null,
 ) {
     // Initial field values come from the edited profile or, for a new
@@ -215,8 +181,6 @@ fun ConnectionEditDialog(
     val seed = existing ?: prefill
     // Transport dropdown maps to: connectionType + useMosh + useEternalTerminal
     val initialTransport = when {
-        seed?.isLocal == true -> "LOCAL"
-        seed?.isGuest == true -> "GUEST"
         seed?.isBtSerial == true -> "BTSERIAL"
         seed?.isBleSerial == true -> "BLESERIAL"
         seed?.isUsbSerial == true -> "USBSERIAL"
@@ -225,31 +189,21 @@ fun ConnectionEditDialog(
         seed?.isSpice == true -> "SPICE"
         seed?.isGlkvm == true -> "GLKVM"
         seed?.isSmb == true -> "SMB"
-        seed?.isRclone == true -> "RCLONE"
-        seed?.isEmail == true -> "EMAIL"
-        seed?.isOpenai == true -> "OPENAI"
         seed?.isEternalTerminal == true -> "ET"
         seed?.isMosh == true -> "MOSH"
-        seed?.isReticulum == true -> "RETICULUM"
         else -> "SSH"
     }
     var selectedTransport by rememberSaveable { mutableStateOf(initialTransport) }
     // Derived connectionType for field visibility
     val connectionType = when (selectedTransport) {
-        "LOCAL" -> "LOCAL"
-        "GUEST" -> "GUEST"
         "BTSERIAL" -> "BTSERIAL"
         "BLESERIAL" -> "BLESERIAL"
         "USBSERIAL" -> "USBSERIAL"
-        "RETICULUM" -> "RETICULUM"
         "VNC" -> "VNC"
         "RDP" -> "RDP"
         "SPICE" -> "SPICE"
         "GLKVM" -> "GLKVM"
         "SMB" -> "SMB"
-        "RCLONE" -> "RCLONE"
-        "EMAIL" -> "EMAIL"
-        "OPENAI" -> "OPENAI"
         else -> "SSH"
     }
     var label by rememberSaveable { mutableStateOf(existing?.label ?: "") }
@@ -329,7 +283,6 @@ fun ConnectionEditDialog(
     var vncSettingsStored by rememberSaveable {
         mutableStateOf(existing?.connectionType == "SSH" && existing?.vncPort != null)
     }
-    var destinationHash by rememberSaveable { mutableStateOf(existing?.destinationHash ?: "") }
     var jumpProfileId by rememberSaveable { mutableStateOf(existing?.jumpProfileId) }
     var proxyType by rememberSaveable { mutableStateOf(existing?.proxyType) }
     var proxyHost by rememberSaveable { mutableStateOf(existing?.proxyHost ?: "") }
@@ -417,80 +370,34 @@ fun ConnectionEditDialog(
     // pin this LOCAL profile to a specific OS. (#per-distro-local)
     var prootDistroId by rememberSaveable { mutableStateOf(existing?.prootDistroId) }
     // Backed by a port-forward rule, not a profile field — see onSave's
-    // third argument and ConnectionsViewModel.reconcileMcpReverseTunnel.
-    // The caller queries hasMcpReverseTunnel asynchronously and the value
+
     // arrives after the first composition, so a plain rememberSaveable on
     // the initial parameter would lock in the pre-query default (false)
     // and the dialog would render OFF for a profile that actually has the
-    // rule — saving then deletes it. Sync from mcpReverseTunnelEnabled
+
     // whenever it changes so the first non-default value seeds the state.
-    var mcpReverseTunnel by rememberSaveable { mutableStateOf(mcpReverseTunnelEnabled) }
-    LaunchedEffect(mcpReverseTunnelEnabled) {
-        mcpReverseTunnel = mcpReverseTunnelEnabled
-    }
     var forwardAgent by rememberSaveable { mutableStateOf(existing?.forwardAgent ?: false) }
     var addressFamily by rememberSaveable { mutableStateOf(existing?.addressFamily ?: "AUTO") }
     var bindAddress by rememberSaveable { mutableStateOf(existing?.bindAddress ?: "") }
     var selectedSessionManager by rememberSaveable { mutableStateOf(seed?.sessionManager) }
     var etPort by rememberSaveable { mutableStateOf(existing?.etPort?.toString() ?: "2022") }
-    var localSideband by rememberSaveable {
-        mutableStateOf(
-            existing != null &&
-                existing.reticulumHost in listOf("127.0.0.1", "localhost", "::1") &&
-                existing.reticulumPort == 37428,
-        )
-    }
-    var rnsHost by rememberSaveable { mutableStateOf(existing?.reticulumHost ?: "") }
-    var rcloneRemoteName by rememberSaveable { mutableStateOf(existing?.rcloneRemoteName ?: "") }
-    var rcloneProvider by rememberSaveable { mutableStateOf(existing?.rcloneProvider ?: "") }
-    // #410: a short token that makes a fresh rclone remote name unique, so two
+
     // connections of the same provider (e.g. two SFTP) don't both save as the
-    // provider name, share one rclone.conf entry, and overwrite each other.
-    val rcloneRemoteToken = rememberSaveable { java.util.UUID.randomUUID().toString().take(6) }
-    // A non-OAuth rclone profile is only really saved once its remote has been
-    // written to rclone.conf via the Configure button — saving a profile shell
+
     // that points at a never-created remote silently loses the config (#295).
-    // Existing rclone profiles are already configured; a new one isn't until
+
     // Configure succeeds, and editing a credential field invalidates it.
-    var rcloneConfigured by rememberSaveable { mutableStateOf(existing?.connectionType == "RCLONE") }
     // EMAIL engines: "imap" (JVM, password/app-password — the common case, listed
     // first) or "proton" (Go bridge, SRP). Gmail/Outlook (OAuth) land in stage 2b
     // on the same IMAP engine.
-    var emailProvider by rememberSaveable { mutableStateOf(existing?.emailProvider ?: "imap") }
-    var emailUsername by rememberSaveable { mutableStateOf(existing?.emailUsername ?: "") }
-    var emailPassword by rememberSaveable { mutableStateOf(existing?.emailPassword ?: "") }
-    var emailMailboxPassword by rememberSaveable { mutableStateOf(existing?.emailMailboxPassword ?: "") }
-    var emailServer by rememberSaveable { mutableStateOf(existing?.emailServer ?: "") }
-    var emailSmtpServer by rememberSaveable { mutableStateOf(existing?.emailSmtpServer ?: "") }
-    var emailPort by rememberSaveable { mutableStateOf(existing?.emailPort?.toString() ?: "993") }
-    var emailSmtpPort by rememberSaveable { mutableStateOf(existing?.emailSmtpPort?.toString() ?: "465") }
-    var emailTls by rememberSaveable { mutableStateOf(existing?.emailTls ?: true) }
     // OPENAI endpoint fields: host/port carry the base URL (a full
     // http:// URL is allowed and wins over host+port), the rest are
     // type-prefixed columns on the profile.
-    var openaiApiKey by rememberSaveable { mutableStateOf(existing?.openaiApiKey ?: "") }
-    var openaiPathPrefix by rememberSaveable { mutableStateOf(existing?.openaiPathPrefix ?: "") }
-    var openaiProtocol by rememberSaveable {
-        mutableStateOf(existing?.aiProtocol?.takeIf { it.isNotBlank() } ?: "OPENAI")
-    }
-    var openaiProtocolExpanded by rememberSaveable { mutableStateOf(false) }
     // AI route carrier: the OPENAI counterpart of the desktops' flag+carrier
-    // rows. Editor mode ("NONE"/"SSH"/"RETICULUM") + the carrier profile id;
+
     // a stale stored pair reads Direct via [aiRouteInitialMode]'s guard.
-    var aiRouteMode by rememberSaveable {
-        mutableStateOf(aiRouteInitialMode(existing?.aiRouteType, existing?.aiRouteProfileId))
-    }
-    var aiRouteCarrierId by rememberSaveable {
-        mutableStateOf(existing?.aiRouteProfileId ?: "")
-    }
     // IMAP provider preset (UI-only prefill; not persisted). Re-derived from the
     // stored IMAP host so re-opening a Gmail profile re-selects "Gmail".
-    var emailPreset by rememberSaveable {
-        mutableStateOf(EmailProviderPreset.fromServer(existing?.emailServer).name)
-    }
-    var rnsPort by rememberSaveable { mutableStateOf(existing?.reticulumPort?.toString() ?: "4242") }
-    var rnsNetworkName by rememberSaveable { mutableStateOf(existing?.reticulumNetworkName ?: "") }
-    var rnsPassphrase by rememberSaveable { mutableStateOf(existing?.reticulumPassphrase ?: "") }
     var fileTransport by rememberSaveable { mutableStateOf(existing?.fileTransport ?: "AUTO") }
     // Per-profile terminal colour-scheme override (#144). null = inherit
     // the global preference; otherwise one of the
@@ -512,7 +419,6 @@ fun ConnectionEditDialog(
         mutableStateOf(existing?.reconnectOnNetworkChange ?: true)
     }
     var tunnelOnly by rememberSaveable { mutableStateOf(existing?.tunnelOnly ?: false) }
-    var mcpEnabled by rememberSaveable { mutableStateOf(existing?.mcpEnabled ?: true) }
     // Port knocking — see core/knock module. Stored on ConnectionProfile,
     // applied per-protocol at the transport layer (ConnectionsViewModel
     // and DesktopViewModel). Honoured only on the direct-dial path.
@@ -567,6 +473,7 @@ fun ConnectionEditDialog(
                     val selectedLabel = when {
                         useCloudflareTunnel -> cfTunnelLabel
                         tunnelDropdownLabel != null -> tunnelDropdownLabel
+                        tunnelConfigId != null -> stringResource(R.string.connections_removed_route)
                         proxyType != null -> proxyType!!
                         else -> noneDirectLabel
                     }
@@ -595,7 +502,6 @@ fun ConnectionEditDialog(
                                     proxyHost = ""
                                     tunnelConfigId = null
                                     useCloudflareTunnel = false
-                                    aiRouteMode = "NONE"
                                     proxyExpanded = false
                                 },
                             )
@@ -626,7 +532,6 @@ fun ConnectionEditDialog(
                                         // The Route-through proxy and the AI
                                         // route carrier are mutually
                                         // exclusive transports.
-                                        aiRouteMode = "NONE"
                                         if (kind == "HTTP" && proxyPort == "1080") {
                                             proxyPort = "8080"
                                         } else if (kind != "HTTP" && proxyPort == "8080") {
@@ -636,109 +541,7 @@ fun ConnectionEditDialog(
                                     },
                                 )
                             }
-                            if (tunnelConfigs.isNotEmpty()) {
-                                HorizontalDivider()
-                                tunnelConfigs.forEach { tunnel ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(stringResource(R.string.connections_tunnel_dropdown_label, tunnel.label))
-                                                Text(
-                                                    runCatching {
-                                                        friendlyTunnelTypeLabel(
-                                                            sh.haven.core.data.db.entities.TunnelConfigType.fromStorage(tunnel.type),
-                                                        )
-                                                    }.getOrDefault(tunnel.type),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                )
-                                            }
-                                        },
-                                        onClick = {
-                                            tunnelConfigId = tunnel.id
-                                            proxyType = null
-                                            proxyHost = ""
-                                            useCloudflareTunnel = false
-                                            // Same exclusivity for the
-                                            // WireGuard / Tailscale tunnels.
-                                            aiRouteMode = "NONE"
-                                            proxyExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                            if (onManageTunnels != null) {
-                                // Quick-add for the standalone backends with
-                                // usable add paths, plus a manage-everything
-                                // link. Cloudflare Tunnel used to live here
-                                // too but is now an inline transport on the
-                                // SSH profile itself (GH #154) — picking it
-                                // from the route-through list above is the
-                                // new path. Tailscale's add path is disabled
-                                // in the Tunnels screen pending the tsnet
-                                // bridge; NetBird and WireGuard are live.
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "+ New WireGuard tunnel",
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    },
-                                    onClick = {
-                                        proxyExpanded = false
-                                        onManageTunnels(sh.haven.core.data.db.entities.TunnelConfigType.WIREGUARD)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "+ New NetBird tunnel",
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    },
-                                    onClick = {
-                                        proxyExpanded = false
-                                        onManageTunnels(sh.haven.core.data.db.entities.TunnelConfigType.NETBIRD)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "+ New OpenVPN tunnel",
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    },
-                                    onClick = {
-                                        proxyExpanded = false
-                                        onManageTunnels(sh.haven.core.data.db.entities.TunnelConfigType.OPENVPN)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "+ New AnyConnect tunnel",
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    },
-                                    onClick = {
-                                        proxyExpanded = false
-                                        onManageTunnels(sh.haven.core.data.db.entities.TunnelConfigType.ANYCONNECT)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            stringResource(R.string.connections_action_manage_tunnels),
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    },
-                                    onClick = {
-                                        proxyExpanded = false
-                                        onManageTunnels(null)
-                                    },
-                                )
-                            }
+
                         }
                     }
 
@@ -1145,8 +948,6 @@ fun ConnectionEditDialog(
                     "SSH" to "SSH",
                     "MOSH" to "Mosh",
                     "ET" to "Eternal Terminal",
-                    "LOCAL" to "Local Shell (PRoot)",
-                    "GUEST" to "Linux Guest (UML)",
                     "BTSERIAL" to "Bluetooth Serial",
                     "BLESERIAL" to "Bluetooth LE Serial",
                     "USBSERIAL" to "USB Serial",
@@ -1155,10 +956,7 @@ fun ConnectionEditDialog(
                     "SPICE" to "SPICE (Desktop)",
                     "GLKVM" to "GLKVM (Desktop)",
                     "SMB" to "SMB (File Share)",
-                    "RCLONE" to "Cloud Storage (rclone)",
-                    "EMAIL" to "Email (IMAP / Proton)",
-                    "OPENAI" to "AI Endpoint (OpenAI-compatible)",
-                    "RETICULUM" to "Reticulum",
+
                 )
                 // #510: the terminal build ships no RDP or SPICE client, so
                 // offering them here would only produce a profile that fails
@@ -1179,12 +977,7 @@ fun ConnectionEditDialog(
                         spice = native.spice,
                         // Probed, not looked for: libgojni.so is present in
                         // every build, but the terminal flavour's copy is
-                        // built without rclone.
-                        rclone = sh.haven.rclone.bridge.RcloneBridge.available,
-                        // Same missing-file gate as rdp/spice: the terminal
-                        // flavour drops the UML libraries, F-Droid skips the
-                        // fetch.
-                        uml = native.uml,
+
                     )
                 }
                 var transportExpanded by remember { mutableStateOf(false) }
@@ -1223,7 +1016,6 @@ fun ConnectionEditDialog(
                                         "RDP" -> "3389"
                                         "SPICE" -> "5900"
                                         "SMB" -> "445"
-                                        "OPENAI" -> "80"
                                         "ET" -> "22"
                                         else -> "22"
                                     }
@@ -1244,17 +1036,11 @@ fun ConnectionEditDialog(
                     placeholder = {
                         Text(
                             when (connectionType) {
-                                "LOCAL" -> "Local Shell"
-                                "GUEST" -> "Linux Guest"
                                 "VNC" -> "My VNC Desktop"
                                 "RDP" -> "My RDP Desktop"
                                 "SPICE" -> "My SPICE Desktop"
                                 "GLKVM" -> "My KVM"
                                 "SMB" -> "My File Share"
-                                "RCLONE" -> "My Google Drive"
-                                "EMAIL" -> "My Mail"
-                                "OPENAI" -> "My AI Endpoint"
-                                "RETICULUM" -> "My Node"
                                 else -> "My Server"
                             }
                         )
@@ -1364,87 +1150,7 @@ fun ConnectionEditDialog(
                     Spacer(Modifier.height(4.dp))
                 }
 
-                if (connectionType == "GUEST") {
-                    ConnectionSection(stringResource(R.string.connections_section_guest))
-                    Text(
-                        stringResource(R.string.connections_guest_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (connectionType == "LOCAL") {
-                    ConnectionSection(stringResource(R.string.connections_section_local_shell))
-                    Text(
-                        if (useAndroidShell) {
-                            stringResource(R.string.connections_local_shell_android_desc)
-                        } else {
-                            stringResource(R.string.connections_local_shell_proot_desc)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { useAndroidShell = !useAndroidShell },
-                    ) {
-                        Checkbox(
-                            checked = useAndroidShell,
-                            onCheckedChange = { useAndroidShell = it },
-                        )
-                        Text(
-                            stringResource(R.string.connections_use_android_shell),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                    // Pin this Local profile to a specific OS (proot only).
-                    // Default "Active distro" = follow the global active one.
-                    if (!useAndroidShell && availableDistros.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        var distroExpanded by remember { mutableStateOf(false) }
-                        val activeDefault = stringResource(R.string.connections_local_distro_active_default)
-                        val selectedDistroLabel = availableDistros
-                            .firstOrNull { it.first == prootDistroId }?.second
-                            ?: activeDefault
-                        ExposedDropdownMenuBox(
-                            expanded = distroExpanded,
-                            onExpandedChange = { distroExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value = selectedDistroLabel,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(stringResource(R.string.connections_local_distro_label)) },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(distroExpanded) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                            )
-                            ExposedDropdownMenu(
-                                expanded = distroExpanded,
-                                onDismissRequest = { distroExpanded = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(activeDefault) },
-                                    onClick = {
-                                        prootDistroId = null
-                                        distroExpanded = false
-                                    },
-                                )
-                                availableDistros.forEach { (id, distroLabel) ->
-                                    DropdownMenuItem(
-                                        text = { Text(distroLabel) },
-                                        onClick = {
-                                            prootDistroId = id
-                                            distroExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else if (connectionType == "BTSERIAL") {
+                if (connectionType == "BTSERIAL") {
                     BtSerialDeviceField(
                         selectedAddress = btDevice,
                         onSelect = { address, name ->
@@ -1477,467 +1183,6 @@ fun ConnectionEditDialog(
                         onParityChange = { usbParity = it },
                         onStopBitsChange = { usbStopBits = it },
                         onFlowControlChange = { usbFlow = it },
-                    )
-                } else if (connectionType == "RCLONE") {
-                    ConnectionSection(stringResource(R.string.connections_section_cloud_storage))
-                    val providerOptions = listOf(
-                        "drive" to "Google Drive",
-                        "dropbox" to "Dropbox",
-                        "onedrive" to "Microsoft OneDrive",
-                        "s3" to "Amazon S3 / Compatible",
-                        "b2" to "Backblaze B2",
-                        "sftp" to "SFTP (remote)",
-                        "webdav" to "WebDAV",
-                        "ftp" to "FTP",
-                        "mega" to "MEGA",
-                        "pcloud" to "pCloud",
-                        "box" to "Box",
-                        "filen" to "Filen",
-                    )
-                    var providerExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = providerExpanded,
-                        onExpandedChange = { providerExpanded = it },
-                    ) {
-                        OutlinedTextField(
-                            value = providerOptions.firstOrNull { it.first == rcloneProvider }?.second
-                                ?: rcloneProvider.ifEmpty { stringResource(R.string.connections_dropdown_select_provider) },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.connections_field_provider)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(providerExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                        )
-                        ExposedDropdownMenu(
-                            expanded = providerExpanded,
-                            onDismissRequest = { providerExpanded = false },
-                        ) {
-                            providerOptions.forEach { (value, displayLabel) ->
-                                DropdownMenuItem(
-                                    text = { Text(displayLabel) },
-                                    onClick = {
-                                        rcloneProvider = value
-                                        providerExpanded = false
-                                        // A fresh connection gets a UNIQUE remote name
-                                        // ("<provider>-<token>") so two of the same provider
-                                        // don't collide on one rclone.conf entry (#410). An
-                                        // existing connection keeps the name it was configured
-                                        // under (renaming would orphan its rclone remote).
-                                        if (existing?.isRclone != true) {
-                                            rcloneRemoteName = "$value-$rcloneRemoteToken"
-                                        }
-                                    },
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    if (rcloneProvider.isBlank() || rcloneProvider in RCLONE_OAUTH_PROVIDERS) {
-                        // OAuth providers (Drive/Dropbox/…) authenticate via the
-                        // browser flow on first connect — no fields to fill here.
-                        Text(
-                            stringResource(R.string.connections_helper_rclone_signin),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        // Non-OAuth providers (Filen, s3, b2, mega, sftp, …):
-                        // collect the rclone-declared required fields and write
-                        // the remote via config/create (#181).
-                        val rcloneCfgVm: RcloneConfigViewModel = hiltViewModel()
-                        val rcloneOptions by rcloneCfgVm.options.collectAsState()
-                        val rcloneCfgStatus by rcloneCfgVm.status.collectAsState()
-                        val rcloneParams = remember(rcloneProvider) { mutableStateMapOf<String, String>() }
-                        LaunchedEffect(rcloneProvider) { rcloneCfgVm.loadOptions(rcloneProvider) }
-                        // A successful Configure means the remote is now in
-                        // rclone.conf — only then may the profile be saved (#295).
-                        LaunchedEffect(rcloneCfgStatus) {
-                            if (rcloneCfgStatus is RcloneConfigViewModel.Status.Success) {
-                                rcloneConfigured = true
-                            }
-                        }
-                        Text(
-                            stringResource(R.string.connections_helper_rclone_credentials),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        rcloneOptions.forEach { opt ->
-                            OutlinedTextField(
-                                value = rcloneParams[opt.name] ?: opt.default,
-                                onValueChange = {
-                                    rcloneParams[opt.name] = it
-                                    // Changing a credential invalidates the verified
-                                    // remote — must re-Configure before saving (#295).
-                                    rcloneConfigured = false
-                                    rcloneCfgVm.clearStatus()
-                                },
-                                label = {
-                                    Text(opt.name.replace('_', ' ').replaceFirstChar { c -> c.uppercase() })
-                                },
-                                singleLine = true,
-                                supportingText = opt.help.takeIf { it.isNotBlank() }?.let {
-                                    { Text(it, style = MaterialTheme.typography.labelSmall) }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(4.dp))
-                        }
-                        val requiredFilled = rcloneOptions.filter { it.required }
-                            .all { (rcloneParams[it.name] ?: it.default).isNotBlank() }
-                        OutlinedButton(
-                            onClick = {
-                                val name = rcloneRemoteName.ifBlank { "$rcloneProvider-$rcloneRemoteToken" }
-                                val params = rcloneOptions
-                                    .associate { it.name to (rcloneParams[it.name] ?: it.default) }
-                                    .filterValues { it.isNotBlank() }
-                                rcloneCfgVm.configure(name, rcloneProvider, params)
-                            },
-                            enabled = requiredFilled &&
-                                rcloneCfgStatus != RcloneConfigViewModel.Status.Working,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            if (rcloneCfgStatus == RcloneConfigViewModel.Status.Working) {
-                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                                Spacer(Modifier.width(8.dp))
-                            }
-                            Text(stringResource(R.string.connections_rclone_configure))
-                        }
-                        when (val s = rcloneCfgStatus) {
-                            is RcloneConfigViewModel.Status.Success -> Text(
-                                stringResource(R.string.connections_rclone_configured_ok),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                            is RcloneConfigViewModel.Status.Error -> Text(
-                                s.message,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                            else -> {}
-                        }
-                        // Make the gated Save discoverable: until Configure
-                        // succeeds, Save stays disabled for a non-OAuth remote (#295).
-                        if (!rcloneConfigured && rcloneProvider.isNotBlank() &&
-                            rcloneCfgStatus !is RcloneConfigViewModel.Status.Error
-                        ) {
-                            Text(
-                                stringResource(R.string.connections_rclone_configure_first),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
-                    }
-                } else if (connectionType == "EMAIL") {
-                    ConnectionSection(stringResource(R.string.connections_section_email))
-                    // Engine picker — one compact segmented row (portrait-friendly).
-                    val emailProviderOptions = listOf(
-                        "imap" to stringResource(R.string.connections_email_provider_imap_short),
-                        "proton" to stringResource(R.string.connections_email_provider_proton_short),
-                    )
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        emailProviderOptions.forEachIndexed { index, (key, label) ->
-                            SegmentedButton(
-                                selected = emailProvider == key,
-                                onClick = { emailProvider = key },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = emailProviderOptions.size,
-                                ),
-                            ) { Text(label) }
-                        }
-                    }
-                    val isImapProvider = emailProvider.equals("imap", ignoreCase = true)
-                    if (!isImapProvider) {
-                        Text(
-                            stringResource(R.string.connections_email_proton_unofficial_warning),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = emailUsername,
-                        onValueChange = { emailUsername = it },
-                        label = { Text(stringResource(R.string.connections_field_email_address)) },
-                        placeholder = { Text(if (isImapProvider) "you@example.com" else "you@proton.me") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    sh.haven.core.ui.PasswordField(
-                        value = emailPassword,
-                        onValueChange = { emailPassword = it },
-                        label = stringResource(R.string.connections_field_email_password),
-                        modifier = Modifier.fillMaxWidth(),
-                        onRevealRequest = onRevealSavedSecret,
-                    )
-                    if (isImapProvider) {
-                        // Generic IMAP/SMTP fields — gated, so they never bloat the
-                        // dialog for Proton (the common case).
-                        val preset = EmailProviderPreset.valueOf(emailPreset)
-                        Spacer(Modifier.height(4.dp))
-                        // Provider preset: prefills server/ports/TLS for the major
-                        // providers; "Custom" leaves the fields manual. UI-only —
-                        // not persisted; re-derived from the saved IMAP host.
-                        var presetExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = presetExpanded,
-                            onExpandedChange = { presetExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value = preset.displayName,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(stringResource(R.string.connections_email_preset_label)) },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(presetExpanded) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                            )
-                            ExposedDropdownMenu(
-                                expanded = presetExpanded,
-                                onDismissRequest = { presetExpanded = false },
-                            ) {
-                                EmailProviderPreset.entries.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option.displayName) },
-                                        onClick = {
-                                            emailPreset = option.name
-                                            presetExpanded = false
-                                            if (option != EmailProviderPreset.GENERIC) {
-                                                option.imapServer?.let { emailServer = it }
-                                                option.smtpServer?.let { emailSmtpServer = it }
-                                                emailPort = option.imapPort.toString()
-                                                emailSmtpPort = option.smtpPort.toString()
-                                                emailTls = option.tls
-                                            }
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                        preset.appPasswordUrl?.let { url ->
-                            val uriHandler = LocalUriHandler.current
-                            TextButton(onClick = { uriHandler.openUri(url) }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    stringResource(
-                                        R.string.connections_email_app_password_link,
-                                        preset.displayName,
-                                    ),
-                                )
-                            }
-                        }
-                        Text(
-                            stringResource(R.string.connections_email_app_password_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = emailServer,
-                            onValueChange = { emailServer = it },
-                            label = { Text(stringResource(R.string.connections_field_imap_server)) },
-                            placeholder = { Text("imap.example.com") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = emailSmtpServer,
-                            onValueChange = { emailSmtpServer = it },
-                            label = { Text(stringResource(R.string.connections_field_smtp_server)) },
-                            placeholder = { Text("smtp.example.com") },
-                            supportingText = {
-                                Text(stringResource(R.string.connections_field_smtp_server_help))
-                            },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            OutlinedTextField(
-                                value = emailPort,
-                                onValueChange = { emailPort = it.filter(Char::isDigit) },
-                                label = { Text(stringResource(R.string.connections_field_imap_port)) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = emailSmtpPort,
-                                onValueChange = { emailSmtpPort = it.filter(Char::isDigit) },
-                                label = { Text(stringResource(R.string.connections_field_smtp_port)) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        BooleanToggleRow(
-                            label = stringResource(R.string.connections_toggle_imap_tls),
-                            checked = emailTls,
-                            onCheckedChange = { emailTls = it },
-                        )
-                    } else {
-                        Spacer(Modifier.height(4.dp))
-                        sh.haven.core.ui.PasswordField(
-                            value = emailMailboxPassword,
-                            onValueChange = { emailMailboxPassword = it },
-                            label = stringResource(R.string.connections_field_email_mailbox_password),
-                            modifier = Modifier.fillMaxWidth(),
-                            onRevealRequest = onRevealSavedSecret,
-                        )
-                        Text(
-                            stringResource(R.string.connections_email_mailbox_password_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                        Text(
-                            stringResource(R.string.connections_email_2fa_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                } else if (connectionType == "OPENAI") {
-                    ConnectionSection(stringResource(R.string.connections_section_openai))
-                    // Base URL = host (+ optional full http:// URL, which wins
-                    // over host+port) + optional path prefix before /v1 —
-                    // mirrors ConnectionProfile.openaiBaseUrl.
-                    OutlinedTextField(
-                        value = host,
-                        onValueChange = { host = it },
-                        label = { Text(stringResource(R.string.connections_field_openai_host)) },
-                        placeholder = { Text("192.168.1.20") },
-                        singleLine = true,
-                        supportingText = {
-                            Text(stringResource(R.string.connections_field_openai_host_hint))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = port,
-                        onValueChange = { port = it.filter { c -> c.isDigit() } },
-                        label = { Text(stringResource(R.string.connections_field_port)) },
-                        placeholder = { Text("8090") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(120.dp),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    sh.haven.core.ui.PasswordField(
-                        value = openaiApiKey,
-                        onValueChange = { openaiApiKey = it },
-                        label = stringResource(R.string.connections_field_openai_api_key),
-                        modifier = Modifier.fillMaxWidth(),
-                        onRevealRequest = onRevealSavedSecret,
-                    )
-                    Text(
-                        stringResource(R.string.connections_field_openai_api_key_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = openaiPathPrefix,
-                        onValueChange = { openaiPathPrefix = it },
-                        label = { Text(stringResource(R.string.connections_field_openai_path_prefix)) },
-                        placeholder = { Text("/api") },
-                        singleLine = true,
-                        supportingText = {
-                            Text(stringResource(R.string.connections_field_openai_path_prefix_hint))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    // Wire protocol: OpenAI-compatible by default; Ollama,
-                    // Anthropic and Gemini change paths, auth headers and
-                    // payload/stream shapes in the client.
-                    ExposedDropdownMenuBox(
-                        expanded = openaiProtocolExpanded,
-                        onExpandedChange = { openaiProtocolExpanded = it },
-                    ) {
-                        OutlinedTextField(
-                            value = openaiProtocol,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.connections_field_openai_protocol)) },
-                            supportingText = {
-                                Text(stringResource(R.string.connections_field_openai_protocol_hint))
-                            },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = openaiProtocolExpanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                        )
-                        ExposedDropdownMenu(
-                            expanded = openaiProtocolExpanded,
-                            onDismissRequest = { openaiProtocolExpanded = false },
-                        ) {
-                            listOf("OPENAI", "OLLAMA", "ANTHROPIC", "GEMINI").forEach { p ->
-                                DropdownMenuItem(
-                                    text = { Text(p) },
-                                    onClick = {
-                                        openaiProtocol = p
-                                        openaiProtocolExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                    val openaiPreview = run {
-                        val base = if (host.contains("://")) host.trimEnd('/')
-                        else "http://$host:${if ((port.toIntOrNull() ?: 0) > 0) port else "80"}".trimEnd('/')
-                        val prefix = openaiPathPrefix.trim()
-                        if (prefix.isEmpty()) base
-                        else base + (if (prefix.startsWith("/")) prefix else "/$prefix")
-                    }
-                    Text(
-                        stringResource(R.string.connections_openai_url_preview, openaiPreview),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                    // AI route carrier: route the endpoint's HTTP through an
-                    // SSH forward or a Reticulum bridge, like the desktops'
-                    // Tunnel-through-SSH rows. Picking a carrier here clears
-                    // the Route-through tunnel below (the carrier IS the
-                    // transport — stacking both is a double-hop).
-                    Spacer(Modifier.height(4.dp))
-                    AiRouteBlock(
-                        mode = aiRouteMode,
-                        carrierId = aiRouteCarrierId,
-                        profiles = sshProfiles,
-                        onModeChange = { mode ->
-                            aiRouteMode = mode
-                            if (mode != "NONE") {
-                                tunnelConfigId = null
-                                proxyType = null
-                                proxyHost = ""
-                            }
-                        },
-                        onCarrierChange = { aiRouteCarrierId = it },
                     )
                 } else if (connectionType == "VNC") {
                     ConnectionSection(stringResource(R.string.connections_section_vnc))
@@ -2778,7 +2023,6 @@ fun ConnectionEditDialog(
 
                     }
 
-
                     ConnectionSection(stringResource(R.string.connections_section_routing))
                     routingBody()
                     }
@@ -3422,39 +2666,7 @@ fun ConnectionEditDialog(
                     spaBody()
                     }
 
-                    CollapsibleSection("Reliability & MCP", secReliabilityExpanded, { secReliabilityExpanded = !secReliabilityExpanded }) {
-                        // ── AI agent (MCP) ── both directions grouped together.
-                        Text(
-                            stringResource(R.string.connections_section_mcp),
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        // Inbound: can the agent read / drive this connection. Off =
-                        // agent tools that target it are refused (its row robot shows a
-                        // slash). Lets you pre-disable a connection the agent never touched.
-                        BooleanToggleRow(
-                            label = stringResource(R.string.connections_toggle_mcp_enabled),
-                            checked = mcpEnabled,
-                            // Turning inbound MCP off also drops the reverse exposure —
-                            // exposing Haven to a host you won't let the agent drive
-                            // makes no sense, so toggle 2 is gated on this one.
-                            onCheckedChange = { mcpEnabled = it; if (!it) mcpReverseTunnel = false },
-                            description = stringResource(R.string.connections_helper_mcp_enabled),
-                        )
-                        // Outbound exposure: reverse-tunnel Haven's own MCP back to the
-                        // remote host. SSH only (mosh/ET can't carry an SSH -R forward);
-                        // disabled while inbound MCP is off.
-                        if (selectedTransport == "SSH") {
-                            Spacer(Modifier.height(8.dp))
-                            BooleanToggleRow(
-                                label = stringResource(R.string.connections_toggle_mcp_tunnel),
-                                checked = mcpReverseTunnel,
-                                onCheckedChange = { mcpReverseTunnel = it },
-                                description = stringResource(R.string.connections_helper_mcp_tunnel),
-                                enabled = mcpEnabled,
-                            )
-                        }
-                        Spacer(Modifier.height(12.dp))
+                    CollapsibleSection("Reliability", secReliabilityExpanded, { secReliabilityExpanded = !secReliabilityExpanded }) {
                         // ── Reliability ──
                         // Tunnel-only mode (#150): bring up the SSH transport +
                         // port forwards without opening a terminal. Pair with
@@ -3580,198 +2792,15 @@ fun ConnectionEditDialog(
                         }
                     }
 
-                } else {
-                    // --- Reticulum connection form ---
-                    // Order: gateway config → scan → destination hash
-                    ConnectionSection(stringResource(R.string.connections_section_reticulum))
-
-                    // 1. Gateway configuration
-                    BooleanToggleRow(
-                        label = stringResource(R.string.connections_toggle_local_sideband),
-                        checked = localSideband,
-                        onCheckedChange = { newValue ->
-                            localSideband = newValue
-                            if (newValue) {
-                                rnsHost = "127.0.0.1"
-                                rnsPort = "37428"
-                            }
-                        },
-                    )
-                    if (!localSideband) {
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            OutlinedTextField(
-                                value = rnsHost,
-                                onValueChange = { rnsHost = it },
-                                label = { Text(stringResource(R.string.connections_field_gateway_host)) },
-                                placeholder = { Text("192.168.0.2") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                            )
-                            OutlinedTextField(
-                                value = rnsPort,
-                                onValueChange = { rnsPort = it.filter { c -> c.isDigit() } },
-                                label = { Text(stringResource(R.string.connections_field_port)) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.width(80.dp),
-                            )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = rnsNetworkName,
-                            onValueChange = { rnsNetworkName = it },
-                            label = { Text(stringResource(R.string.connections_field_network_name)) },
-                            placeholder = { Text(stringResource(R.string.connections_helper_network_name)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        sh.haven.core.ui.PasswordField(
-                            value = rnsPassphrase,
-                            onValueChange = { rnsPassphrase = it },
-                            label = stringResource(R.string.connections_field_passphrase),
-                            placeholder = stringResource(R.string.connections_hint_ifac_passphrase),
-                            modifier = Modifier.fillMaxWidth(),
-                            onRevealRequest = onRevealSavedSecret,
-                        )
-                    }
-
-                    // 2. Scan for destinations (uses gateway config above)
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = {
-                            val scanHost = if (localSideband) "127.0.0.1" else rnsHost
-                            val scanPort = if (localSideband) 37428 else (rnsPort.toIntOrNull() ?: 4242)
-                            onScanReticulum(
-                                scanHost,
-                                scanPort,
-                                rnsNetworkName.ifBlank { null },
-                                rnsPassphrase.ifBlank { null },
-                            )
-                        },
-                        enabled = !reticulumScanning,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (reticulumScanning) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.connections_scanning) + "…")
-                        } else {
-                            Text(stringResource(R.string.connections_action_scan_rnsh))
-                        }
-                    }
-
-                    // 3. Discovered destinations (tapping a chip fills the hash)
-                    val filtered = remember(discoveredDestinations, destinationHash) {
-                        val prefix = destinationHash.lowercase()
-                        discoveredDestinations
-                            .filter { prefix.isEmpty() || it.hash.startsWith(prefix) }
-                            .take(8)
-                    }
-                    if (filtered.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        val hiddenCount = discoveredDestinations.size - filtered.size
-                        Text(
-                            text = if (hiddenCount > 0) {
-                                stringResource(R.string.connections_discovered_count_filtered, filtered.size, discoveredDestinations.size)
-                            } else {
-                                stringResource(R.string.connections_discovered_count, filtered.size)
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            filtered.forEach { dest ->
-                                val hopsLabel = if (dest.hops >= 0) " (${dest.hops}h)" else ""
-                                SuggestionChip(
-                                    onClick = { destinationHash = dest.hash },
-                                    label = {
-                                        Text(
-                                            text = dest.hash.take(12) + ".." + hopsLabel,
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    },
-                                )
-                            }
-                        }
-                    }
-
-                    // 4. Destination hash (auto-filled by chip tap, or manual entry)
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = destinationHash,
-                        onValueChange = {
-                            destinationHash = it.filter { c -> c in "0123456789abcdefABCDEF" }
-                                .take(32)
-                        },
-                        label = { Text(stringResource(R.string.connections_field_destination_hash)) },
-                        placeholder = { Text(stringResource(R.string.connections_helper_destination_hash)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // Post-login command
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = postLoginCommand,
-                        onValueChange = { postLoginCommand = it },
-                        label = { Text(stringResource(R.string.connections_field_post_login)) },
-                        placeholder = { Text("cd /app && clear") },
-                        supportingText = { Text(stringResource(R.string.connections_helper_post_login)) },
-                        singleLine = false,
-                        minLines = 1,
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // 5. This device's identity (#585). Deliberately shown in a
-                    // per-profile form even though it is global: this is where
-                    // the user is standing when a server refuses them for not
-                    // being on its whitelist, and the help text says it is
-                    // shared so the placement cannot be read as per-profile.
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.connections_identity_label),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = reticulumIdentityHash
-                            ?: stringResource(R.string.connections_identity_none),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = if (reticulumIdentityHash != null) FontFamily.Monospace else null,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.connections_identity_help),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    OutlinedButton(
-                        onClick = onImportReticulumIdentity,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.connections_identity_import))
-                    }
-                }
+                } else {}
 
                 // Port knocking. Visible for any profile with a remote
-                // TCP host — skipped for LOCAL (no host), RCLONE (its own
-                // protocol), and RETICULUM (mesh, not TCP).
-                if (connectionType in setOf("VNC", "RDP", "SPICE", "GLKVM", "SMB", "EMAIL", "OPENAI")) {
+
+                if (connectionType in setOf("VNC", "RDP", "SPICE", "GLKVM", "SMB", "OPENAI")) {
                     ConnectionSection(stringResource(R.string.connections_section_routing))
                     routingBody()
                 }
-                if (connectionType in setOf("VNC", "RDP", "SPICE", "GLKVM", "SMB", "EMAIL", "OPENAI")) {
+                if (connectionType in setOf("VNC", "RDP", "SPICE", "GLKVM", "SMB", "OPENAI")) {
                     ConnectionSection(stringResource(R.string.connections_section_port_knock))
                     portKnockBody()
                     ConnectionSection(stringResource(R.string.connections_section_spa))
@@ -3782,7 +2811,7 @@ fun ConnectionEditDialog(
                 // WireGuard / Tailscale tunnel. Was SSH-only until #149;
                 // VNC, RDP, and SMB now also honour profile.tunnelConfigId
                 // so the picker has to surface for them too. LOCAL has no
-                // network; RCLONE and Reticulum manage their own transport.
+
                 // Mutually exclusive at the UI layer: picking any tunnel
                 // clears proxy fields; picking any proxy clears
                 // tunnelConfigId. The connect path enforces tunnel >
@@ -3796,12 +2825,9 @@ fun ConnectionEditDialog(
                 portKnockDelayMs.toIntOrNull() ?: KnockSequence.DEFAULT_DELAY_MS,
             ).isSuccess
             val proxyOk = (connectionType == "SSH" && useCloudflareTunnel) ||
-                (connectionType == "OPENAI" && aiRouteMode != "NONE") ||
-                connectionType in setOf("LOCAL", "GUEST", "BTSERIAL", "BLESERIAL", "USBSERIAL", "RCLONE", "RETICULUM") ||
+                connectionType in setOf("BTSERIAL", "BLESERIAL", "USBSERIAL") ||
                 proxyComplete(proxyType, proxyHost)
             val canSave = knockOk && proxyOk && when (connectionType) {
-                "LOCAL" -> true // No host/auth needed
-                "GUEST" -> true // No fields — the rootfs and kernel args are fixed
                 "BTSERIAL" -> btDevice.isNotBlank() // a paired device must be picked
                 "BLESERIAL" -> bleDevice.isNotBlank() // a scanned device must be picked
                 "USBSERIAL" -> usbDevice.isNotBlank() && (usbBaud.toIntOrNull() ?: 0) > 0
@@ -3813,51 +2839,14 @@ fun ConnectionEditDialog(
                 "SMB" -> host.isNotBlank() && smbShare.isNotBlank() && tunnelComplete(smbSshForward, smbSshProfileId)
                 // OAuth providers authenticate on connect (no Configure step); every
                 // other provider must have its remote written via Configure first (#295).
-                "RCLONE" -> rcloneProvider.isNotBlank() &&
-                    (rcloneProvider in sh.haven.core.rclone.RCLONE_OAUTH_PROVIDERS || rcloneConfigured)
-                "EMAIL" -> emailUsername.isNotBlank() && emailPassword.isNotBlank() &&
-                    (!emailProvider.equals("imap", ignoreCase = true) || emailServer.isNotBlank())
-                "OPENAI" -> host.isNotBlank() && aiRouteComplete(aiRouteMode, aiRouteCarrierId)
-                else -> destinationHash.length == 32 && (localSideband || rnsHost.isNotBlank())
+                else -> false
             }
             // Build the profile from the current form state. Shared by Save
             // and "Connect without saving" (#751) so both dial/save exactly
             // what the form shows.
             fun buildProfile(): ConnectionProfile {
                         val etPortInt = etPort.toIntOrNull() ?: 2022
-                        val profile = if (connectionType == "LOCAL") {
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = "localhost",
-                                username = "",
-                            )).copy(
-                                label = label.ifBlank { if (useAndroidShell) "Android Shell" else "Local Shell" },
-                                host = "localhost",
-                                port = 0,
-                                username = "",
-                                connectionType = "LOCAL",
-                                useAndroidShell = useAndroidShell,
-                                prootDistroId = if (useAndroidShell) null else prootDistroId,
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                            )
-                        } else if (connectionType == "GUEST") {
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = "localhost",
-                                username = "",
-                            )).copy(
-                                label = label.ifBlank { "Linux Guest" },
-                                host = "localhost",
-                                port = 0,
-                                username = "",
-                                connectionType = "GUEST",
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                            )
-                        } else if (connectionType == "BTSERIAL") {
+                        val profile = if (connectionType == "BTSERIAL") {
                             // The paired device MAC lives in `host` (no new column).
                             (existing ?: ConnectionProfile(
                                 label = label,
@@ -4058,125 +3047,6 @@ fun ConnectionEditDialog(
                             ).withRoutingSelection(
                                 proxyType, proxyHost, proxyPort, proxyUser, proxyPassword, tunnelConfigId,
                             )
-                        } else if (connectionType == "RCLONE") {
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = "",
-                                username = "",
-                            )).copy(
-                                label = label.ifBlank {
-                                    val providerLabel = when (rcloneProvider) {
-                                        "drive" -> "Google Drive"
-                                        "dropbox" -> "Dropbox"
-                                        "onedrive" -> "OneDrive"
-                                        "s3" -> "Amazon S3"
-                                        "b2" -> "Backblaze B2"
-                                        "mega" -> "MEGA"
-                                        "pcloud" -> "pCloud"
-                                        "box" -> "Box"
-                                        "filen" -> "Filen"
-                                        else -> rcloneProvider
-                                    }
-                                    providerLabel
-                                },
-                                host = "",
-                                port = 0,
-                                username = "",
-                                connectionType = "RCLONE",
-                                rcloneRemoteName = rcloneRemoteName.ifBlank { "$rcloneProvider-$rcloneRemoteToken" },
-                                rcloneProvider = rcloneProvider,
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                            )
-                        } else if (connectionType == "EMAIL") {
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = host,
-                                username = emailUsername,
-                            )).copy(
-                                label = label.ifBlank {
-                                    emailUsername.ifBlank {
-                                        if (emailProvider.equals("imap", true)) "Email" else "Proton Mail"
-                                    }
-                                },
-                                // host carries the optional tunnel-ingress/bastion that
-                                // SPA/knock guards; for Proton the mail server is Proton's,
-                                // for IMAP it's emailServer (reached through the tunnel).
-                                host = host,
-                                port = 0,
-                                username = emailUsername,
-                                connectionType = "EMAIL",
-                                emailProvider = emailProvider,
-                                emailUsername = emailUsername,
-                                emailPassword = emailPassword.ifBlank { null },
-                                emailMailboxPassword = emailMailboxPassword.ifBlank { null },
-                                emailServer = emailServer.ifBlank { null },
-                                emailSmtpServer = emailSmtpServer.ifBlank { null },
-                                emailPort = emailPort.toIntOrNull()?.takeIf { it in 1..65535 } ?: 993,
-                                emailSmtpPort = emailSmtpPort.toIntOrNull()?.takeIf { it in 1..65535 } ?: 465,
-                                emailTls = emailTls,
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                                portKnockSequence = portKnockSequence.ifBlank { null },
-                                portKnockDelayMs = portKnockDelayMs.toIntOrNull()
-                                    ?.coerceAtLeast(0) ?: KnockSequence.DEFAULT_DELAY_MS,
-                                spaKey = spaKey.ifBlank { null },
-                                spaKeyBase64 = spaKeyBase64,
-                                spaHmacKey = spaHmacKey.ifBlank { null },
-                                spaHmacKeyBase64 = spaHmacKeyBase64,
-                                spaAccessSpec = spaAccessSpec.ifBlank { null },
-                                spaAllowMode = spaAllowMode,
-                                spaExplicitIp = spaExplicitIp.ifBlank { null },
-                                spaPort = spaPort.toIntOrNull()?.takeIf { it in 1..65535 }
-                                    ?: SpaConfig.DEFAULT_SPA_PORT,
-                            ).withRoutingSelection(
-                                proxyType, proxyHost, proxyPort, proxyUser, proxyPassword, tunnelConfigId,
-                            )
-                        } else if (connectionType == "OPENAI") {
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = host,
-                                username = "",
-                            )).copy(
-                                label = label.ifBlank { "AI Endpoint" },
-                                host = host,
-                                port = port.toIntOrNull()?.takeIf { it in 1..65535 } ?: 0,
-                                username = "",
-                                connectionType = "OPENAI",
-                                openaiApiKey = openaiApiKey.ifBlank { null },
-                                openaiPathPrefix = openaiPathPrefix.trim().ifBlank { null },
-                                aiProtocol = openaiProtocol.takeIf { it != "OPENAI" },
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                                tunnelConfigId = tunnelConfigId,
-                                portKnockSequence = portKnockSequence.ifBlank { null },
-                                portKnockDelayMs = portKnockDelayMs.toIntOrNull()
-                                    ?.coerceAtLeast(0) ?: KnockSequence.DEFAULT_DELAY_MS,
-                                spaKey = spaKey.ifBlank { null },
-                                spaKeyBase64 = spaKeyBase64,
-                                spaHmacKey = spaHmacKey.ifBlank { null },
-                                spaHmacKeyBase64 = spaHmacKeyBase64,
-                                spaAccessSpec = spaAccessSpec.ifBlank { null },
-                                spaAllowMode = spaAllowMode,
-                                spaExplicitIp = spaExplicitIp.ifBlank { null },
-                                spaPort = spaPort.toIntOrNull()?.takeIf { it in 1..65535 }
-                                    ?: SpaConfig.DEFAULT_SPA_PORT,
-                            ).withRoutingSelection(
-                                proxyType = if (aiRouteMode == "NONE") proxyType else null,
-                                proxyHost = proxyHost,
-                                proxyPort = proxyPort,
-                                proxyUser = proxyUser,
-                                proxyPassword = proxyPassword,
-                                tunnelConfigId = if (aiRouteMode == "NONE") tunnelConfigId else null,
-                            ).copy(
-                                // One (type, carrier) pair, self-exclusive: a
-                                // saved profile can never carry two carriers.
-                                aiRouteType = aiRouteTypeForSave(aiRouteMode),
-                                aiRouteProfileId = aiRouteCarrierForSave(aiRouteMode, aiRouteCarrierId),
-                            )
                         } else if (connectionType == "SMB") {
                             val smbPortInt = port.toIntOrNull() ?: 445
                             (existing ?: ConnectionProfile(
@@ -4276,7 +3146,6 @@ fun ConnectionEditDialog(
                                 reconnectMaxAttempts = reconnectMaxAttempts.toIntOrNull()?.coerceAtLeast(0) ?: 5,
                                 reconnectOnNetworkChange = reconnectOnNetworkChange,
                                 tunnelOnly = tunnelOnly,
-                                mcpEnabled = mcpEnabled,
                                 sessionManager = selectedSessionManager,
                                 useMosh = selectedTransport == "MOSH",
                                 useEternalTerminal = selectedTransport == "ET",
@@ -4315,32 +3184,7 @@ fun ConnectionEditDialog(
                                 // (shared standalone tunnel) is persisted as-is.
                                 tunnelConfigId = if (useCloudflareTunnel) null else tunnelConfigId,
                             )
-                        } else {
-                            val savedHost = if (localSideband) "127.0.0.1" else rnsHost
-                            val savedPort = if (localSideband) 37428 else (rnsPort.toIntOrNull() ?: 4242)
-                            (existing ?: ConnectionProfile(
-                                label = label,
-                                host = "",
-                                port = 0,
-                                username = "",
-                            )).copy(
-                                label = label.ifBlank { "RNS:${destinationHash.take(12)}" },
-                                host = "",
-                                port = 0,
-                                username = "",
-                                connectionType = "RETICULUM",
-                                destinationHash = destinationHash.lowercase(),
-                                reticulumHost = savedHost,
-                                reticulumPort = savedPort,
-                                reticulumNetworkName = rnsNetworkName.ifBlank { null },
-                                reticulumPassphrase = rnsPassphrase.ifBlank { null },
-                                postLoginCommand = postLoginCommand.ifBlank { null },
-                                postLoginBeforeSessionManager = postLoginBeforeSessionManager,
-                                colorTag = colorTag,
-                                groupId = groupId,
-                                identityId = identityId,
-                            )
-                        }
+                        } else { error("Unsupported connection type") }
                 return profile
             }
             Row(horizontalArrangement = Arrangement.End) {
@@ -4372,12 +3216,9 @@ fun ConnectionEditDialog(
                                 jumpDestination = cfJumpDestination,
                             )
                         } else null
-                        // MCP reverse tunnel only applies to plain SSH, and only
-                        // when inbound MCP is allowed for this connection (the
-                        // toggle is gated on mcpEnabled). For other transports or
-                        // when MCP is off, report false so the screen tears down
+
                         // any stale rule.
-                        onSave(profile, cfInput, mcpReverseTunnel && mcpEnabled && selectedTransport == "SSH")
+                        onSave(profile, cfInput)
                     },
                     enabled = canSave,
                 ) {
@@ -4687,118 +3528,6 @@ private fun SshTunnelBlock(
 }
 
 /**
- * AI route carrier picker: the OPENAI counterpart of [SshTunnelBlock].
- * Three-way mode (Direct / Via SSH / Via Reticulum), then the carrier
- * dropdown for the chosen kind. Save is gated by [aiRouteComplete] — a
- * picked mode without a carrier can't be saved.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AiRouteBlock(
-    mode: String,
-    carrierId: String?,
-    profiles: List<ConnectionProfile>,
-    onModeChange: (String) -> Unit,
-    onCarrierChange: (String) -> Unit,
-) {
-    var modeExpanded by remember { mutableStateOf(false) }
-    val modeOptions = listOf(
-        "NONE" to stringResource(R.string.connections_dropdown_none_direct),
-        "SSH" to stringResource(R.string.connections_ai_route_via_ssh),
-        "RETICULUM" to stringResource(R.string.connections_ai_route_via_reticulum),
-    )
-    ExposedDropdownMenuBox(
-        expanded = modeExpanded,
-        onExpandedChange = { modeExpanded = it },
-    ) {
-        OutlinedTextField(
-            value = modeOptions.firstOrNull { it.first == mode }?.second
-                ?: stringResource(R.string.connections_dropdown_none_direct),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.connections_ai_route_section)) },
-            supportingText = { Text(stringResource(R.string.connections_helper_ai_route)) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = modeExpanded)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(
-            expanded = modeExpanded,
-            onDismissRequest = { modeExpanded = false },
-        ) {
-            modeOptions.forEach { (value, label) ->
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = {
-                        onModeChange(value)
-                        modeExpanded = false
-                    },
-                )
-            }
-        }
-    }
-    when (mode) {
-        "SSH" -> SshTunnelBlock(
-            enabled = true,
-            carrierId = carrierId,
-            sshProfiles = profiles,
-            onEnabledChange = { /* always on inside the AI route block */ },
-            onCarrierChange = onCarrierChange,
-            showToggle = false,
-        )
-        "RETICULUM" -> {
-            val candidates = profiles.filter { it.isReticulum }
-            if (candidates.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                var reticulumExpanded by remember { mutableStateOf(false) }
-                val selected = candidates.firstOrNull { it.id == carrierId }
-                ExposedDropdownMenuBox(
-                    expanded = reticulumExpanded,
-                    onExpandedChange = { reticulumExpanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = selected?.label
-                            ?: stringResource(R.string.connections_dropdown_select_carrier),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.connections_field_ai_route_carrier)) },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(reticulumExpanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = reticulumExpanded,
-                        onDismissRequest = { reticulumExpanded = false },
-                    ) {
-                        candidates.forEach { candidate ->
-                            DropdownMenuItem(
-                                text = { Text(candidate.label) },
-                                onClick = {
-                                    onCarrierChange(candidate.id)
-                                    reticulumExpanded = false
-                                },
-                            )
-                        }
-                    }
-                }
-            } else {
-                Text(
-                    stringResource(R.string.connections_helper_add_reticulum_first),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
-    }
-}
-
-/**
  * Read the SSH-engine choice out of the sshOptions text (#58): "SSHLIB" when
  * a `HavenSshEngine sshlib` line is present, "JSCH" otherwise. Mirrors
  * `ConnectionConfig.sshEngine`'s safe-fallback parse.
@@ -4867,7 +3596,6 @@ private fun ForwardingExportSnippetRow(snippet: String) {
         }
     }
 }
-
 
 /**
  * Ordered editor for a profile's auth methods (#166). Operates on the

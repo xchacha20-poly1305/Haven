@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
-import sh.haven.core.data.agent.AgentUiCommand
-import sh.haven.core.data.agent.AgentUiCommandBus
+import sh.haven.core.data.navigation.UiCommand
+import sh.haven.core.data.navigation.UiCommandBus
 import sh.haven.core.data.db.entities.ConnectionProfile
 import sh.haven.core.data.db.entities.WorkspaceItem
 import sh.haven.core.data.repository.ConnectionRepository
@@ -26,55 +26,11 @@ import sh.haven.core.redact.LogRedact
 
 private const val TAG = "WorkspaceLauncher"
 
-/**
- * Restores a [sh.haven.core.data.db.entities.WorkspaceProfile].
- *
- * ### Terminals: per-profile plans, no UI bus
- *
- * Terminal items are grouped by connection profile into plans that run
- * **concurrently** — a slow or interactive host delays only its own
- * items, never the rest of the workspace. Within a plan, sessions
- * attach sequentially through [SshSessionAttacher]:
- *
- *  - a live terminal already on the item's session name → reused
- *    (relaunching a workspace is idempotent, no duplicate tabs);
- *  - a live/in-flight connection → the session attaches as another
- *    channel on it, directly — no `AgentUiCommand` hop, so nothing
- *    depends on which screens happen to be composed;
- *  - no connection at all → ONE interactive dial per plan via
- *    [AgentUiCommand.ConnectProfile] (auth prompts — password, FIDO
- *    tap, host key — surface on the Connections screen the user is
- *    already on), then the remaining items attach once CONNECTED.
- *    A dial that doesn't come up fails that plan's remaining items
- *    with a message; relaunching the workspace retries just those.
- *
- * Mosh/ET/Reticulum/Local terminals keep the bus path
- * ([AgentUiCommand.OpenTerminalSession]) — single-session transports
- * with their own managers.
- *
- * After the terminal plans settle, one
- * [AgentUiCommand.FocusTerminalSession] navigates to the Terminal
- * screen when at least one session came up.
- *
- * ### Non-terminal kinds
- *
- * WAYLAND / FILE_BROWSER / DESKTOP dispatch over the bus as before,
- * strictly after the terminal plans settle so tunneled desktops attach
- * to already-up SSH sessions (`tunnelDependents`). Same caveat as the
- * existing `NavigateToSftpPath` verb: emissions for a screen the user
- * has never visited may drop because the page-scoped ViewModel isn't
- * alive yet. `DesktopViewModel` is nav-scoped and always alive.
- *
- * ### Cancellation
- *
- * Cooperative — [cancel] flips a flag checked before each item; items
- * not yet started mark `Skipped`.
- */
 @Singleton
 class WorkspaceLauncher @Inject constructor(
     private val workspaceRepository: WorkspaceRepository,
     private val connectionRepository: ConnectionRepository,
-    private val agentUiCommandBus: AgentUiCommandBus,
+    private val uiCommandBus: UiCommandBus,
     private val sshSessionManager: SshSessionManager,
     private val sshSessionAttacher: SshSessionAttacher,
 ) {
@@ -123,7 +79,7 @@ class WorkspaceLauncher @Inject constructor(
                 // Navigate to the Terminal screen now that sessions exist. The
                 // tab-select part drops harmlessly if the screen isn't mounted
                 // yet — adoption on mount shows the new tabs anyway.
-                agentUiCommandBus.emit(AgentUiCommand.FocusTerminalSession(it))
+                uiCommandBus.emit(UiCommand.FocusTerminalSession(it))
             }
         }
 
@@ -264,9 +220,9 @@ class WorkspaceLauncher @Inject constructor(
                 remoteNames?.let { SessionManager.sanitizeSessionName(name) !in it } == true
 
             if (!isPlainSsh) {
-                // Mosh/ET/Reticulum/Local: single-session transports, tab-only
+
                 // path through their own session managers.
-                val ok = emitWithRetry(AgentUiCommand.OpenTerminalSession(profile.id, sessionName = name))
+                val ok = emitWithRetry(UiCommand.OpenTerminalSession(profile.id, sessionName = name))
                 progress.update(
                     item.id,
                     if (ok) ItemProgress.Status.Succeeded else ItemProgress.Status.Failed,
@@ -304,7 +260,7 @@ class WorkspaceLauncher @Inject constructor(
                     // Interactive dial: prompts (password / FIDO / host key /
                     // session picker) surface on the Connections screen. The
                     // connect opens this item's tab itself, attached to [name].
-                    if (!emitWithRetry(AgentUiCommand.ConnectProfile(profile.id, sessionName = name))) {
+                    if (!emitWithRetry(UiCommand.ConnectProfile(profile.id, sessionName = name))) {
                         progress.update(item.id, ItemProgress.Status.Failed, "ui bus overflow")
                         continue
                     }
@@ -332,14 +288,14 @@ class WorkspaceLauncher @Inject constructor(
 
     private suspend fun dispatchNonTerminal(item: WorkspaceItem): DispatchOutcome {
         val command = when (item.kind) {
-            WorkspaceItem.Kind.WAYLAND -> AgentUiCommand.OpenWaylandDesktop
+            WorkspaceItem.Kind.WAYLAND -> return DispatchOutcome(false, "Local Linux desktops have been removed from this build")
             WorkspaceItem.Kind.FILE_BROWSER -> {
                 val profile = item.connectionProfileId?.let { connectionRepository.getById(it) }
                     ?: return DispatchOutcome(false, "profile missing")
                 if (!profile.isFileBrowser()) {
                     return DispatchOutcome(false, "${profile.label} is not a file-browser profile")
                 }
-                AgentUiCommand.NavigateToSftpPath(
+                UiCommand.NavigateToSftpPath(
                     profileId = profile.id,
                     path = item.path ?: "/",
                 )
@@ -350,7 +306,7 @@ class WorkspaceLauncher @Inject constructor(
                 if (!profile.isDesktop) {
                     return DispatchOutcome(false, "${profile.label} is not a desktop profile")
                 }
-                AgentUiCommand.OpenRemoteDesktop(profile.id)
+                UiCommand.OpenRemoteDesktop(profile.id)
             }
             WorkspaceItem.Kind.TERMINAL ->
                 error("terminal items go through runProfilePlan")
@@ -366,9 +322,9 @@ class WorkspaceLauncher @Inject constructor(
      * The bus has a 1-element buffer; concurrent plans can race it. Retry
      * a rejected emit briefly before reporting overflow.
      */
-    private suspend fun emitWithRetry(command: AgentUiCommand): Boolean {
+    private suspend fun emitWithRetry(command: UiCommand): Boolean {
         repeat(EMIT_RETRIES) { attempt ->
-            if (agentUiCommandBus.emit(command)) return true
+            if (uiCommandBus.emit(command)) return true
             if (attempt < EMIT_RETRIES - 1) delay(EMIT_RETRY_DELAY_MS)
         }
         return false
@@ -503,11 +459,5 @@ class WorkspaceLauncher @Inject constructor(
     }
 }
 
-/**
- * True when the profile resolves to a file-browser tab. Mirrors the
- * `isTerminal` / `isDesktop` helpers but covers the SFTP / SMB / Rclone
- * / Local file-browser kinds explicitly so workspace items don't have to
- * duplicate the predicate.
- */
 private fun ConnectionProfile.isFileBrowser(): Boolean =
-    isSsh || isSmb || isRclone || isLocal
+    isSupported && (isSsh || isSmb)

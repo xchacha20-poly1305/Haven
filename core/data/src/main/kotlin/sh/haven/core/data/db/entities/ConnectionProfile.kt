@@ -154,9 +154,9 @@ data class ConnectionProfile(
     val lastSessionName: String? = null,
     /** Disable alternate screen buffer (DECSET 1049) so scrollback works in screen/vim. */
     val disableAltScreen: Boolean = false,
-    /** rclone remote name (e.g. "gdrive"). */
+
     val rcloneRemoteName: String? = null,
-    /** rclone provider type (e.g. "drive", "s3", "dropbox"). */
+
     val rcloneProvider: String? = null,
     /**
      * Embedded email (#EMAIL). Selects engine + auth chain: "proton" (Go
@@ -215,27 +215,13 @@ data class ConnectionProfile(
      * string here because :core:data does not depend on that module.
      */
     val aiProtocol: String? = null,
-    /**
-     * OPENAI: which carrier a routed endpoint's HTTP rides. "SSH" = local
-     * forward through the carrier's live SSH session, "RETICULUM" = mesh
-     * bridge to the endpoint host:port. Null = direct dial (the common
-     * case). One (type, carrier) pair, so a profile can never store two
-     * carriers — the mutual exclusion the Route-through picker and the
-     * desktop flag+id pairs get from the editor.
-     */
+
     val aiRouteType: String? = null,
     /** Carrier profile id for [aiRouteType]; null when unrouted. */
     val aiRouteProfileId: String? = null,
-    /** Use native Android shell instead of PRoot for local connections. */
+
     val useAndroidShell: Boolean = false,
-    /**
-     * For LOCAL profiles: open the proot shell directly in this distro
-     * (e.g. `debian-bookworm`, `alpine-3.21`) instead of the global active
-     * distro. Null = follow the active distro (the original behaviour, so
-     * existing profiles are unchanged). Ignored when [useAndroidShell] is
-     * true. Each distro has its own rootfs, so distinct profiles can run
-     * different OSes side by side.
-     */
+
     val prootDistroId: String? = null,
     /** Custom mosh-server command (overrides the default `mosh-server new -s -c 256 -l LANG=en_US.UTF-8`). */
     val moshServerCommand: String? = null,
@@ -257,9 +243,9 @@ data class ConnectionProfile(
      * connect rather than binding the wrong hop. Null lets the system pick.
      */
     val bindAddress: String? = null,
-    /** IFAC network name for Reticulum gateway isolation (maps to ifacNetname). */
+
     val reticulumNetworkName: String? = null,
-    /** IFAC passphrase for Reticulum gateway isolation (maps to ifacNetkey). */
+
     val reticulumPassphrase: String? = null,
     /** Command to send automatically after SSH login (e.g. "cd /app && clear"). */
     val postLoginCommand: String? = null,
@@ -350,36 +336,11 @@ data class ConnectionProfile(
     val autoReconnect: Boolean = true,
     val reconnectMaxAttempts: Int = 5,
     val reconnectOnNetworkChange: Boolean = true,
-    /**
-     * Tunnel-only mode (#150 Phase B). When true, a connect to this
-     * profile brings up the SSH transport and registers the
-     * configured port-forward rules but DOES NOT allocate a PTY or
-     * open a terminal tab. The session lives in the background
-     * carrying just the forwards — equivalent to `ssh -N -L … host`.
-     *
-     * Defaults to false so existing profiles keep their interactive
-     * behaviour. Compose with autoReconnect + maxAttempts=0 to get
-     * autossh-style indefinite-keepalive port forwards.
-     *
-     * Only meaningful for SSH-family profiles. Ignored on
-     * VNC/RDP/SMB/RCLONE/RETICULUM/LOCAL.
-     */
+
     val tunnelOnly: Boolean = false,
-    /**
-     * Whether the MCP agent may operate on this connection. When false, agent tools
-     * that target this profile are refused, and the per-row MCP indicator shows a
-     * disabled state. Default true (current behaviour). Toggled from the Connections
-     * row's MCP icon.
-     */
+
     val mcpEnabled: Boolean = true,
-    /**
-     * Optional port-knock sequence sent before the real socket open.
-     * Format: whitespace- or comma-separated `port[/proto]` tokens, e.g.
-     * `"7000 8000 9000"` (all TCP) or `"7000/tcp 8000/udp 9000/tcp"`.
-     * Empty / null = knocking disabled. Parsed by `KnockSequence.parse`.
-     * Only meaningful for protocols with a remote TCP host (SSH, Mosh,
-     * ET, VNC, RDP, SMB) — ignored for LOCAL/RCLONE/RETICULUM.
-     */
+
     val portKnockSequence: String? = null,
     /**
      * Delay between knock packets, in milliseconds. Matches `knockd`'s
@@ -628,5 +589,7 @@ data class ConnectionProfile(
     val usbSerialConfig: String? get() = sshOptions
 
     val isDesktop: Boolean get() = isVnc || isRdp || isSpice || isGlkvm
-    val isTerminal: Boolean get() = !isDesktop && !isSmb && !isRclone && !isEmail && !isSaf && !isOpenai
+    val isSupported: Boolean get() = !isLocal && !isGuest && !isEmail && !isOpenai && !isRclone && !isReticulum && usbDriveSerial == null
+
+    val isTerminal: Boolean get() = isSupported && !isDesktop && !isSmb && !isRclone && !isEmail && !isSaf && !isOpenai
 }

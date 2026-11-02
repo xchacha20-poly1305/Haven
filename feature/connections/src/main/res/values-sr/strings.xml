@@ -349,7 +349,6 @@
     <string name="connections_section_general">Опште</string>
     <string name="connections_section_local_shell">Локална љуска</string>
     <string name="connections_section_guest">Linux гост</string>
-    <string name="connections_guest_desc">Покреће право Линукс језгро на овом уређају, са сопственим кореним фајл системом и мрежом. Рут фајл систем се распакује (~512 MB) при првој употреби. Није потребан хост ни акредитиви.</string>
     <string name="connections_section_btserial">Bluetooth серијски</string>
     <string name="connections_btserial_desc">Повезивање са упареним Bluetooth-у-серијски адаптер (нпр. конзолни порт свича или рутера).</string>
     <string name="connections_btserial_device">Упарени уређај</string>
@@ -379,45 +378,14 @@
     <string name="connections_usbserial_flow_rtscts">RTS/CTS</string>
     <string name="connections_usbserial_flow_xonxoff">XON/XOFF</string>
     <string name="connections_section_cloud_storage">Складиште у облаку</string>
-    <string name="rclone_import_title">Увоз rclone удаљених</string>
-    <string name="rclone_import_intro">Налепите свој Линукс rclone.conf, или изаберите фајл. Удаљени (укључујући и OAuth жетоне) се увозе онакви какви су, тако да нема потребе да их поново конфигуришете.</string>
-    <string name="rclone_import_pick_file">Изаберите rclone.conf…</string>
-    <string name="rclone_import_paste_label">садржај rclone.conf фајла</string>
-    <string name="rclone_import_parse">Пронађи удаљене</string>
-    <string name="rclone_import_encrypted">Тај фајл је rclone конфигурација шифрована лозинком. Извршите „rclone config show“ у десктопу, па уместо тога налепите дешифровани излаз.</string>
-    <string name="rclone_import_already_added">већ је додат</string>
-    <string name="rclone_import_no_type">нема типа</string>
-    <string name="rclone_import_select_count">Увози се %1$d удаљени(х)</string>
-    <string name="rclone_import_done">Увезено је %1$d, прескочено %2$d, није успело %3$d.</string>
-    <string name="rclone_import_menu">Увоз rclone конфигурације…</string>
+
     <string name="connections_section_vnc">VNC подешавања</string>
     <string name="connections_section_rdp">RDP подешавања</string>
     <string name="connections_section_spice">SPICE подешавања</string>
-    <string name="connections_section_openai">AI крајња тачка</string>
-    <string name="connections_field_openai_host">Адреса сервера</string>
-    <string name="connections_field_openai_host_hint">IP, име хоста или пун http:// URL</string>
-    <string name="connections_field_openai_api_key">API кључ (опционо)</string>
-    <string name="connections_field_openai_api_key_hint">Шаље се као Bearer токен. Оставите празно за сервере без кључа.</string>
-    <string name="connections_field_openai_path_prefix">Префикс путање (опционо)</string>
-    <string name="connections_field_openai_path_prefix_hint">Убаци се пре /v1 — нпр. /api</string>    <string name="connections_field_openai_protocol">Протокол</string>
-    <string name="connections_field_openai_protocol_hint">Подразумевано OpenAI-компатибилно; Ollama, Anthropic и Gemini мењају путање и аутентификацију.</string>
 
-    <string name="connections_openai_url_preview">URL крајње тачке: %1$s</string>
     <string name="connections_section_smb">SMB подешавања</string>
     <string name="connections_section_email">И-мејл налог</string>
     <string name="connections_auth_method_proton_srp">ProtonMail SRP</string>
-    <string name="connections_email_provider_proton">Пружалац услуге: ProtonMail</string>
-    <string name="connections_email_proton_unofficial_warning">Користи незванични Proton API. Ово је добијено реверзним инжењерством и крши Proton услове — ваш налог би могао бити ограничен или закључан. Наставите уз сопствени ризик.</string>
-    <string name="connections_field_email_address">И-мејл адреса</string>
-    <string name="connections_field_email_password">Лозинка</string>
-    <string name="connections_field_email_mailbox_password">Лозинка сандучета (само за режим са две лозинке)</string>
-    <string name="connections_email_mailbox_password_hint">Оставите празно осим ако ваш Proton налог има посебну лозинку за сандуче.</string>
-    <string name="connections_email_2fa_hint">Ако ваш налог користи 2FA, повежите његову TOTP тајну у SSH кључ / TOTP менаџер и аутоматски ће се применити.</string>
-    <string name="connections_email_provider_proton_short">ProtonMail</string>
-    <string name="connections_email_provider_imap_short">IMAP/SMTP</string>
-    <string name="connections_email_app_password_hint">Користите своју лозинку, или лозинку апликације ако пружалац услуге то захтева (Fastmail, iCloud, Yahoo, Gmail/2FA).</string>
-    <string name="connections_email_preset_label">Унапред сачувана подешавања пружаоца</string>
-    <string name="connections_email_app_password_link">Креирајте лозинку апликације за %1$s</string>
     <string name="connections_field_imap_server">IMAP сервер</string>
     <string name="connections_field_smtp_server">SMTP сервер</string>
     <string name="connections_field_smtp_server_help">Оставите празно да се користи IMAP сервер.</string>
@@ -428,31 +396,22 @@
     <string name="connections_section_terminal">Терминал</string>
     <string name="connections_section_authentication">Потврда идентитета</string>
     <string name="connections_section_embedded_vnc">Уграђени VNC</string>
-    <string name="connections_section_reticulum">Reticulum</string>
+
     <string name="connections_section_routing">Рутирање</string>
-    <string name="connections_toggle_mcp_tunnel">Изложи уназад Haven-ов MCP овом хосту</string>
-    <string name="connections_helper_mcp_tunnel">"Тунелује уназад Haven-ов сопствени MCP сервер удаљном хосту, тако да проциси који се извршавају тамо (нпр. Claude Code који ради на серверу) могу да приступе http://127.0.0.1:8730/mcp и (преко loopback интерфејса) прескоче упаривање &amp; пристанак. Примењује се током успостављања везе. За континуирани приступ без отворене сесије, поставите ово као Увек активна MCP веза у Подешавања → Крајња тачка агента.\n"</string>
+
     <string name="connections_section_reconnect">Повежи се поново</string>
-    <string name="connections_section_mcp">AI агент (MCP)</string>
-    <string name="connections_local_shell_android_desc">Покреће својствену Андроид љуску (/system/bin/sh). Приступа Андроид командама, фајл систему и root (ако је доступно).</string>
-    <string name="connections_local_shell_proot_desc">Покреће Алпајн Линукс љуску локално помоћу PRoot. Приликом прве употребе преузима минимални rootfs (~4MB). Није потребан root приступ или мрежна веза.</string>
-    <string name="connections_local_distro_label">Отвори у ОС</string>
-    <string name="connections_local_distro_active_default">Активна дистрибуција (подразумевано)</string>
+
     <string name="connections_dropdown_select_provider">Изаберите пружаоца…</string>
-    <string name="connections_helper_rclone_signin">Пријавите се у свом прегледачу приликом првог повезивања.</string>
-    <string name="connections_helper_rclone_credentials">Унесите детаље налога за овог пружаоца, затим тапните Конфигуриши да сачувате и потврдите подешавања удаљеног.</string>
-    <string name="connections_rclone_configure">Конфигуриши &amp; потврди</string>
-    <string name="connections_rclone_configured_ok">Удаљени је подешен и потврђен.</string>
-    <string name="connections_rclone_configure_first">Тапните „Конфигуриши &amp; потврди“ да сачувате овај удаљени пре него што будете могли да Сачувате везу.</string>
+
     <string name="connections_dropdown_select_ssh">Изаберите SSH везу</string>
     <string name="connections_helper_add_ssh_first">Најпре додајте SSH везу</string>
     <string name="connections_ai_route_section">Носач ИИ руте</string>
     <string name="connections_ai_route_via_ssh">Преко SSH</string>
-    <string name="connections_ai_route_via_reticulum">Преко Reticulum</string>
+
     <string name="connections_field_ai_route_carrier">Носећа веза</string>
     <string name="connections_dropdown_select_carrier">Изабери везу</string>
     <string name="connections_helper_ai_route">Руторира крајњу тачку преко носиоца: SSH отвара локално прослеђивање кроз сесију носиоца, Reticulum прави мост преко мреже. Носилац мора бити повезан за Reticulum руте.</string>
-    <string name="connections_helper_add_reticulum_first">Прво додајте Reticulum везу</string>
+
     <string name="connections_toggle_rdp_nla">Network Level Authentication (NLA)</string>
     <string name="connections_helper_mosh_required">На удаљеном хосту је потребан mosh-server</string>
     <string name="connections_helper_et_required">На удаљеном хосту је потребан etserver (порт %1$s)</string>
@@ -477,8 +436,7 @@
     <string name="connections_rdp_depth_16">16-бита (подразумевано — функционише свуда, мања верност)</string>
     <string name="connections_rdp_depth_24">24-бита (xrdp — Windows ресетује везу)</string>
     <string name="connections_rdp_depth_32">32-бита (Windows — црни екран на xrdp)</string>
-    <string name="connections_agent_active">Агент је активан</string>
-    <string name="connections_agent_activity">Активност агента</string>
+
     <string name="connections_pf_type_local">ЛОКАЛНИ</string>
     <string name="connections_pf_type_remote">УДАЉЕНИ</string>
     <string name="connections_pf_type_dynamic">ДИНАМИЧКИ (SOCKS5)</string>
@@ -506,7 +464,7 @@
     <string name="connections_pf_dynamic_explanation">SOCKS5 клијенти на вашем уређају могу да се повежу на %1$s:%2$s и шаљу захтеве на било које одредиште. Сваки захтев отвара нови директни-tcpip канал кроз SSH сервер.</string>
     <string name="connections_pf_dynamic_port_fallback">&lt;порт&gt;</string>
     <string name="connections_hosts_discovered">откривено је %1$d хостова</string>
-    <string name="connections_rclone_provider_cloud">Облак</string>
+
     <string name="connections_list_via">кроз %1$s</string>
     <string name="connections_auth_methods_title">Методе провере идентитета</string>
     <string name="connections_auth_methods_description">Све наведене методе се нуде серверу, по наведеном редоследу; сервер који захтева неколико (нпр. кључ + лозинка, или два кључа) мора да задовољи сваки. „Било који софтверски кључ“ покушава ваше софтверске кључеве; „Било који хардверски кључ“ вам омогућава да тапнете било који безбедносни кључ који поседујете; прикачите кључ према имену ако желите да се захтева баш тај кључ. „Било који софтверски кључ“ никада не нуди хардверски (FIDO/YubiKey) кључ.</string>
@@ -528,11 +486,7 @@
     <string name="connections_auth_confirm_otp_desc">Приказује генерисани кôд да се потврди једним тапом, уместо да се аутоматски преда.</string>
     <string name="connections_vm_copied_short">Копирано</string>
     <string name="connections_vm_terminal_not_found">Није пронађена Терминал апликација</string>
-    <string name="connections_mcp_badge">MCP</string>
-    <string name="connections_mcp_active">Агент оперише кроз ову везу — тапните да искључите MCP за њу</string>
-    <string name="connections_mcp_disabled">MCP је искључен за ову везу — тапните да га укључите</string>
-    <string name="connections_toggle_mcp_enabled">Дозволите да агент контролише ову везу</string>
-    <string name="connections_helper_mcp_enabled">Долазно: када је искључено, алати AI-агента (MCP) не могу да читају или да управљају овом везом. Она за вас још увек нормално ради.</string>
+
     <string name="connections_deeplink_confirm_title">Желите ли да се повеже?</string>
     <string name="connections_deeplink_confirm_message">Линк жели да се повеже на %1$s.</string>
     <string name="connections_deeplink_confirm_session">Линк жели да се повеже на %1$s и да прикачи сесију „%2$s“.</string>

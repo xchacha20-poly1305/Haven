@@ -51,7 +51,7 @@
     <string name="terminal_new_tab_host_key_changed">%s의 호스트 키가 변경됨 — 보안을 위해 연결이 거부되었습니다</string>
     <string name="terminal_new_tab_connection_failed">연결할 수 없음: %s</string>
     <string name="terminal_new_tab_shell_failed">셸을 열지 못함: %s</string>
-    <string name="terminal_new_tab_reticulum_no_session">복제할 활성 Reticulum 세션이 없습니다</string>
+
     <string name="terminal_new_tab_connecting">연결 중…</string>
 
     <!-- EmptyTerminalState -->
@@ -88,7 +88,6 @@
     <!-- #210 i18n sweep -->
     <string name="terminal_link_open_failed">이 링크를 열 수 있는 앱이 없습니다</string>
     <string name="terminal_link_scheme_blocked">차단된 링크 (지원되지 않는 스킴)</string>
-    <string name="terminal_local_vnc_failed">로컬 데스크톱을 시작할 수 없습니다</string>
     <string name="terminal_attach_title">첨부</string>
     <string name="terminal_attach_send_file">파일 보내기</string>
     <string name="terminal_attach_send_file_desc">원격으로 업로드하고 경로를 붙여넣습니다</string>
@@ -98,10 +97,7 @@
     <string name="terminal_attach_scan_camera_desc">QR 코드나 바코드를 촬영하여 내용을 붙여넣습니다</string>
     <string name="terminal_attach_scan_gallery">코드 스캔 (사진)</string>
     <string name="terminal_attach_scan_gallery_desc">QR 코드나 바코드가 있는 사진을 선택하여 내용을 붙여넣습니다</string>
-    <string name="terminal_attach_ocr_camera">텍스트 인식 (카메라)</string>
-    <string name="terminal_attach_ocr_camera_desc">인쇄된 텍스트를 촬영하여 인식된 내용을 붙여넣습니다</string>
-    <string name="terminal_attach_ocr_gallery">텍스트 인식 (사진)</string>
-    <string name="terminal_attach_ocr_gallery_desc">인쇄된 텍스트가 있는 사진을 선택하여 인식된 내용을 붙여넣습니다</string>
+
     <string name="terminal_scan_no_code">이미지에서 코드를 감지하지 못했습니다</string>
     <string name="terminal_scan_no_text">이미지에서 텍스트를 감지하지 못했습니다</string>
     <string name="terminal_scan_failed">스캔 실패: %s</string>

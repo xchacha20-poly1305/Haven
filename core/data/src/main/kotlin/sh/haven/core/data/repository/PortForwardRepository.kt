@@ -1,6 +1,7 @@
 package sh.haven.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import sh.haven.core.data.db.PortForwardRuleDao
 import sh.haven.core.data.db.entities.PortForwardRule
 import javax.inject.Inject
@@ -11,13 +12,16 @@ class PortForwardRepository @Inject constructor(
     private val dao: PortForwardRuleDao,
 ) {
     fun observeForProfile(profileId: String): Flow<List<PortForwardRule>> =
-        dao.observeForProfile(profileId)
+        dao.observeForProfile(profileId).map { rules -> rules.filterNot { it.isRetiredAgentForward() } }
 
-    /** All rules across every profile — used to derive which connections expose MCP. */
     fun observeAll(): Flow<List<PortForwardRule>> = dao.observeAll()
 
     suspend fun getEnabledForProfile(profileId: String): List<PortForwardRule> =
-        dao.getEnabledForProfile(profileId)
+        dao.getEnabledForProfile(profileId).filterNot { it.isRetiredAgentForward() }
+
+    private fun PortForwardRule.isRetiredAgentForward(): Boolean =
+        type == PortForwardRule.Type.REMOTE && bindPort == 8730 &&
+            targetHost == "127.0.0.1" && targetPort == 8730
 
     suspend fun save(rule: PortForwardRule) = dao.upsert(rule)
 
